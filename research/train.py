@@ -6,6 +6,7 @@ import json
 import math
 import sqlite3
 import contextlib
+from collections import Counter
 from pathlib import Path
 import numpy as np
 
@@ -201,15 +202,60 @@ def fit_fold(train, cal, test, include_gbt=False):
     return weights, profiles, fitted
 
 
-def run(args):
+def load_dataset(args):
+    """Pin selection to the current configuration, even if it has no valid labels."""
     with contextlib.closing(sqlite3.connect(f'file:{Path(args.db).resolve()}?mode=ro', uri=True)) as db:
-        records = [json.loads(row[0]) for row in db.execute("SELECT payload FROM records WHERE kind='outcome' ORDER BY ts,id")]
-    records = [r for r in records if r['source'] == args.source and r['payload']['learning_eligible']]
-    if not records: raise ValueError('没有匹配来源的有效自动 Outcome')
-    rows = [r['payload'] for r in records]
-    latest = max(rows, key=lambda o: o['prediction']['ts'])['prediction']
+        db.execute('BEGIN')  # One consistent WAL snapshot for records and configuration.
+        records = [(kind, json.loads(encoded)) for kind, encoded in db.execute(
+            "SELECT kind,payload FROM records WHERE kind IN ('prediction','outcome') ORDER BY ts,id")]
+        checkpoint = None
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='checkpoint'").fetchone():
+            saved = db.execute('SELECT state FROM checkpoint WHERE id=1').fetchone()
+            if saved: checkpoint = json.loads(saved[0])
+    records = [(kind, r['payload']) for kind, r in records if r['source'] == args.source]
+    predictions = [p if kind == 'prediction' else p['prediction'] for kind, p in records]
+    outcomes = {p['prediction']['prediction_id']: p for kind, p in records if kind == 'outcome'}
+    latest = max(predictions, key=lambda p: p['ts']) if predictions else None
+    selection = 'latest_prediction'
+    if checkpoint and checkpoint.get('source') == args.source:
+        current = checkpoint['config']
+        # Do not fall back to an older version while a new configuration is collecting.
+        latest = {**(latest or {}), **{k: current[k] for k in ('horizon', 'target', 'stop')},
+                  'config_version': checkpoint['config_version']}
+        selection = 'checkpoint'
     definition = lambda p: (p['config_version'], p['horizon'], p['target'], p['stop'])
-    rows = sorted({o['prediction']['prediction_id']: o for o in rows if definition(o['prediction']) == definition(latest)}.values(), key=lambda r: r['prediction']['ts'])
+    current = [o for o in outcomes.values() if latest and definition(o['prediction']) == definition(latest)]
+    rows = sorted([o for o in current if o['learning_eligible']], key=lambda o: o['prediction']['ts'])
+    cohorts = Counter((o['prediction']['config_version'], o['prediction']['symbol'], o['learning_eligible']) for o in outcomes.values())
+    evidence = dict(source=args.source, selection=selection,
+                    definition=dict(zip(('config_version', 'horizon', 'target', 'stop'), definition(latest))) if latest else None,
+                    total_outcomes=len(outcomes), current_outcomes=len(current), eligible_outcomes=len(rows),
+                    distinct_prediction_times=len({o['prediction']['ts'] for o in rows}),
+                    eligible_by_symbol=dict(Counter(o['prediction']['symbol'] for o in rows)),
+                    invalid_reasons=dict(Counter(o.get('prediction_error') or 'unknown' for o in current if not o['learning_eligible'])),
+                    cohorts=[dict(config_version=v, symbol=s, learning_eligible=e, count=n) for (v,s,e),n in sorted(cohorts.items())])
+    return rows, evidence
+
+
+def run(args):
+    evidence = None
+    try:
+        rows, evidence = load_dataset(args)
+        if not rows: raise ValueError('没有匹配来源及当前配置的有效自动 Outcome')
+        return train_dataset(args, rows, evidence)
+    except (ValueError, KeyError, sqlite3.Error) as error:
+        out = Path(args.output); out.mkdir(parents=True, exist_ok=True)
+        report = dict(status='REJECTED', source=args.source, stage='dataset_validation',
+                      reason=str(error), dataset=evidence, checks={'dataset_ready': False},
+                      limitations=['No candidate was produced. No production model or trading gate was changed.'])
+        (out/'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False)+'\n')
+        # A repeated invocation must not leave a previous candidate next to a new rejection.
+        (out/'challenger.json').unlink(missing_ok=True)
+        raise
+
+
+def train_dataset(args, rows, evidence):
+    latest = rows[-1]['prediction']
     if any(o['prediction']['features'].get('feature_schema_version', 'micro-v1') != 'micro-v1' for o in rows):
         raise ValueError('训练数据包含不兼容的特征 schema')
     for outcome in rows: target(outcome)
@@ -260,6 +306,7 @@ def run(args):
     out = Path(args.output); out.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(artifact, indent=2, allow_nan=False).encode(); (out/'challenger.json').write_bytes(encoded)
     report = {'status': 'PAPER_RESEARCH_GATE_PASS' if all(checks.values()) else 'REJECTED', 'source': args.source,
+              'dataset': evidence,
               'counts': {'train': len(train), 'calibration': len(cal), 'test': len(all_test), 'symbols': symbols}, 'checks': checks,
               'score_baseline': reports['score'], 'logistic': reports['logistic'], 'chronological_test_windows': windows,
               'walk_forward': {'folds': len(windows), 'refit_each_fold': True, 'purged_boundaries': True, 'test_windows_disjoint': True},
@@ -277,4 +324,4 @@ if __name__=='__main__':
     parser.add_argument('--db',required=True);parser.add_argument('--source',choices=['live','demo'],required=True)
     parser.add_argument('--model',choices=['score','logistic','gbt'],default='score');parser.add_argument('--output',default='data/research')
     try: run(parser.parse_args())
-    except (ValueError,KeyError) as e: parser.exit(2,f'Research rejected: {e}\n')
+    except (ValueError,KeyError,sqlite3.Error) as e: parser.exit(2,f'Research rejected: {e}\n')

@@ -1,0 +1,2362 @@
+{
+  "kind": "real-public-feed-runtime-validation",
+  "source": "live",
+  "mode": "OBSERVE",
+  "config_version": 34,
+  "ai_mode": "OFF",
+  "private_configured": false,
+  "model": "score-v1-unvalidated",
+  "samples": [
+    {
+      "wall_ts": 1790928023955,
+      "engine_ts": 1790928023841,
+      "lag_ms": 114,
+      "response_ms": 145,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 179,
+          "exchange_age_ms": 63,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 169,
+          "exchange_age_ms": 62,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 208,
+          "exchange_age_ms": 35,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 169,
+          "exchange_age_ms": 66,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928026087,
+      "engine_ts": 1790928025872,
+      "lag_ms": 215,
+      "response_ms": 123,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 58,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 98,
+          "exchange_age_ms": 131,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 97,
+          "exchange_age_ms": 150,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 98,
+          "exchange_age_ms": 135,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928028147,
+      "engine_ts": 1790928028091,
+      "lag_ms": 56,
+      "response_ms": 53,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 48,
+          "exchange_age_ms": 199,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 212,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 54,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 216,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928030216,
+      "engine_ts": 1790928030132,
+      "lag_ms": 84,
+      "response_ms": 64,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 48,
+          "exchange_age_ms": 198,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 58,
+          "exchange_age_ms": 171,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 178,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 58,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928032288,
+      "engine_ts": 1790928032225,
+      "lag_ms": 63,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 1,
+          "exchange_age_ms": 247,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 52,
+          "exchange_age_ms": 178,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 13,
+          "exchange_age_ms": 233,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 51,
+          "exchange_age_ms": 182,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928034357,
+      "engine_ts": 1790928034292,
+      "lag_ms": 65,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 27,
+          "exchange_age_ms": 220,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 20,
+          "exchange_age_ms": 211,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 28,
+          "exchange_age_ms": 214,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 20,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928036425,
+      "engine_ts": 1790928036333,
+      "lag_ms": 92,
+      "response_ms": 66,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 219,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 43,
+          "exchange_age_ms": 170,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 43,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928038514,
+      "engine_ts": 1790928038326,
+      "lag_ms": 188,
+      "response_ms": 87,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 12,
+          "exchange_age_ms": 164,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 34,
+          "exchange_age_ms": 177,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 43,
+          "exchange_age_ms": 164,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 151,
+          "exchange_age_ms": 81,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928040585,
+      "engine_ts": 1790928040492,
+      "lag_ms": 93,
+      "response_ms": 61,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 242,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 19,
+          "exchange_age_ms": 211,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 244,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928042647,
+      "engine_ts": 1790928042572,
+      "lag_ms": 75,
+      "response_ms": 55,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 36,
+          "exchange_age_ms": 202,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 231,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 34,
+          "exchange_age_ms": 208,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 235,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928044714,
+      "engine_ts": 1790928044652,
+      "lag_ms": 62,
+      "response_ms": 62,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 79,
+          "exchange_age_ms": 162,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 79,
+          "exchange_age_ms": 151,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 68,
+          "exchange_age_ms": 178,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 78,
+          "exchange_age_ms": 155,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928046780,
+      "engine_ts": 1790928046711,
+      "lag_ms": 69,
+      "response_ms": 59,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 97,
+          "exchange_age_ms": 143,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 1,
+          "exchange_age_ms": 192,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 67,
+          "exchange_age_ms": 165,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 28,
+          "exchange_age_ms": 96,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928048845,
+      "engine_ts": 1790928048782,
+      "lag_ms": 63,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 214,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 9,
+          "exchange_age_ms": 221,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 8,
+          "exchange_age_ms": 238,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 9,
+          "exchange_age_ms": 225,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928050919,
+      "engine_ts": 1790928050842,
+      "lag_ms": 77,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 50,
+          "exchange_age_ms": 194,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 67,
+          "exchange_age_ms": 161,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 20,
+          "exchange_age_ms": 222,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 67,
+          "exchange_age_ms": 165,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928052989,
+      "engine_ts": 1790928052922,
+      "lag_ms": 67,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 89,
+          "exchange_age_ms": 154,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 48,
+          "exchange_age_ms": 181,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 59,
+          "exchange_age_ms": 188,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 48,
+          "exchange_age_ms": 185,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928055058,
+      "engine_ts": 1790928054992,
+      "lag_ms": 66,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 16,
+          "exchange_age_ms": 226,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 211,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 79,
+          "exchange_age_ms": 162,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928057116,
+      "engine_ts": 1790928056943,
+      "lag_ms": 173,
+      "response_ms": 54,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 213,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 69,
+          "exchange_age_ms": 160,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 89,
+          "exchange_age_ms": 157,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 69,
+          "exchange_age_ms": 164,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928059179,
+      "engine_ts": 1790928059114,
+      "lag_ms": 65,
+      "response_ms": 61,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 82,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 229,
+          "exchange_age_ms": 11,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 1,
+          "exchange_age_ms": 132,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 171,
+          "exchange_age_ms": 7,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928061248,
+      "engine_ts": 1790928061183,
+      "lag_ms": 65,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 90,
+          "exchange_age_ms": 155,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 9,
+          "exchange_age_ms": 220,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 37,
+          "exchange_age_ms": 207,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 8,
+          "exchange_age_ms": 224,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928063313,
+      "engine_ts": 1790928063233,
+      "lag_ms": 80,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 247,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 59,
+          "exchange_age_ms": 170,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 50,
+          "exchange_age_ms": 201,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 59,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928065385,
+      "engine_ts": 1790928065303,
+      "lag_ms": 82,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 219,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 40,
+          "exchange_age_ms": 200,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 177,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 204,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928067452,
+      "engine_ts": 1790928067383,
+      "lag_ms": 69,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 179,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 10,
+          "exchange_age_ms": 220,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 241,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 10,
+          "exchange_age_ms": 224,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928069517,
+      "engine_ts": 1790928069453,
+      "lag_ms": 64,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 100,
+          "exchange_age_ms": 149,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 81,
+          "exchange_age_ms": 150,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 213,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 81,
+          "exchange_age_ms": 154,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928071586,
+      "engine_ts": 1790928071503,
+      "lag_ms": 83,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 65,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 7,
+          "exchange_age_ms": 300,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 205,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 107,
+          "exchange_age_ms": 396,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928073650,
+      "engine_ts": 1790928073582,
+      "lag_ms": 68,
+      "response_ms": 57,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 22,
+          "exchange_age_ms": 202,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 10,
+          "exchange_age_ms": 221,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 22,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 9,
+          "exchange_age_ms": 225,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928075806,
+      "engine_ts": 1790928075754,
+      "lag_ms": 52,
+      "response_ms": 151,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 171,
+          "exchange_age_ms": 70,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 49,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 191,
+          "exchange_age_ms": 52,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 53,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928077906,
+      "engine_ts": 1790928077853,
+      "lag_ms": 53,
+      "response_ms": 90,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 130,
+          "exchange_age_ms": 113,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 180,
+          "exchange_age_ms": 50,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 150,
+          "exchange_age_ms": 97,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 180,
+          "exchange_age_ms": 54,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928080085,
+      "engine_ts": 1790928079872,
+      "lag_ms": 213,
+      "response_ms": 169,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 97,
+          "exchange_age_ms": 134,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 95,
+          "exchange_age_ms": 131,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 129,
+          "exchange_age_ms": 118,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 89,
+          "exchange_age_ms": 135,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928082207,
+      "engine_ts": 1790928082156,
+      "lag_ms": 51,
+      "response_ms": 115,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 152,
+          "exchange_age_ms": 94,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 182,
+          "exchange_age_ms": 47,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 161,
+          "exchange_age_ms": 82,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 51,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928084326,
+      "engine_ts": 1790928084268,
+      "lag_ms": 58,
+      "response_ms": 110,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 204,
+          "exchange_age_ms": 22,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 183,
+          "exchange_age_ms": 35,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 234,
+          "exchange_age_ms": 10,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 182,
+          "exchange_age_ms": 39,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928086408,
+      "engine_ts": 1790928086356,
+      "lag_ms": 52,
+      "response_ms": 75,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 171,
+          "exchange_age_ms": 76,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 47,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 171,
+          "exchange_age_ms": 68,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 51,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928088468,
+      "engine_ts": 1790928088412,
+      "lag_ms": 56,
+      "response_ms": 54,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 162,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 39,
+          "exchange_age_ms": 191,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 54,
+          "exchange_age_ms": 168,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 38,
+          "exchange_age_ms": 195,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928090539,
+      "engine_ts": 1790928090476,
+      "lag_ms": 63,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 240,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 2,
+          "exchange_age_ms": 227,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 93,
+          "exchange_age_ms": 148,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 2,
+          "exchange_age_ms": 231,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928092622,
+      "engine_ts": 1790928092569,
+      "lag_ms": 53,
+      "response_ms": 75,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 157,
+          "exchange_age_ms": 85,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 195,
+          "exchange_age_ms": 34,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 145,
+          "exchange_age_ms": 97,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 195,
+          "exchange_age_ms": 38,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928094709,
+      "engine_ts": 1790928094655,
+      "lag_ms": 54,
+      "response_ms": 82,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 202,
+          "exchange_age_ms": 39,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 181,
+          "exchange_age_ms": 48,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 192,
+          "exchange_age_ms": 57,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 180,
+          "exchange_age_ms": 52,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928096767,
+      "engine_ts": 1790928096713,
+      "lag_ms": 54,
+      "response_ms": 53,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 19,
+          "exchange_age_ms": 225,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 190,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 247,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 19,
+          "exchange_age_ms": 194,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928098912,
+      "engine_ts": 1790928098859,
+      "lag_ms": 53,
+      "response_ms": 136,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 222,
+          "exchange_age_ms": 17,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 186,
+          "exchange_age_ms": 44,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 206,
+          "exchange_age_ms": 39,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 185,
+          "exchange_age_ms": 48,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928100985,
+      "engine_ts": 1790928100905,
+      "lag_ms": 80,
+      "response_ms": 66,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 28,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 198,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 243,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 202,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928103057,
+      "engine_ts": 1790928102973,
+      "lag_ms": 84,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 60,
+          "exchange_age_ms": 187,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 230,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 234,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928105129,
+      "engine_ts": 1790928105028,
+      "lag_ms": 101,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 72,
+          "exchange_age_ms": 172,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 54,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 34,
+          "exchange_age_ms": 200,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 179,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928107190,
+      "engine_ts": 1790928107129,
+      "lag_ms": 61,
+      "response_ms": 58,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 128,
+          "exchange_age_ms": 9,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 61,
+          "exchange_age_ms": 74,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 55,
+          "exchange_age_ms": 139,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 237,
+          "exchange_age_ms": 22,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928109259,
+      "engine_ts": 1790928109175,
+      "lag_ms": 84,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 32,
+          "exchange_age_ms": 207,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 2,
+          "exchange_age_ms": 228,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 11,
+          "exchange_age_ms": 237,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 2,
+          "exchange_age_ms": 232,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928111331,
+      "engine_ts": 1790928111233,
+      "lag_ms": 98,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 50,
+          "exchange_age_ms": 191,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 170,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 20,
+          "exchange_age_ms": 227,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928113399,
+      "engine_ts": 1790928113329,
+      "lag_ms": 70,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 3,
+          "exchange_age_ms": 237,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 75,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 1,
+          "exchange_age_ms": 78,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928115459,
+      "engine_ts": 1790928115404,
+      "lag_ms": 55,
+      "response_ms": 54,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 41,
+          "exchange_age_ms": 204,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 199,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 98,
+          "exchange_age_ms": 148,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 28,
+          "exchange_age_ms": 203,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928117523,
+      "engine_ts": 1790928117455,
+      "lag_ms": 68,
+      "response_ms": 63,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 51,
+          "exchange_age_ms": 193,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 80,
+          "exchange_age_ms": 148,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 100,
+          "exchange_age_ms": 141,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 79,
+          "exchange_age_ms": 152,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928119591,
+      "engine_ts": 1790928119528,
+      "lag_ms": 63,
+      "response_ms": 60,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 85,
+          "exchange_age_ms": 160,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 35,
+          "exchange_age_ms": 212,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 52,
+          "exchange_age_ms": 179,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928121656,
+      "engine_ts": 1790928121586,
+      "lag_ms": 70,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 246,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 11,
+          "exchange_age_ms": 217,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 41,
+          "exchange_age_ms": 200,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 10,
+          "exchange_age_ms": 221,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928123725,
+      "engine_ts": 1790928123654,
+      "lag_ms": 71,
+      "response_ms": 64,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 19,
+          "exchange_age_ms": 220,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 39,
+          "exchange_age_ms": 149,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 69,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 153,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928125796,
+      "engine_ts": 1790928125727,
+      "lag_ms": 69,
+      "response_ms": 64,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 53,
+          "exchange_age_ms": 187,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 31,
+          "exchange_age_ms": 176,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 3,
+          "exchange_age_ms": 245,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 180,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928127864,
+      "engine_ts": 1790928127785,
+      "lag_ms": 79,
+      "response_ms": 65,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 71,
+          "exchange_age_ms": 169,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 13,
+          "exchange_age_ms": 218,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 12,
+          "exchange_age_ms": 231,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 222,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928129963,
+      "engine_ts": 1790928129866,
+      "lag_ms": 97,
+      "response_ms": 96,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 113,
+          "exchange_age_ms": 128,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 93,
+          "exchange_age_ms": 137,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 52,
+          "exchange_age_ms": 194,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 93,
+          "exchange_age_ms": 141,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928132032,
+      "engine_ts": 1790928131963,
+      "lag_ms": 69,
+      "response_ms": 61,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 89,
+          "exchange_age_ms": 140,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 10,
+          "exchange_age_ms": 241,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 89,
+          "exchange_age_ms": 144,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928134097,
+      "engine_ts": 1790928134033,
+      "lag_ms": 64,
+      "response_ms": 58,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 247,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 59,
+          "exchange_age_ms": 170,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 30,
+          "exchange_age_ms": 215,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 59,
+          "exchange_age_ms": 174,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928136165,
+      "engine_ts": 1790928136104,
+      "lag_ms": 61,
+      "response_ms": 61,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 216,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 199,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 60,
+          "exchange_age_ms": 186,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 203,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928138311,
+      "engine_ts": 1790928138257,
+      "lag_ms": 54,
+      "response_ms": 136,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 143,
+          "exchange_age_ms": 103,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 184,
+          "exchange_age_ms": 46,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 174,
+          "exchange_age_ms": 75,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 184,
+          "exchange_age_ms": 50,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928140414,
+      "engine_ts": 1790928140360,
+      "lag_ms": 54,
+      "response_ms": 98,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 200,
+          "exchange_age_ms": 40,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 185,
+          "exchange_age_ms": 43,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 200,
+          "exchange_age_ms": 20,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 185,
+          "exchange_age_ms": 47,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928142471,
+      "engine_ts": 1790928142403,
+      "lag_ms": 68,
+      "response_ms": 53,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 241,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 200,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 16,
+          "exchange_age_ms": 227,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 18,
+          "exchange_age_ms": 204,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928144548,
+      "engine_ts": 1790928144474,
+      "lag_ms": 74,
+      "response_ms": 69,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 29,
+          "exchange_age_ms": 210,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 229,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 51,
+          "exchange_age_ms": 198,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 0,
+          "exchange_age_ms": 233,
+          "gaps": 0
+        }
+      }
+    },
+    {
+      "wall_ts": 1790928146619,
+      "engine_ts": 1790928146545,
+      "lag_ms": 74,
+      "response_ms": 64,
+      "storage_healthy": true,
+      "venues": {
+        "BTCUSDT:binance": {
+          "ready": true,
+          "age_ms": 61,
+          "exchange_age_ms": 179,
+          "gaps": 0
+        },
+        "BTCUSDT:okx": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 158,
+          "gaps": 0
+        },
+        "ETHUSDT:binance": {
+          "ready": true,
+          "age_ms": 68,
+          "exchange_age_ms": 175,
+          "gaps": 0
+        },
+        "ETHUSDT:okx": {
+          "ready": true,
+          "age_ms": 70,
+          "exchange_age_ms": 162,
+          "gaps": 0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "count": 60,
+    "duration_ms": 122664,
+    "lag_p50_ms": 68.0,
+    "lag_p95_ms": 188,
+    "lag_max_ms": 215,
+    "all_venues_ready_samples": 60,
+    "storage_healthy": true
+  },
+  "telemetry": {
+    "checkpoint_serialize": {
+      "max_us": 141748,
+      "p50_us": 122766,
+      "p95_us": 132254,
+      "samples": 241
+    },
+    "core_ingest": {
+      "max_us": 3357,
+      "p50_us": 426,
+      "p95_us": 975,
+      "samples": 1000
+    },
+    "features": {
+      "max_us": 729,
+      "p50_us": 337,
+      "p95_us": 569,
+      "samples": 1000
+    },
+    "ingest_queue_delay": {
+      "max_us": 50000,
+      "p50_us": 1000,
+      "p95_us": 36000,
+      "samples": 1000
+    },
+    "qualification": {
+      "max_us": 69,
+      "p50_us": 28,
+      "p95_us": 40,
+      "samples": 189
+    }
+  },
+  "research": {
+    "finished_at": 1790927855286,
+    "interval_secs": 0,
+    "job_id": "research-1790927851107-471",
+    "model": "score",
+    "next_run": 1790927855286,
+    "output": "/Users/bojiao/Documents/GitHub/seetrade/data/live-validation/research/research-1790927851107-471",
+    "requested_at": 1790927851107,
+    "result": {
+      "checks": {
+        "dataset_ready": false
+      },
+      "dataset": {
+        "cohorts": [
+          {
+            "config_version": 1,
+            "count": 3,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 1,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 1,
+            "count": 3,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 1,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 3,
+            "count": 1,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 3,
+            "count": 1,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 3,
+            "count": 6,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 3,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 5,
+            "count": 23,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 5,
+            "count": 15,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 5,
+            "count": 28,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 5,
+            "count": 15,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 7,
+            "count": 10,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 7,
+            "count": 15,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 7,
+            "count": 13,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 7,
+            "count": 14,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 8,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 8,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 9,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 9,
+            "count": 1,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 9,
+            "count": 2,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 12,
+            "count": 10,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 12,
+            "count": 35,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 12,
+            "count": 10,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 12,
+            "count": 33,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 15,
+            "count": 1,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 18,
+            "count": 16,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 18,
+            "count": 21,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 18,
+            "count": 13,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 18,
+            "count": 24,
+            "learning_eligible": true,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 21,
+            "count": 7,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 21,
+            "count": 9,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 22,
+            "count": 1,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 22,
+            "count": 3,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 25,
+            "count": 6,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 25,
+            "count": 11,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 28,
+            "count": 28,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 28,
+            "count": 1,
+            "learning_eligible": true,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 28,
+            "count": 28,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 31,
+            "count": 12,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 31,
+            "count": 10,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "config_version": 34,
+            "count": 14,
+            "learning_eligible": false,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "config_version": 34,
+            "count": 13,
+            "learning_eligible": false,
+            "symbol": "ETHUSDT"
+          }
+        ],
+        "current_outcomes": 27,
+        "definition": {
+          "config_version": 34,
+          "horizon": 60,
+          "stop": 0.001,
+          "target": 0.003
+        },
+        "distinct_prediction_times": 0,
+        "eligible_by_symbol": {},
+        "eligible_outcomes": 0,
+        "invalid_reasons": {
+          "confirmed_signal_change": 26,
+          "stale_feed": 1
+        },
+        "selection": "checkpoint",
+        "source": "live",
+        "total_outcomes": 468
+      },
+      "error": "Research rejected: 没有匹配来源及当前配置的有效自动 Outcome\n",
+      "limitations": [
+        "No candidate was produced. No production model or trading gate was changed."
+      ],
+      "reason": "没有匹配来源及当前配置的有效自动 Outcome",
+      "source": "live",
+      "stage": "dataset_validation",
+      "status": "REJECTED"
+    },
+    "status": "FAILED"
+  },
+  "before_fix": {
+    "observed_wall_lag_ms": [
+      276659,
+      272123
+    ],
+    "checkpoint_bytes": 1971472,
+    "periodic_checkpoint_interval_ms": 100
+  },
+  "after_fix": {
+    "periodic_checkpoint_interval_ms": 1000,
+    "critical_record_checkpoint": "unchanged",
+    "actual_wall_time_guard": "new risk only"
+  },
+  "limitations": [
+    "Two minute local public feed observation is not a long duration load test.",
+    "No private account validation or funded orders.",
+    "Research eligibility and profitability gates remain unchanged."
+  ],
+  "validation": {
+    "rust_tests": 79,
+    "python_tests": 14,
+    "rustfmt": "PASS",
+    "clippy": "PASS",
+    "build": "PASS",
+    "replay_sha256": "b42f6f9b27b4a6bf6f9960036995a1016828de673bc552023c4438e8ed2f5306",
+    "browser_tests": "NOT_RERUN: no frontend changes; previous run 14 passed",
+    "funded_orders_sent": 0
+  }
+}

@@ -33,6 +33,57 @@ def synthetic_rows(count=800):
     return rows
 
 class ResearchTests(unittest.TestCase):
+    def test_current_configuration_never_falls_back_to_old_eligible_labels(self):
+        for newest in ('invalid_outcome', 'open_prediction', 'checkpoint'):
+            with self.subTest(newest=newest), tempfile.TemporaryDirectory() as d:
+                root = Path(d); db = root/'live.sqlite'
+                old = dict(prediction_id='old', ts=1000, config_version=1, horizon=60,
+                           target=.003, stop=.001, symbol='BTCUSDT')
+                new = dict(old, prediction_id='new', ts=2000, config_version=2)
+                outcome = dict(prediction=old, learning_eligible=True)
+                with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+                    conn.execute('CREATE TABLE records(id INTEGER PRIMARY KEY,kind TEXT,ts INTEGER,payload TEXT)')
+                    conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',
+                                 ('outcome',1000,json.dumps(dict(source='live',payload=outcome))))
+                    if newest == 'checkpoint':
+                        conn.execute('CREATE TABLE checkpoint(id INTEGER PRIMARY KEY,state TEXT)')
+                        conn.execute('INSERT INTO checkpoint VALUES(1,?)', (json.dumps(dict(
+                            source='live',config_version=2,config=dict(horizon=60,target=.003,stop=.001))),))
+                    else:
+                        kind = 'outcome' if newest == 'invalid_outcome' else 'prediction'
+                        payload = dict(prediction=new,learning_eligible=False,prediction_error='stale_feed') if kind == 'outcome' else new
+                        conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',
+                                     (kind,2000,json.dumps(dict(source='live',payload=payload))))
+                    # A different source must not choose the configuration for this research run.
+                    conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',
+                                 ('prediction',3000,json.dumps(dict(source='demo',payload=dict(new,ts=3000,config_version=99)))))
+                output = root/'result'; output.mkdir(); (output/'challenger.json').write_text('old artifact')
+                args = Namespace(db=str(db),source='live',model='score',output=str(output))
+                with self.assertRaisesRegex(ValueError, '当前配置'): train.run(args)
+                report = json.loads((output/'report.json').read_text())
+                self.assertEqual(report['status'], 'REJECTED')
+                self.assertEqual(report['dataset']['definition']['config_version'], 2)
+                self.assertEqual(report['dataset']['eligible_outcomes'], 0)
+                self.assertEqual(report['dataset']['total_outcomes'], 2 if newest == 'invalid_outcome' else 1)
+                self.assertFalse((output/'challenger.json').exists())
+
+    def test_insufficient_samples_leave_a_structured_rejection(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); db = root/'live.sqlite'
+            outcome = synthetic_rows(1)[0]
+            outcome.update(learning_eligible=True)
+            outcome['prediction'].update(config_version=1,horizon=60)
+            with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+                conn.execute('CREATE TABLE records(id INTEGER PRIMARY KEY,kind TEXT,ts INTEGER,payload TEXT)')
+                conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',
+                             ('outcome',12000,json.dumps(dict(source='live',payload=outcome))))
+            args = Namespace(db=str(db),source='live',model='score',output=str(root/'result'))
+            with self.assertRaisesRegex(ValueError, '100 个'): train.run(args)
+            report = json.loads((root/'result/report.json').read_text())
+            self.assertEqual(report['dataset']['eligible_outcomes'], 1)
+            self.assertFalse(report['checks']['dataset_ready'])
+            self.assertFalse((root/'result/challenger.json').exists())
+
     def test_walk_forward_refits_with_purged_boundaries_and_disjoint_tests(self):
         folds = train.walk_forward(synthetic_rows())
         seen = set(); sizes = []; previous_end = None
@@ -127,7 +178,7 @@ class ResearchTests(unittest.TestCase):
     def test_full_offline_report_and_source_isolation(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);db=root/'demo.sqlite';rng=train.np.random.default_rng(11)
-            with sqlite3.connect(db) as conn:
+            with contextlib.closing(sqlite3.connect(db)) as conn, conn:
                 conn.execute('CREATE TABLE records(id INTEGER PRIMARY KEY,kind TEXT,ts INTEGER,payload TEXT)')
                 for i in range(400):
                     f=dict(book_imbalance=float(rng.uniform(-.8,.8)),flow_imbalance=0.,aggressive_imbalance=0.,microprice_bps=0.,momentum=0.,volatility=.0002,cross_venue_bps=0.,spread_bps=1.,depth=1e6)

@@ -121,6 +121,7 @@ async fn main() -> Result<()> {
         let clock_tx = tx.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
             loop {
                 interval.tick().await;
                 let ts = feeds::now_ms();
@@ -143,11 +144,22 @@ async fn main() -> Result<()> {
     }
     let runtime = app.clone();
     let worker = tokio::spawn(async move {
+        let mut last_checkpoint = std::time::Instant::now();
         while let Some(mut e) = rx.recv().await {
             let mut engine = runtime.engine.lock().await;
+            engine.telemetry.lock().unwrap().record(
+                "ingest_queue_delay",
+                feeds::now_ms().saturating_sub(e.receive_ts) * 1000,
+            );
             // Serialize receive order across independent venue sockets before recording/replay.
             e.receive_ts = e.receive_ts.max(engine.now);
-            let checkpoint = matches!(e.data, EventData::Clock);
+            // Journal every input, but avoid serializing the entire history at 10 Hz.
+            // Derived records and broker/control commands still force durable checkpoints.
+            let checkpoint = matches!(e.data, EventData::Clock)
+                && last_checkpoint.elapsed() >= std::time::Duration::from_secs(1);
+            if checkpoint {
+                last_checkpoint = std::time::Instant::now();
+            }
             engine.storage_healthy = runtime.store.healthy.load(Ordering::SeqCst);
             if !engine.storage_healthy {
                 engine.kill_switch = true;
@@ -215,8 +227,15 @@ async fn main() -> Result<()> {
     Ok(())
 }
 fn persist(app: &App, engine: &mut Engine, journal: Journal, checkpoint: bool) {
+    let started = std::time::Instant::now();
     let snapshot = if checkpoint || !engine.records.is_empty() {
-        Some(serde_json::to_string(&*engine).expect("finite engine state"))
+        let snapshot = serde_json::to_string(&*engine).expect("finite engine state");
+        engine
+            .telemetry
+            .lock()
+            .unwrap()
+            .record("checkpoint_serialize", started.elapsed().as_micros() as u64);
+        Some(snapshot)
     } else {
         None
     };
@@ -547,7 +566,8 @@ async fn cancel_worker<G: ExecutionGateway>(
                         && !o.reduce_only()
                         && o.status != "QUEUED"
                         && (e.kill_switch
-                            || e.now >= o.deadline_ts
+                            || feeds::now_ms() >= o.deadline_ts
+                            || feeds::now_ms().abs_diff(e.now) > e.config.max_stale_ms
                             || e.mode != o.execution_mode
                             || e.live.protection.contains_key(symbol))
                 })
@@ -570,6 +590,17 @@ async fn cancel_worker<G: ExecutionGateway>(
         tokio::time::sleep(std::time::Duration::from_millis(900)).await;
     }
 }
+fn runtime_risk_expired(
+    e: &Engine,
+    order: &micro_alpha_engine::live::Intent,
+    wall_now: u64,
+) -> bool {
+    !order.reduce_only()
+        && (wall_now.abs_diff(e.now) > e.config.max_stale_ms
+            || wall_now >= order.deadline_ts
+            || wall_now.saturating_sub(order.created_ts) > 5000)
+}
+
 async fn order_worker<G: ExecutionGateway>(
     app: Shared,
     rules: tokio::sync::watch::Receiver<G>,
@@ -639,8 +670,7 @@ async fn order_worker<G: ExecutionGateway>(
                 let e = app.engine.lock().await;
                 if o.reduce_only() {
                     None
-                } else if e.now >= o.deadline_ts
-                    || e.now.saturating_sub(o.created_ts) > 5000
+                } else if runtime_risk_expired(&e, &o, feeds::now_ms())
                     || !["CONFIRM", "AUTO"].contains(&e.mode.as_str())
                 {
                     Some("订单意图过期或模式已变更".to_string())
@@ -684,7 +714,7 @@ async fn order_worker<G: ExecutionGateway>(
                 !o.reduce_only()
                     && (e.kill_switch
                         || e.mode != o.execution_mode
-                        || e.now >= o.deadline_ts
+                        || runtime_risk_expired(&e, &o, feeds::now_ms())
                         || e.live.protection.contains_key(&o.plan.symbol))
             };
             if canceled {
@@ -755,35 +785,60 @@ async fn research_worker(app: Shared, dir: PathBuf) {
             .stderr(std::process::Stdio::piped())
             .kill_on_drop(true)
             .output();
-        let (ok, value) = match tokio::time::timeout(std::time::Duration::from_secs(600), result)
-            .await
-        {
-            Ok(Ok(r)) if r.status.success() => match std::fs::read(output.join("report.json"))
-                .ok()
-                .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
-            {
-                Some(v) => (true, v),
-                None => (false, json!({"error":"训练进程没有生成有效报告"})),
-            },
-            Ok(Ok(r)) => (
-                false,
-                json!({"error":String::from_utf8_lossy(&r.stderr).chars().take(1000).collect::<String>()}),
-            ),
-            Ok(Err(_)) => (
-                false,
-                json!({"error":"无法启动 Python；请安装 .venv 与研究依赖"}),
-            ),
-            Err(_) => (
-                false,
-                json!({"error":"研究任务超过 10 分钟，已终止；Champion 未改变"}),
-            ),
-        };
+        let (ok, value) =
+            match tokio::time::timeout(std::time::Duration::from_secs(600), result).await {
+                Ok(Ok(r)) => research_result(
+                    r.status.success(),
+                    std::fs::read(output.join("report.json"))
+                        .ok()
+                        .and_then(|b| serde_json::from_slice::<Value>(&b).ok()),
+                    &String::from_utf8_lossy(&r.stderr),
+                ),
+                Ok(Err(_)) => (
+                    false,
+                    json!({"error":"无法启动 Python；请安装 .venv 与研究依赖"}),
+                ),
+                Err(_) => (
+                    false,
+                    json!({"error":"研究任务超过 10 分钟，已终止；Champion 未改变"}),
+                ),
+            };
         let _ = broker_commit(
             &app,
             "research_finished",
             json!({"job_id":job.job_id,"ok":ok,"result":value}),
         )
         .await;
+    }
+}
+
+fn research_result(success: bool, report: Option<Value>, stderr: &str) -> (bool, Value) {
+    let report = report.filter(Value::is_object);
+    if success {
+        return match report {
+            Some(v) => (true, v),
+            None => (false, json!({"error":"训练进程没有生成有效报告"})),
+        };
+    }
+    let mut value = report.unwrap_or_else(|| json!({}));
+    value["error"] = json!(stderr.chars().take(1000).collect::<String>());
+    (false, value)
+}
+
+#[cfg(test)]
+mod research_result_tests {
+    use super::*;
+
+    #[test]
+    fn failed_training_preserves_dataset_evidence_without_becoming_success() {
+        let evidence = json!({"status":"REJECTED","dataset":{"eligible_outcomes":0}});
+        let (ok, report) = research_result(false, Some(evidence), "insufficient samples");
+        assert!(!ok);
+        assert_eq!(report["dataset"]["eligible_outcomes"], 0);
+        assert_eq!(report["error"], "insufficient samples");
+        assert!(!research_result(true, None, "").0);
+        assert!(!research_result(true, Some(json!(null)), "").0);
+        assert!(!research_result(false, Some(json!({"status":"PASS"})), "failure").0);
     }
 }
 
@@ -1048,6 +1103,17 @@ mod execution_tests {
             reason: String::new(),
             alpha_id: None,
         };
+        // Even when all event-time checks appear fresh, a stalled runtime cannot
+        // submit new risk. Reductions must remain available during that stall.
+        assert!(!runtime_risk_expired(&e, &entry, e.now));
+        assert!(runtime_risk_expired(
+            &e,
+            &entry,
+            e.now + e.config.max_stale_ms + 1
+        ));
+        let mut protection = entry.clone();
+        protection.action = "EXIT".into();
+        assert!(!runtime_risk_expired(&e, &protection, e.now + 60_001));
         e.live.orders.insert(entry.client_id.clone(), entry.clone());
         let mut blocked = entry.clone();
         blocked.client_id = "blocked-entry".into();
