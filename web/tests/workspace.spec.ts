@@ -14,7 +14,7 @@ test("live dashboard renders core data and switches instruments", async ({
     page.getByRole("heading", { name: "核心判断", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "CONFIRM 确认交易 · 未开放" }),
+    page.getByRole("button", { name: "CONFIRM 确认交易 · 未就绪" }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "ETHUSDT 永续合约" }).click();
   await expect(page.locator(".market-price")).toContainText("ETHUSDT");
@@ -49,7 +49,16 @@ test("paper mode, kill switch and risk settings are persisted through the API", 
     const field = page.getByLabel("最大日亏损", { exact: true });
     const original = await field.inputValue();
     await field.fill("75");
+    const saved = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/control/config") &&
+        response.request().method() === "POST",
+    );
     await page.getByRole("button", { name: "保存风险设置" }).click();
+    expect((await saved).ok()).toBe(true);
+    expect(
+      (await (await request.get("/api/state")).json()).config.max_daily_loss,
+    ).toBe(75);
     await expect(page.getByRole("status")).toContainText("已保存");
     await page.reload();
     await page.getByRole("button", { name: "风险设置", exact: true }).click();
@@ -308,4 +317,273 @@ test("opening settings before the first response still initializes the form", as
   await expect(page.getByLabel("最大日亏损", { exact: true })).toHaveValue(
     String(state.config.max_daily_loss),
   );
+});
+
+test("research controls create a challenger job without changing the champion", async ({
+  page,
+  request,
+}) => {
+  const state = await (await request.get("/api/state")).json();
+  const version = state.model.model_version;
+  let submitted: unknown;
+  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+  await page.route("**/api/control/research_run", (route) => {
+    submitted = route.request().postDataJSON();
+    state.research.status = "QUEUED";
+    return route.fulfill({ json: state });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "模型健康", exact: true }).click();
+  await page.getByLabel("候选模型", { exact: true }).selectOption("logistic");
+  await page.getByRole("button", { name: "立即运行研究", exact: true }).click();
+  await expect.poll(() => submitted).toEqual({ model: "logistic" });
+  await expect(page.getByTestId("operations-panel")).toContainText("QUEUED");
+  expect(state.model.model_version).toBe(version);
+  await expect(
+    page.getByRole("button", { name: "立即运行研究", exact: true }),
+  ).toBeDisabled();
+});
+
+test("private execution reports cannot be forged from the browser; explanations are read only", async ({
+  request,
+}) => {
+  const headers = { "X-Micro-Alpha": "local" };
+  for (const command of [
+    "broker_snapshot",
+    "broker_order",
+    "research_finished",
+  ]) {
+    const result = await request.post(`/api/control/${command}`, {
+      headers,
+      data: {},
+    });
+    expect(result.status()).toBe(403);
+  }
+  const before = await (await request.get("/api/state")).json();
+  const result = await request.post("/api/assist", {
+    headers,
+    data: { symbol: "BTCUSDT" },
+  });
+  expect(result.ok()).toBeTruthy();
+  expect((await result.json()).text).toContain("不修改概率");
+  const after = await (await request.get("/api/state")).json();
+  expect(after.model.model_version).toBe(before.model.model_version);
+  expect(after.live.orders).toEqual(before.live.orders);
+});
+
+test("qualified episode displays independent AUTO skip and preserves opening probability", async ({
+  page,
+  request,
+}) => {
+  const state = await (await request.get("/api/state")).json();
+  const s = state.symbols.BTCUSDT;
+  const original =
+    s.active ||
+    state.outcomes.find(
+      (o: { prediction: { symbol: string } }) =>
+        o.prediction.symbol === "BTCUSDT",
+    ).prediction;
+  s.active = {
+    ...original,
+    prediction_id: "episode-ui-admission",
+    ts: state.now,
+    status: "TRACKING",
+    calibrated_probabilities: [0.6, 0.3, 0.1],
+    episode: {
+      ...original.episode,
+      latest_evaluated_at: state.now,
+      latest_calibrated_probabilities: [0.7, 0.2, 0.1],
+    },
+  };
+  s.qualification = { ...original.qualification, status: "QUALIFIED" };
+  s.last_result = null;
+  state.mode = "AUTO";
+  const decision = {
+    admission_id: "admission-ui-fixture",
+    episode_id: s.active.prediction_id,
+    symbol: "BTCUSDT",
+    evaluated_at: state.now,
+    evaluation_ts: state.now,
+    decision: "SKIPPED",
+    reason_codes: ["AUTO_EDGE_THRESHOLD_NOT_MET"],
+    config_version: state.config_version,
+    context: "LIVE",
+    priority_tuple: {
+      policy_version: "priority-v1",
+      net_edge_after_cost: 0.0003,
+      model_trust: 3,
+      execution_quality: -0.001,
+      risk_consumption: 1,
+      episode_opened_at: state.now,
+    },
+    risk_budget_before: {
+      available_loss: 100,
+      available_notional: 100,
+      available_slots: 1,
+    },
+    risk_budget_after_if_admitted: {
+      available_loss: 100,
+      available_notional: 100,
+      available_slots: 1,
+    },
+    competing_episode_ids: [],
+  };
+  state.admission = { latest: { BTCUSDT: decision } };
+  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+  await page.goto("/");
+  await expect(page.locator(".qualification")).toContainText("QUALIFIED");
+  await expect(page.getByTestId("admission-card")).toContainText(
+    "AUTO: SKIPPED",
+  );
+  await expect(page.getByTestId("admission-card")).toContainText(
+    "AUTO_EDGE_THRESHOLD_NOT_MET",
+  );
+  await expect(page.getByTestId("episode-snapshots")).toContainText(
+    "60.0% / 30.0% / 10.0%",
+  );
+  await expect(page.locator(".probability-labels")).toContainText("70.0%");
+  state.admission.latest.BTCUSDT.decision = "ADMITTED";
+  state.admission.latest.BTCUSDT.reason_codes = [];
+  await expect(page.getByTestId("admission-card")).toContainText(
+    "AUTO: ADMITTED",
+  );
+  await expect(page.getByTestId("admission-card")).toContainText(
+    "成交以交易所回报为准",
+  );
+});
+
+test("integrity counts and durable admission history are separate from prediction samples", async ({
+  page,
+  request,
+}) => {
+  const state = await (await request.get("/api/state")).json();
+  state.daily_integrity = {
+    realtime_evaluations: 600,
+    prediction_episodes_opened: 5,
+    prediction_episodes_closed: 4,
+    qualified_episodes: 2,
+    paper_trades: 1,
+    live_trades: 0,
+  };
+  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+  await page.route("**/api/history?kind=auto_admission*", (route) =>
+    route.fulfill({
+      json: [
+        {
+          payload: {
+            admission_id: "audit-ui",
+            symbol: "BTCUSDT",
+            context: "SHADOW",
+            episode_id: "episode-1",
+            decision: "SKIPPED",
+            reason_codes: ["REENTRY_COOLDOWN"],
+          },
+        },
+      ],
+    }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "模型健康", exact: true }).click();
+  const panel = page.getByTestId("integrity-panel");
+  await expect(panel).toContainText("实时评估 600");
+  await expect(panel).toContainText("开启 5");
+  await expect(panel).toContainText("交易所完成交易 0");
+  await page.getByRole("button", { name: "加载准入审计" }).click();
+  await expect(panel).toContainText("REENTRY_COOLDOWN");
+});
+
+test("AUTO settings enforce independent threshold on the server", async ({
+  page,
+  request,
+}) => {
+  const initial = await (await request.get("/api/state")).json();
+  const bad = {
+    ...initial.config,
+    auto_min_net_edge: initial.config.min_net_edge / 2,
+  };
+  const result = await request.post("/api/control/config", {
+    headers: { "X-Micro-Alpha": "local" },
+    data: bad,
+  });
+  expect(result.status()).toBe(400);
+  await page.goto("/");
+  await page.getByRole("button", { name: "风险设置", exact: true }).click();
+  await expect(
+    page.getByLabel("AUTO 最低成本后优势", { exact: true }),
+  ).toHaveValue(String(initial.config.auto_min_net_edge * 100));
+  await expect(
+    page.getByLabel("AUTO 最低模型可信度", { exact: true }),
+  ).toHaveValue(initial.config.auto_required_model_trust);
+});
+
+test("live risk shows stale account separately from confirmed protection and execution feedback", async ({
+  page,
+  request,
+}) => {
+  const state = await (await request.get("/api/state")).json();
+  state.live.configured = true;
+  state.live.venue = "binance";
+  state.live.environment = "testnet";
+  state.live_enabled = false;
+  state.live_gate_reason = "账户快照过期，保护性退出处理中";
+  state.ai_mode = "OFF";
+  state.symbols.BTCUSDT.health.paper_samples = 40;
+  state.symbols.BTCUSDT.health.paper_ev_drift = -0.001;
+
+  state.live_positions = {
+    BTCUSDT: {
+      quantity: 0.001,
+      account_quantity: 0,
+      account_age_ms: 15000,
+      reconciled: false,
+      current_notional: 100,
+      target_notional: 0,
+      effective_leverage: 0.1,
+      target_leverage: 0,
+      entry_price: 100000,
+      mark_price: 99000,
+      unrealized_pnl: -1,
+      liquidation_buffer: 0.4,
+      sl: 99000,
+      tp: 102000,
+      deadline_ts: state.now + 60000,
+      action: "EXIT",
+      reason: "止盈或止损触发",
+      pending: [{ action: "EXIT", status: "UNKNOWN" }],
+      feedback: {
+        samples: 3,
+        excluded_samples: 2,
+        execution_drift: 0.001,
+        ev_drift: -0.002,
+        status: "DEGRADED",
+      },
+    },
+  };
+  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "模型健康", exact: true }).click();
+  await expect(
+    page.getByText("PAPER 实际净收益偏差", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId("operations-panel")).toContainText(
+    "AI 辅助：OFF",
+  );
+  const risk = page.getByTestId("live-position-risk");
+  await expect(risk).toContainText("100.00 / 0.00 USDT");
+  await expect(risk).toContainText("数量待对账，禁止新增风险");
+  await expect(risk).toContainText("EXIT UNKNOWN");
+  await expect(risk).toContainText("可比样本 3 · 排除 2");
+  await expect(risk).toContainText("成本偏差 10.00 bps");
+  await expect(
+    page.getByRole("button", { name: "执行当前计划" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "减仓平掉 BTCUSDT" }),
+  ).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+    ),
+  ).toBeTruthy();
 });

@@ -44,6 +44,16 @@ pub struct Config {
     pub max_opposite_rate: f64,
     pub max_mae_stop_multiple: f64,
     pub high_trust_samples: usize,
+    pub alpha_eval_interval_ms: u64,
+    pub qualification_eval_interval_ms: u64,
+    pub auto_min_net_edge: f64,
+    pub auto_required_model_trust: String,
+    pub auto_max_concurrent_positions: usize,
+    pub reentry_cooldown_seconds: u64,
+    pub max_auto_entries_per_window: usize,
+    pub auto_entry_window_seconds: u64,
+    pub max_daily_trades: usize,
+    pub admission_priority_policy_version: String,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -89,6 +99,16 @@ impl Default for Config {
             max_opposite_rate: 0.2,
             max_mae_stop_multiple: 3.,
             high_trust_samples: 100,
+            alpha_eval_interval_ms: 1000,
+            qualification_eval_interval_ms: 1000,
+            auto_min_net_edge: 0.0004,
+            auto_required_model_trust: "HIGH".into(),
+            auto_max_concurrent_positions: 1,
+            reentry_cooldown_seconds: 60,
+            max_auto_entries_per_window: 3,
+            auto_entry_window_seconds: 300,
+            max_daily_trades: 20,
+            admission_priority_policy_version: "priority-v1".into(),
         }
     }
 }
@@ -102,7 +122,18 @@ impl Config {
         {
             return Err("配置必须为有限非负值".into());
         }
-        if self.equity < 100.
+        if self.auto_min_net_edge < self.min_net_edge
+            || self.auto_min_net_edge > 0.1
+            || !["NORMAL", "HIGH"].contains(&self.auto_required_model_trust.as_str())
+            || !(1..=2).contains(&self.auto_max_concurrent_positions)
+            || !(1..=86400).contains(&self.reentry_cooldown_seconds)
+            || !(1..=100).contains(&self.max_auto_entries_per_window)
+            || !(10..=86400).contains(&self.auto_entry_window_seconds)
+            || !(1..=1000).contains(&self.max_daily_trades)
+            || self.admission_priority_policy_version != "priority-v1"
+            || !(100..=5000).contains(&self.alpha_eval_interval_ms)
+            || !(100..=5000).contains(&self.qualification_eval_interval_ms)
+            || self.equity < 100.
             || self.equity > 1_000_000.
             || self.risk_per_trade <= 0.
             || self.risk_per_trade > 0.02
@@ -192,6 +223,12 @@ pub enum EventData {
         index: f64,
         funding: f64,
     },
+    Context {
+        mark: Option<f64>,
+        index: Option<f64>,
+        funding: Option<f64>,
+        next_funding_ts: Option<u64>,
+    },
     Health {
         connected: bool,
         reason: String,
@@ -215,9 +252,18 @@ pub struct Features {
     pub volatility: f64,
     pub depth: f64,
     pub cross_venue_bps: Option<f64>,
+    /// Legacy field: synchronized one-second return difference (OKX minus Binance).
     pub cross_venue_lead_bps: Option<f64>,
+    #[serde(default)]
+    pub cross_venue_lag: Option<crate::cross_venue::LeadLag>,
     pub mark: Option<f64>,
     pub index: Option<f64>,
+    #[serde(default)]
+    pub funding_rate: Option<f64>,
+    #[serde(default)]
+    pub next_funding_ts: Option<u64>,
+    #[serde(default)]
+    pub feature_lag_ms: u64,
     pub data_quality: Vec<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -270,8 +316,50 @@ pub struct TradePlan {
     pub entry_type: String,
     pub exit_rules: Vec<String>,
 }
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct EpisodeMetadata {
+    pub episode_id: String,
+    pub opened_at: u64,
+    pub closed_at: Option<u64>,
+    pub upper_barrier: f64,
+    pub lower_barrier: f64,
+    pub latest_evaluated_at: u64,
+    pub latest_raw_probabilities: Option<[f64; 3]>,
+    pub latest_calibrated_probabilities: Option<[f64; 3]>,
+    pub latest_feature_snapshot_id: String,
+    pub highest_qualification: String,
+    pub close_reason: Option<String>,
+    pub signal_epoch: u64,
+    pub last_price_ts: u64,
+    pub first_hit: Option<String>,
+    pub first_hit_at: Option<u64>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AlphaEvaluation {
+    pub symbol: String,
+    pub evaluated_at: u64,
+    pub qualification_evaluated_at: u64,
+    pub raw_probabilities: [f64; 3],
+    pub calibrated_probabilities: Option<[f64; 3]>,
+    pub features: Features,
+    pub qualification: Option<Qualification>,
+    pub target_position: Option<TradePlan>,
+}
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct IntegrityCounters {
+    pub realtime_evaluations: u64,
+    pub prediction_episodes_opened: u64,
+    pub prediction_episodes_closed: u64,
+    pub qualified_episodes: u64,
+    pub paper_trades: u64,
+    pub live_trades: u64,
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Prediction {
+    #[serde(default)]
+    pub episode: EpisodeMetadata,
     pub prediction_id: String,
     pub symbol: String,
     pub ts: u64,
@@ -281,6 +369,12 @@ pub struct Prediction {
     pub stop: f64,
     pub start_price: f64,
     pub current_price: f64,
+    /// Calibrated first-hit payoff expectation in the forecast direction; timeout payoff is zero.
+    #[serde(default)]
+    pub expected_move: Option<f64>,
+    /// Absolute deterministic score normalized to [0,1], not a probability.
+    #[serde(default)]
+    pub signal_strength: f64,
     pub raw_probabilities: [f64; 3],
     pub calibrated_probabilities: Option<[f64; 3]>,
     pub model_version: String,
@@ -292,6 +386,8 @@ pub struct Prediction {
     pub qualification: Qualification,
     pub plan: Option<TradePlan>,
     pub config_version: u64,
+    #[serde(default)]
+    pub cost_assumptions_bps: Option<f64>,
 }
 impl Prediction {
     pub fn sign(&self) -> f64 {
@@ -311,6 +407,8 @@ impl Prediction {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Outcome {
+    #[serde(default)]
+    pub horizon_observation: Option<crate::horizon::HorizonObservation>,
     pub prediction: Prediction,
     pub outcome_type: String,
     pub first_hit_ts: u64,
@@ -358,6 +456,12 @@ pub struct Position {
     pub expected_cost: f64,
     pub expected_edge: f64,
     pub cost_basis: f64,
+    #[serde(default)]
+    pub alpha_ids: Vec<String>,
+    #[serde(default)]
+    pub last_funding_ts: u64,
+    #[serde(default)]
+    pub funding_observed: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TradeResult {
@@ -378,6 +482,8 @@ pub struct CalibrationBin {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ModelHealth {
+    #[serde(default)]
+    pub live: crate::live::LiveHealth,
     pub trust: String,
     pub samples: usize,
     pub predicted_hit_rate: f64,
@@ -389,6 +495,10 @@ pub struct ModelHealth {
     pub observed_edge: f64,
     pub ev_drift: f64,
     pub execution_drift: Option<f64>,
+    #[serde(default)]
+    pub paper_samples: usize,
+    #[serde(default)]
+    pub paper_ev_drift: Option<f64>,
     pub strong_opposite_rate: f64,
     pub mae_p95: f64,
     pub regime_drift: bool,

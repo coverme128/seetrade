@@ -1,0 +1,124 @@
+{
+  "source": "live",
+  "mode": "OBSERVE",
+  "now": 1790911534577,
+  "storage_healthy": true,
+  "config_version": 18,
+  "live_enabled": false,
+  "research": {
+    "finished_at": 1790911366449,
+    "interval_secs": 0,
+    "job_id": "research-1790911361818-256",
+    "model": "score",
+    "next_run": 1790911366449,
+    "output": "/Users/bojiao/Documents/GitHub/seetrade/data/live-validation/research/research-1790911361818-256",
+    "requested_at": 1790911361818,
+    "result": {
+      "error": "Research rejected: 滚动验证至少需要 100 个不同时间点，推荐数百条真实预测\n"
+    },
+    "status": "FAILED"
+  },
+  "telemetry": {
+    "core_ingest": {
+      "max_us": 1080,
+      "p50_us": 11,
+      "p95_us": 105,
+      "samples": 1000
+    },
+    "features": {
+      "max_us": 510,
+      "p50_us": 45,
+      "p95_us": 89,
+      "samples": 808
+    },
+    "qualification": {
+      "max_us": 214,
+      "p50_us": 27,
+      "p95_us": 58,
+      "samples": 737
+    }
+  },
+  "model_version": "score-v1-unvalidated",
+  "live_orders": 0,
+  "venues": {
+    "BTCUSDT": {
+      "binance": {
+        "age_ms": 8,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 415,
+        "funding_rate": 4.15e-05,
+        "gaps": 0,
+        "index": 85223.20891304,
+        "mark": 85194.40022464,
+        "mid": 85193.15,
+        "next_funding_ts": 1790928000000,
+        "ready": true,
+        "reconnects": 19,
+        "sequence": 11714331025363
+      },
+      "okx": {
+        "age_ms": 91,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 330,
+        "funding_rate": -1.12119569884e-05,
+        "gaps": 0,
+        "index": 85223.0,
+        "mark": 85175.3,
+        "mid": 85175.25,
+        "next_funding_ts": 1790928000000,
+        "ready": true,
+        "reconnects": 0,
+        "sequence": 343427271071
+      }
+    },
+    "ETHUSDT": {
+      "binance": {
+        "age_ms": 53,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 371,
+        "funding_rate": 7.726e-05,
+        "gaps": 0,
+        "index": 2715.01930233,
+        "mark": 2714.14403101,
+        "mid": 2713.915,
+        "next_funding_ts": 1790928000000,
+        "ready": true,
+        "reconnects": 16,
+        "sequence": 11714331020089
+      },
+      "okx": {
+        "age_ms": 0,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 425,
+        "funding_rate": 2.73811787415e-05,
+        "gaps": 0,
+        "index": 2714.95,
+        "mark": 2713.7,
+        "mid": 2713.645,
+        "next_funding_ts": 1790928000000,
+        "ready": true,
+        "reconnects": 0,
+        "sequence": 341319435949
+      }
+    }
+  },
+  "release_check": {
+    "now": 1790912271612,
+    "mode": "OBSERVE",
+    "storage_healthy": true,
+    "live_enabled": false,
+    "execution_metrics": {
+      "ack_p95_ms": null,
+      "fill_p95_ms": null,
+      "orders": 0,
+      "rejected": 0,
+      "rejection_rate": null,
+      "unknown": 0
+    },
+    "model_version": "score-v1-unvalidated"
+  }
+}

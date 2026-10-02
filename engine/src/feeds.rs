@@ -198,7 +198,7 @@ async fn binance(tx: &mpsc::Sender<MarketEvent>, symbol: &str) -> Result<()> {
                         let ts=integer(&v["E"])? as u64;
                         match v["e"].as_str(){
                             Some("aggTrade")=>send(tx,"binance",symbol,ts,integer(&v["a"])?,EventData::Trade{price:number(&v["p"])?,quantity:number(&v["q"])?,buy:!v["m"].as_bool().context("missing maker side")?}).await?,
-                            Some("markPriceUpdate")=>send(tx,"binance",symbol,ts,0,EventData::Mark{mark:number(&v["p"])?,index:number(&v["i"])?,funding:number(&v["r"])?}).await?,_=>{}
+                            Some("markPriceUpdate")=>send(tx,"binance",symbol,ts,0,EventData::Context{mark:Some(number(&v["p"])?),index:Some(number(&v["i"])?),funding:Some(number(&v["r"])?),next_funding_ts:Some(integer(&v["T"])? as u64)}).await?,_=>{}
                         }
                     },_=>{}
                 }
@@ -239,7 +239,10 @@ async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
     .await??;
     ws.send(Message::Text(json!({"op":"subscribe","args":[
         {"channel":"books","instId":"BTC-USDT-SWAP"},{"channel":"books","instId":"ETH-USDT-SWAP"},
-        {"channel":"trades","instId":"BTC-USDT-SWAP"},{"channel":"trades","instId":"ETH-USDT-SWAP"}
+        {"channel":"trades","instId":"BTC-USDT-SWAP"},{"channel":"trades","instId":"ETH-USDT-SWAP"},
+        {"channel":"mark-price","instId":"BTC-USDT-SWAP"},{"channel":"mark-price","instId":"ETH-USDT-SWAP"},
+        {"channel":"index-tickers","instId":"BTC-USDT"},{"channel":"index-tickers","instId":"ETH-USDT"},
+        {"channel":"funding-rate","instId":"BTC-USDT-SWAP"},{"channel":"funding-rate","instId":"ETH-USDT-SWAP"}
     ]}).to_string().into())).await?;
     let mut books: BTreeMap<String, Book> = BTreeMap::new();
     let mut ping = tokio::time::interval(Duration::from_secs(10));
@@ -253,7 +256,7 @@ async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
                     last=Instant::now();if t=="pong"{continue;}
                     let v:Value=serde_json::from_str(&t)?;if v["event"]=="error"{return Err(anyhow!("OKX subscription: {}",v["msg"]));}
                     let inst=v["arg"]["instId"].as_str().unwrap_or("");
-                    let symbol=match inst{"BTC-USDT-SWAP"=>"BTCUSDT","ETH-USDT-SWAP"=>"ETHUSDT",_=>continue};
+                    let symbol=match inst{"BTC-USDT-SWAP"|"BTC-USDT"=>"BTCUSDT","ETH-USDT-SWAP"|"ETH-USDT"=>"ETHUSDT",_=>continue};
                     let Some(rows)=v["data"].as_array()else{continue;};
                     for row in rows {
                         let ts=integer(&row["ts"])? as u64;
@@ -264,6 +267,9 @@ async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
                                 let e=MarketEvent{exchange:"okx".into(),symbol:symbol.into(),exchange_ts:ts,receive_ts:now_ms(),sequence_id:integer(&row["seqId"])?,data};
                                 books.entry(symbol.into()).or_default().apply(&e).map_err(|e|anyhow!(e))?;tx.send(e).await?;
                             }
+                            Some("mark-price")=>send(tx,"okx",symbol,ts,0,EventData::Context{mark:Some(number(&row["markPx"])?),index:None,funding:None,next_funding_ts:None}).await?,
+                            Some("index-tickers")=>send(tx,"okx",symbol,ts,0,EventData::Context{mark:None,index:Some(number(&row["idxPx"])?),funding:None,next_funding_ts:None}).await?,
+                            Some("funding-rate")=>send(tx,"okx",symbol,ts,0,EventData::Context{mark:None,index:None,funding:Some(number(&row["fundingRate"])?),next_funding_ts:Some(integer(&row["fundingTime"])? as u64)}).await?,
                             Some("trades")=>send(tx,"okx",symbol,ts,0,EventData::Trade{price:number(&row["px"])?,quantity:number(&row["sz"])?*multipliers[inst],buy:row["side"]=="buy"}).await?,_=>{}
                         }
                     }

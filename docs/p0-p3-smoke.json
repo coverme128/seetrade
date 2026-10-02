@@ -1,0 +1,140 @@
+{
+  "now": 1790926288349,
+  "source": "live",
+  "mode": "OBSERVE",
+  "storage_healthy": true,
+  "kill_switch": false,
+  "ai_mode": "OFF",
+  "live_enabled": false,
+  "live_gate_reason": "执行通道未就绪：",
+  "auto_evidence_ready": false,
+  "execution_metrics": {
+    "ack_p95_ms": null,
+    "fill_p95_ms": null,
+    "orders": 0,
+    "rejected": 0,
+    "rejection_rate": null,
+    "unknown": 0
+  },
+  "integrity": {
+    "live_trades": 0,
+    "paper_trades": 0,
+    "prediction_episodes_closed": 129,
+    "prediction_episodes_opened": 127,
+    "qualified_episodes": 0,
+    "realtime_evaluations": 8396
+  },
+  "validation": {
+    "rust_tests": 78,
+    "python_tests": 12,
+    "browser_tests": 14,
+    "production_build": "PASS",
+    "rustfmt_clippy_typescript_prettier": "PASS",
+    "replay_records": 3122,
+    "replay_outcomes": 7,
+    "replay_trades": 0,
+    "replay_sha256": "b42f6f9b27b4a6bf6f9960036995a1016828de673bc552023c4438e8ed2f5306",
+    "scope": "P0-P3 / 12 phases from v1.0.3 IMPLEMENTATION-PLAN",
+    "private_exchange_validation": "NOT_RUN: no private account configured; local mock tests only",
+    "funded_orders_sent": 0
+  },
+  "model": {
+    "model_version": "score-v1-unvalidated",
+    "model_type": "deterministic-score",
+    "source": "live",
+    "validated": false,
+    "feature_schema_version": "micro-v1",
+    "calibration_version": "none",
+    "artifact_hash": "built-in-score-v1"
+  },
+  "research": {
+    "status": "FAILED",
+    "interval_secs": 0,
+    "job_id": "research-1790911361818-256"
+  },
+  "symbols": {
+    "BTCUSDT": {
+      "venues": {
+        "binance": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 87,
+          "exchange_age_ms": 35,
+          "gaps": 0,
+          "error": ""
+        },
+        "okx": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 38,
+          "exchange_age_ms": 54,
+          "gaps": 0,
+          "error": ""
+        }
+      },
+      "qualification_status": null,
+      "qualification_reasons": null,
+      "health": {
+        "trust": "LOW",
+        "samples": 0,
+        "calibration_error": 0.0,
+        "ev_drift": 0.0,
+        "paper_samples": 0,
+        "paper_ev_drift": null,
+        "execution_drift": null,
+        "live": {
+          "ev_drift": null,
+          "excluded_samples": 0,
+          "execution_drift": null,
+          "samples": 0,
+          "status": "INSUFFICIENT"
+        },
+        "retrain_recommended": false
+      }
+    },
+    "ETHUSDT": {
+      "venues": {
+        "binance": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 68,
+          "exchange_age_ms": 57,
+          "gaps": 0,
+          "error": ""
+        },
+        "okx": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 27,
+          "exchange_age_ms": 58,
+          "gaps": 0,
+          "error": ""
+        }
+      },
+      "qualification_status": null,
+      "qualification_reasons": null,
+      "health": {
+        "trust": "LOW",
+        "samples": 0,
+        "calibration_error": 0.0,
+        "ev_drift": 0.0,
+        "paper_samples": 0,
+        "paper_ev_drift": null,
+        "execution_drift": null,
+        "live": {
+          "ev_drift": null,
+          "excluded_samples": 0,
+          "execution_drift": null,
+          "samples": 0,
+          "status": "INSUFFICIENT"
+        },
+        "retrain_recommended": false
+      }
+    }
+  },
+  "production_gates": {
+    "CONFIRM_LIVE_READY": "FAIL: private environment and tiny-live evidence absent",
+    "AUTO_LIVE_READY": "FAIL: live evidence and current model gates not satisfied",
+    "RETRAIN_PROMOTION_READY": "FAIL: no proven live challenger ready for promotion"
+  }
+}

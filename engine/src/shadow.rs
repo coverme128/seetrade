@@ -315,7 +315,7 @@ impl ShadowRun {
                     .is_some_and(|v| (0.0..=policy.max_opposite_rate).contains(&v))
                 && n("selected").is_some_and(|v| v >= policy.min_window_selected as f64)
         };
-        let mut previous_test_start = None;
+        let mut previous_test_end = None;
         for w in windows {
             let ts = |section: &str, key: &str| w[section][key].as_u64().ok_or("验证窗口时间无效");
             let train_start = ts("train", "start")?;
@@ -330,7 +330,7 @@ impl ShadowRun {
                 && cal_end < test_start
                 && test_start <= test_end
                 && test_end <= now)
-                || previous_test_start.is_some_and(|v| v >= test_start)
+                || previous_test_end.is_some_and(|v| v >= test_start)
                 || !metric_ok(w)
                 || w["calibration_coverage"]
                     .as_f64()
@@ -338,7 +338,7 @@ impl ShadowRun {
             {
                 return Err("离线窗口的时间隔离、校准、收益或尾部指标不满足要求".into());
             }
-            previous_test_start = Some(test_start);
+            previous_test_end = Some(test_end);
         }
         let groups = report["final_model_regimes"]
             .as_object()

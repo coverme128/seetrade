@@ -40,6 +40,16 @@ export type Config = {
   max_opposite_rate: number;
   max_mae_stop_multiple: number;
   high_trust_samples: number;
+  alpha_eval_interval_ms: number;
+  qualification_eval_interval_ms: number;
+  auto_min_net_edge: number;
+  auto_required_model_trust: string;
+  auto_max_concurrent_positions: number;
+  reentry_cooldown_seconds: number;
+  max_auto_entries_per_window: number;
+  auto_entry_window_seconds: number;
+  max_daily_trades: number;
+  admission_priority_policy_version: string;
 };
 export type Features = {
   mid: number;
@@ -53,6 +63,13 @@ export type Features = {
   depth: number;
   cross_venue_bps: number | null;
   cross_venue_lead_bps: number | null;
+  cross_venue_lag?: {
+    clock: string;
+    leader: string;
+    lag_ms: number;
+    correlation: number;
+    samples: number;
+  } | null;
   mark: number | null;
   index: number | null;
   data_quality: string[];
@@ -96,6 +113,19 @@ export type Plan = {
   exit_rules: string[];
 };
 export type Prediction = {
+  episode?: {
+    episode_id: string;
+    opened_at: number;
+    closed_at: number | null;
+    upper_barrier: number;
+    lower_barrier: number;
+    latest_evaluated_at: number;
+    latest_raw_probabilities: number[] | null;
+    latest_calibrated_probabilities: number[] | null;
+    latest_feature_snapshot_id: string;
+    highest_qualification: string;
+    close_reason: string | null;
+  };
   prediction_id: string;
   symbol: string;
   ts: number;
@@ -105,6 +135,8 @@ export type Prediction = {
   stop: number;
   start_price: number;
   current_price: number;
+  expected_move: number | null;
+  signal_strength: number;
   raw_probabilities: number[];
   calibrated_probabilities: number[] | null;
   model_version: string;
@@ -116,6 +148,11 @@ export type Prediction = {
   config_version: number;
 };
 export type Outcome = {
+  horizon_observation?: {
+    deadline_ts: number;
+    final_move_at_timeout: number | null;
+    status: string;
+  } | null;
   prediction: Prediction;
   outcome_type: string;
   first_hit_ts: number;
@@ -177,6 +214,8 @@ export type Health = {
   observed_edge: number;
   ev_drift: number;
   execution_drift: number | null;
+  paper_samples?: number;
+  paper_ev_drift?: number | null;
   strong_opposite_rate: number;
   mae_p95: number;
   regime_drift: boolean;
@@ -257,7 +296,48 @@ export type ShadowRun = {
     regimes: Record<string, ShadowMetrics>;
   };
 };
+export type AdmissionDecision = {
+  admission_id: string;
+  episode_id: string;
+  symbol: string;
+  evaluated_at: number;
+  evaluation_ts: number;
+  decision: string;
+  reason_codes: string[];
+  priority_tuple: {
+    policy_version: string;
+    net_edge_after_cost: number;
+    model_trust: number;
+    execution_quality: number;
+    risk_consumption: number;
+    episode_opened_at: number;
+  };
+  competing_episode_ids: string[];
+  risk_budget_before: {
+    available_loss: number;
+    available_notional: number;
+    available_slots: number;
+  };
+  risk_budget_after_if_admitted: {
+    available_loss: number;
+    available_notional: number;
+    available_slots: number;
+  };
+  config_version: number;
+  context: string;
+};
+export type IntegrityCounters = {
+  realtime_evaluations: number;
+  prediction_episodes_opened: number;
+  prediction_episodes_closed: number;
+  qualified_episodes: number;
+  paper_trades: number;
+  live_trades: number;
+};
 export type State = {
+  integrity: IntegrityCounters;
+  daily_integrity: IntegrityCounters;
+  admission: { latest: Record<string, AdmissionDecision> };
   shadow: ShadowRun | null;
   rollback_available: boolean;
   shadow_policy_defaults: Record<string, number>;
@@ -288,5 +368,88 @@ export type State = {
     daily_pnl: number;
     peak: number;
   };
-  live_gate_reason: string;
+  execution_metrics: {
+    orders: number;
+    rejected: number;
+    rejection_rate: number | null;
+    unknown: number;
+    ack_p95_ms: number | null;
+    fill_p95_ms: number | null;
+  };
+  live_positions?: Record<
+    string,
+    {
+      quantity: number;
+      account_quantity: number;
+      account_age_ms: number | null;
+      reconciled: boolean;
+      current_notional: number;
+      target_notional: number;
+      effective_leverage: number | null;
+      target_leverage: number | null;
+      entry_price: number | null;
+      mark_price: number | null;
+      unrealized_pnl: number | null;
+      liquidation_buffer: number | null;
+      sl: number | null;
+      tp: number | null;
+      deadline_ts: number | null;
+      action: string;
+      reason: string;
+      pending: { action: string; status: string }[];
+      feedback: {
+        samples: number;
+        excluded_samples: number;
+        execution_drift: number | null;
+        ev_drift: number | null;
+        status: string;
+      };
+    }
+  >;
+  ai_mode?: "OFF" | "ASSIST";
+  live_enabled: boolean;
+  auto_evidence_ready: boolean;
+  live: {
+    configured: boolean;
+    venue: string;
+    environment: string;
+    cap: number;
+    account: null | {
+      equity: number;
+      available: number;
+      positions: Record<string, { quantity: number }>;
+    };
+    trades: {
+      parent_id: string;
+      symbol: string;
+      net_pnl: number;
+      expected_net_pnl: number;
+      fees: number;
+      funding_income: number;
+    }[];
+    orders: Record<
+      string,
+      {
+        client_id: string;
+        action: string;
+        plan: Plan;
+        created_ts: number;
+        status: string;
+        filled_qty: number;
+        average_price: number;
+        fee: number;
+        send_ts: number;
+        ack_ts: number;
+        reason: string;
+      }
+    >;
+  };
+  research: {
+    status: string;
+    model: string;
+    interval_secs: number;
+    output: string;
+    result: unknown;
+  };
+  live_gate_reason: string | null;
 };

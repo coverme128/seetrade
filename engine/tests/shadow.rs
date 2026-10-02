@@ -169,6 +169,12 @@ fn import_rejects_mismatched_evidence_atomically() {
         },
         {
             let mut v = good.clone();
+            // A boolean declaration cannot hide overlapping observed test paths.
+            v["report"]["chronological_test_windows"][0]["test"]["end"] = json!(240);
+            v
+        },
+        {
+            let mut v = good.clone();
             v["policy"] = json!({"min_samples":0});
             v
         },

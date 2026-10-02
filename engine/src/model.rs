@@ -18,6 +18,13 @@ pub struct RegimeCalibration {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Stump {
+    pub feature: usize,
+    pub threshold: f64,
+    pub left: [f64; 3],
+    pub right: [f64; 3],
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Model {
     pub model_version: String,
     pub model_type: String,
@@ -30,6 +37,8 @@ pub struct Model {
     pub source: String,
     pub temperature: f64,
     pub weights: Option<Vec<Vec<f64>>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trees: Vec<Stump>,
     pub validated: bool,
     pub horizon: u64,
     pub target: f64,
@@ -59,6 +68,7 @@ impl Model {
             source: if demo { "demo" } else { "live" }.into(),
             temperature: 1.25,
             weights: None,
+            trees: vec![],
             validated: demo,
             horizon: c.horizon,
             target: c.target,
@@ -96,7 +106,21 @@ impl Model {
     }
     pub fn probabilities(&self, f: &Features, c: &Config) -> ([f64; 3], Option<[f64; 3]>) {
         let score = Self::score(f);
-        let logits = if let Some(w) = &self.weights {
+        let logits = if !self.trees.is_empty() {
+            let x = Self::vector(f);
+            let mut values = [0.; 3];
+            for t in &self.trees {
+                let leaf = if x[t.feature] <= t.threshold {
+                    t.left
+                } else {
+                    t.right
+                };
+                for i in 0..3 {
+                    values[i] += leaf[i];
+                }
+            }
+            values
+        } else if let Some(w) = &self.weights {
             let x = Self::vector(f);
             [dot(&w[0], &x), dot(&w[1], &x), dot(&w[2], &x)]
         } else {
@@ -219,7 +243,26 @@ impl Model {
         h
     }
     pub fn validate(&self, demo: bool) -> Result<(), String> {
-        if self.source != if demo { "demo" } else { "live" }
+        if ![
+            "deterministic-score",
+            "logistic-regression",
+            "gradient-boosted-trees",
+        ]
+        .contains(&self.model_type.as_str())
+            || (self.model_type == "gradient-boosted-trees"
+                && (self.trees.is_empty() || self.weights.is_some()))
+            || (self.model_type != "gradient-boosted-trees" && !self.trees.is_empty())
+            || (self.model_type == "logistic-regression" && self.weights.is_none())
+            || self.trees.len() > 200
+            || self.trees.iter().any(|t| {
+                t.feature >= 10
+                    || !t.threshold.is_finite()
+                    || t.left
+                        .iter()
+                        .chain(&t.right)
+                        .any(|v| !v.is_finite() || v.abs() > 10.)
+            })
+            || self.source != if demo { "demo" } else { "live" }
             || self.feature_schema_version != "micro-v1"
             || self.label_version != "first-hit-v1"
             || !self.temperature.is_finite()
@@ -306,6 +349,17 @@ pub fn health(
             .sum::<f64>()
             / recent_trades.len() as f64
     });
+    let paper_basis = recent_trades
+        .iter()
+        .map(|t| t.position.cost_basis)
+        .sum::<f64>();
+    let paper_ev_drift = (paper_basis > 0.).then(|| {
+        recent_trades
+            .iter()
+            .map(|t| t.net_pnl - t.position.expected_edge * t.position.cost_basis)
+            .sum::<f64>()
+            / paper_basis
+    });
     let opposite = recent
         .iter()
         .filter(|o| o.outcome_type == "STRONG_OPPOSITE_MOVE")
@@ -332,6 +386,8 @@ pub fn health(
     } else if error > c.calibration_warning
         || expected - observed > c.ev_drift_limit
         || execution_drift.is_some_and(|d| d > c.max_slippage)
+        || (recent_trades.len() >= c.min_samples
+            && paper_ev_drift.is_some_and(|d| d < -c.ev_drift_limit))
     {
         reasons.push("校准或成本后收益偏移，降低仓位".into());
         "DEGRADED"
@@ -341,6 +397,7 @@ pub fn health(
         "NORMAL"
     };
     ModelHealth {
+        live: Default::default(),
         trust: trust.into(),
         samples: n,
         predicted_hit_rate: recent
@@ -361,6 +418,8 @@ pub fn health(
         observed_edge: observed,
         ev_drift: observed - expected,
         execution_drift,
+        paper_samples: recent_trades.len(),
+        paper_ev_drift,
         strong_opposite_rate: opposite,
         mae_p95,
         regime_drift,

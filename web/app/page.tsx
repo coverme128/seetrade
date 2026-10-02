@@ -1,4 +1,6 @@
 "use client";
+import { AdmissionCard, IntegrityPanel } from "./admission-panel";
+import OperationsPanel from "./operations-panel";
 import { useCallback, useEffect, useState } from "react";
 import { ShadowPanel } from "./shadow-panel";
 import type {
@@ -30,7 +32,9 @@ const outcomes: Record<string, string> = {
   TIMEOUT_POSITIVE: "超时 · 正向",
   TIMEOUT_NEGATIVE: "超时 · 反向",
   STRONG_OPPOSITE_MOVE: "强反向波动",
-  INVALIDATED: "数据失效",
+  INVALIDATED: "数据失效（旧记录）",
+  DATA_INVALIDATED: "数据失效",
+  SIGNAL_INVALIDATED: "信号失效",
 };
 const modes: Record<string, string> = {
   OBSERVE: "观察",
@@ -354,7 +358,12 @@ export default function Home() {
     h = s?.health;
   const card = p || s?.last_result?.prediction;
   const result = !p ? s?.last_result : null;
-  const probs = card?.calibrated_probabilities || card?.raw_probabilities;
+  const probs = p
+    ? p.episode?.latest_calibrated_probabilities ||
+      p.episode?.latest_raw_probabilities ||
+      p.calibrated_probabilities ||
+      p.raw_probabilities
+    : card?.calibrated_probabilities || card?.raw_probabilities;
   const position = state?.positions[symbol];
   const isDemo = state?.source === "demo";
   const displayedOutcomes = (historyRows || state?.outcomes || []).filter(
@@ -486,7 +495,7 @@ export default function Home() {
             <div className="notice error">
               <Icon name="stop" size={17} />
               <span>
-                紧急停止已生效：已停止新模拟订单。持仓策略：
+                紧急停止已生效：已停止新增订单。持仓策略：
                 {state.config.kill_behavior === "hold"
                   ? "保留持仓，继续 TP / SL / 超时退出"
                   : "按有效报价平仓，断流时等待恢复"}
@@ -496,7 +505,7 @@ export default function Home() {
           )}
           {state && !state.storage_healthy && (
             <div className="notice error">
-              存储异常：已停止新模拟订单。检查磁盘空间与核心日志。
+              存储异常：已停止新增订单。检查磁盘空间与核心日志。
             </div>
           )}
           <div className="workspace-bar">
@@ -525,19 +534,36 @@ export default function Home() {
                   key={mode}
                   className={state?.mode === mode ? "selected" : ""}
                   disabled={
-                    !connected || busy || ["CONFIRM", "AUTO"].includes(mode)
+                    !connected ||
+                    busy ||
+                    (["CONFIRM", "AUTO"].includes(mode) &&
+                      !state?.live_enabled) ||
+                    (mode === "AUTO" && !state?.auto_evidence_ready)
                   }
                   title={
                     ["CONFIRM", "AUTO"].includes(mode)
-                      ? state?.live_gate_reason
+                      ? state?.live_gate_reason || undefined
                       : label
                   }
-                  onClick={() => command("mode", { mode })}
+                  onClick={() => {
+                    if (
+                      mode !== "AUTO" ||
+                      window.confirm(
+                        "开启 AUTO 后将按风险门槛自动执行真实账户订单，是否启用？",
+                      )
+                    )
+                      command("mode", {
+                        mode,
+                        acknowledge_auto: mode === "AUTO",
+                      });
+                  }}
                 >
                   {mode}
                   <small>
                     {label}
-                    {["CONFIRM", "AUTO"].includes(mode) ? " · 未开放" : ""}
+                    {["CONFIRM", "AUTO"].includes(mode) && !state?.live_enabled
+                      ? " · 未就绪"
+                      : ""}
                   </small>
                 </button>
               ))}
@@ -549,6 +575,16 @@ export default function Home() {
             </div>
           ) : (
             <>
+              {(tab === "health" ||
+                tab === "settings" ||
+                state.live?.configured) && (
+                <OperationsPanel
+                  state={state}
+                  symbol={symbol}
+                  busy={busy}
+                  command={command}
+                />
+              )}
               {tab === "overview" && (
                 <>
                   <div className="metric-strip">
@@ -706,7 +742,7 @@ export default function Home() {
                           {[
                             ["订单流失衡", f?.flow_imbalance],
                             ["10s 动量", f?.momentum],
-                            ["跨市场领先差 bps", f?.cross_venue_lead_bps],
+                            ["跨市场 1 秒收益差 bps", f?.cross_venue_lead_bps],
                             ["标记价格", f?.mark],
                             ["指数价格", f?.index],
                           ].map(([k, v]) => (
@@ -719,8 +755,12 @@ export default function Home() {
                           ))}
                         </div>
                         <p>
-                          跨市场领先差为两市场 1s 收益之差；OI /
-                          清算流暂未启用。
+                          跨市场收益差为 OKX 减 Binance 的 1 秒收益。
+                          接收时间领先 / 滞后：
+                          {f?.cross_venue_lag
+                            ? `${f.cross_venue_lag.leader} · ${f.cross_venue_lag.lag_ms} ms · 相关系数 ${f.cross_venue_lag.correlation.toFixed(2)} · ${f.cross_venue_lag.samples} 对样本`
+                            : "暂无足够的新鲜、相关样本"}
+                          。用于行情背景，未接入模型打分。
                         </p>
                       </details>
                     </section>
@@ -788,6 +828,43 @@ export default function Home() {
                               </label>
                               <b className="mono">{pct(probs[2], 1)}</b>
                             </div>
+                          </div>
+                          <div className="key-values padded">
+                            <div>
+                              <span>预期方向幅度（First-hit 近似）</span>
+                              <b>
+                                {card.expected_move == null
+                                  ? "等待校准"
+                                  : pct(card.expected_move)}
+                              </b>
+                            </div>
+                            <div>
+                              <span>信号强度（非概率）</span>
+                              <b>{pct(card.signal_strength ?? 0, 1)}</b>
+                            </div>
+                          </div>
+                          <div
+                            className="padded"
+                            data-testid="episode-snapshots"
+                          >
+                            <small className="mono">
+                              Episode · {card.prediction_id}
+                            </small>
+                            <p className="muted">
+                              {result
+                                ? "开场概率"
+                                : "上方显示最新概率；开场概率"}
+                              ：
+                              {(
+                                card.calibrated_probabilities ||
+                                card.raw_probabilities
+                              )
+                                .map((v) => pct(v, 1))
+                                .join(" / ")}
+                              {p?.episode?.latest_evaluated_at
+                                ? ` · 更新于 ${time(p.episode.latest_evaluated_at)}`
+                                : ""}
+                            </p>
                           </div>
                           <div className="prediction-footer">
                             <span className="status-dot" />
@@ -876,6 +953,7 @@ export default function Home() {
                               : "WATCH"}
                         </Badge>
                       </div>
+                      <AdmissionCard state={state} symbol={symbol} />
                       {q ? (
                         <>
                           <div className="ev-summary">
@@ -1193,6 +1271,9 @@ export default function Home() {
                   </section>
                 </>
               )}
+              {(tab === "health" || tab === "history") && (
+                <IntegrityPanel state={state} />
+              )}
               {tab === "history" && (
                 <>
                   <div className="summary-cards">
@@ -1305,11 +1386,20 @@ export default function Home() {
                           <b>{pct(h.actual_hit_rate - h.predicted_hit_rate)}</b>
                         </div>
                         <div>
-                          <span>Execution Drift</span>
+                          <span>PAPER 执行成本偏差</span>
                           <b>
                             {h.execution_drift === null
                               ? "尚无模拟成交"
                               : pct(h.execution_drift, 3)}
+                          </b>
+                        </div>
+                        <div>
+                          <span>PAPER 实际净收益偏差</span>
+                          <b>
+                            {h.paper_ev_drift == null
+                              ? "尚无可比交易"
+                              : pct(h.paper_ev_drift, 3)}{" "}
+                            · {h.paper_samples ?? 0} 笔
                           </b>
                         </div>
                         <div>
@@ -1402,7 +1492,9 @@ export default function Home() {
                         <h2>风险信封</h2>
                         <Badge>版本 {state.config_version}</Badge>
                       </div>
-                      <span className="muted">仅用于本地模拟账户</span>
+                      <span className="muted">
+                        预测、模拟与执行共同风险边界
+                      </span>
                     </div>
                     <div className="settings-grid">
                       {(
@@ -1424,6 +1516,37 @@ export default function Home() {
                           ["max_daily_loss", "最大日亏损", "USDT", 1],
                           ["max_drawdown", "最大回撤", "%", 100],
                           ["min_net_edge", "最低成本后优势", "%", 100],
+                          [
+                            "auto_min_net_edge",
+                            "AUTO 最低成本后优势",
+                            "%",
+                            100,
+                          ],
+                          [
+                            "auto_max_concurrent_positions",
+                            "AUTO 最大并发持仓",
+                            "个",
+                            1,
+                          ],
+                          ["reentry_cooldown_seconds", "重新入场冷却", "秒", 1],
+                          [
+                            "max_auto_entries_per_window",
+                            "窗口入场上限",
+                            "次",
+                            1,
+                          ],
+                          [
+                            "auto_entry_window_seconds",
+                            "入场统计窗口",
+                            "秒",
+                            1,
+                          ],
+                          [
+                            "max_daily_trades",
+                            "每日安全次数上限",
+                            "次（非目标）",
+                            1,
+                          ],
                           ["max_slippage", "最大单边滑点", "%", 100],
                           [
                             "min_liquidation_buffer",
@@ -1460,6 +1583,22 @@ export default function Home() {
                           </div>
                         </label>
                       ))}
+                      <label className="field">
+                        <span>AUTO 最低模型可信度</span>
+                        <select
+                          aria-label="AUTO 最低模型可信度"
+                          value={draft.auto_required_model_trust}
+                          onChange={(e) =>
+                            setDraft({
+                              ...draft,
+                              auto_required_model_trust: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="HIGH">HIGH</option>
+                          <option value="NORMAL">NORMAL</option>
+                        </select>
+                      </label>
                       <label className="field">
                         <span>预测窗口</span>
                         <select
@@ -1499,6 +1638,8 @@ export default function Home() {
                       <div className="settings-grid">
                         {(
                           [
+                            "alpha_eval_interval_ms",
+                            "qualification_eval_interval_ms",
                             "min_net_pnl",
                             "adverse_selection_bps",
                             "impact_bps",
@@ -1545,8 +1686,9 @@ export default function Home() {
                       </div>
                       <p className="muted">
                         高级字段采用内部单位：比例使用小数，bps
-                        为万分之一，时间字段按名称使用秒或毫秒。同一预测内暂不加仓，incremental_ev
-                        为保留参数。signal_enter / signal_exit
+                        为万分之一，时间字段按名称使用秒或毫秒。incremental_ev
+                        为独立信号加仓和重新入场的增量优势门槛。AUTO 排序策略为
+                        priority-v1。signal_enter / signal_exit
                         为方向进入与退出评分阈值，前者须更大；signal_confirm_ms
                         为方向确认时间，result_hold_ms 为结果最短保留时间。
                       </p>
@@ -1593,7 +1735,7 @@ export default function Home() {
           <footer className="footer">
             <span>
               <span className="status-dot" />
-              MICRO ALPHA <b>PERSONAL v0.1</b>
+              MICRO ALPHA <b>PERSONAL v0.3</b>
             </span>
             <span>
               Deterministic core · AI OFF ·{" "}
@@ -1651,7 +1793,21 @@ export default function Home() {
                     ],
                   ),
                 ],
-                ["实际方向收益", pct(selected.final_move)],
+                ["首次结算方向收益", pct(selected.final_move)],
+                [
+                  "到期方向收益",
+                  selected.horizon_observation?.status === "OBSERVED"
+                    ? pct(selected.horizon_observation.final_move_at_timeout)
+                    : selected.horizon_observation?.status ===
+                        "DATA_INVALIDATED"
+                      ? "数据不足"
+                      : "等待到期观察",
+                ],
+                [
+                  "关闭原因",
+                  selected.prediction.episode?.close_reason ||
+                    selected.outcome_type,
+                ],
                 ["MFE / MAE", `${pct(selected.mfe)} / ${pct(selected.mae)}`],
                 ["观察净优势", pct(selected.observed_net_edge)],
                 ["误差分类", selected.prediction_error],
@@ -1830,7 +1986,7 @@ function OutcomeTable({
                   tone={
                     o.outcome_type === "TARGET_HIT"
                       ? "positive"
-                      : o.outcome_type === "INVALIDATED"
+                      : o.outcome_type.endsWith("INVALIDATED")
                         ? "muted"
                         : "warning"
                   }

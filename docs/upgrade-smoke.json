@@ -1,0 +1,200 @@
+{
+  "checked_at_utc": "2026-10-02T06:09:30.500528+00:00",
+  "checks": {
+    "observe_default": true,
+    "public_live_source": true,
+    "storage_healthy": true,
+    "no_execution_credentials": true,
+    "no_live_orders": true,
+    "auto_not_enabled": true,
+    "evaluation_distinct_from_episode_count": true,
+    "admission_history_queryable": true,
+    "public_venues_ready": true
+  },
+  "mode": "OBSERVE",
+  "model": "score-v1-unvalidated",
+  "config_version": 25,
+  "cadence_ms": {
+    "alpha": 1000,
+    "qualification": 1000
+  },
+  "policy": "priority-v1",
+  "latest_admission": [
+    {
+      "episode_id": "prediction-1790921320591-349",
+      "decision": "SKIPPED",
+      "reason_codes": [
+        "NOT_QUALIFIED",
+        "MODEL_TRUST_INSUFFICIENT",
+        "RISK_BUDGET_UNAVAILABLE"
+      ],
+      "context": "SHADOW"
+    },
+    {
+      "episode_id": "prediction-1790921320591-349",
+      "decision": "SKIPPED",
+      "reason_codes": [
+        "NOT_QUALIFIED",
+        "MODEL_TRUST_INSUFFICIENT",
+        "EXECUTION_QUALITY_FAIL",
+        "RISK_BUDGET_UNAVAILABLE"
+      ],
+      "context": "SHADOW"
+    },
+    {
+      "episode_id": "prediction-1790921320591-349",
+      "decision": "SKIPPED",
+      "reason_codes": [
+        "NOT_QUALIFIED",
+        "MODEL_TRUST_INSUFFICIENT",
+        "RISK_BUDGET_UNAVAILABLE"
+      ],
+      "context": "SHADOW"
+    }
+  ],
+  "samples": [
+    {
+      "now": 1790921334792,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 29,
+        "prediction_episodes_opened": 28,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 674
+      },
+      "venues": {
+        "BTCUSDT": {
+          "binance": true,
+          "okx": true
+        },
+        "ETHUSDT": {
+          "binance": true,
+          "okx": true
+        }
+      },
+      "evaluations": {
+        "BTCUSDT": 1790921333893,
+        "ETHUSDT": 1790921333893
+      }
+    },
+    {
+      "now": 1790921335792,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 29,
+        "prediction_episodes_opened": 28,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 676
+      },
+      "venues": {
+        "BTCUSDT": {
+          "binance": true,
+          "okx": true
+        },
+        "ETHUSDT": {
+          "binance": true,
+          "okx": true
+        }
+      },
+      "evaluations": {
+        "BTCUSDT": 1790921334992,
+        "ETHUSDT": 1790921334992
+      }
+    },
+    {
+      "now": 1790921336691,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 29,
+        "prediction_episodes_opened": 28,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 678
+      },
+      "venues": {
+        "BTCUSDT": {
+          "binance": true,
+          "okx": true
+        },
+        "ETHUSDT": {
+          "binance": true,
+          "okx": true
+        }
+      },
+      "evaluations": {
+        "BTCUSDT": 1790921335993,
+        "ETHUSDT": 1790921335993
+      }
+    },
+    {
+      "now": 1790921337792,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 29,
+        "prediction_episodes_opened": 28,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 680
+      },
+      "venues": {
+        "BTCUSDT": {
+          "binance": true,
+          "okx": true
+        },
+        "ETHUSDT": {
+          "binance": true,
+          "okx": true
+        }
+      },
+      "evaluations": {
+        "BTCUSDT": 1790921337092,
+        "ETHUSDT": 1790921337092
+      }
+    },
+    {
+      "now": 1790921338792,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 29,
+        "prediction_episodes_opened": 28,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 682
+      },
+      "venues": {
+        "BTCUSDT": {
+          "binance": true,
+          "okx": true
+        },
+        "ETHUSDT": {
+          "binance": true,
+          "okx": true
+        }
+      },
+      "evaluations": {
+        "BTCUSDT": 1790921338092,
+        "ETHUSDT": 1790921338092
+      }
+    }
+  ],
+  "final_release_check": {
+    "checked_at_utc": "2026-10-02T06:15:31.394282+00:00",
+    "mode": "OBSERVE",
+    "storage_healthy": true,
+    "live_configured": false,
+    "live_orders": 0,
+    "integrity": {
+      "live_trades": 0,
+      "paper_trades": 0,
+      "prediction_episodes_closed": 44,
+      "prediction_episodes_opened": 44,
+      "qualified_episodes": 0,
+      "realtime_evaluations": 1096
+    },
+    "browser_tests_passed": 13,
+    "rust_tests_passed": 66,
+    "research_tests_passed": 11
+  }
+}

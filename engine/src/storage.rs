@@ -17,9 +17,21 @@ use tokio::sync::mpsc;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Journal {
-    Start { engine: Box<Engine> },
-    Event { event: crate::types::MarketEvent },
-    Command { command: String, payload: Value },
+    Start {
+        engine: Box<Engine>,
+    },
+    Event {
+        event: crate::types::MarketEvent,
+    },
+    Command {
+        command: String,
+        payload: Value,
+    },
+    RejectedCommand {
+        command: String,
+        payload: Value,
+        error: String,
+    },
 }
 pub struct Batch {
     pub journal: Journal,
@@ -110,7 +122,24 @@ impl Store {
                     annotations.insert(id.to_owned(), note["payload"]["annotation"].clone());
                 }
             }
+            let mut horizon_stmt = conn
+                .prepare("SELECT payload FROM records WHERE kind='outcome_horizon' ORDER BY id")?;
+            let rows = horizon_stmt.query_map([], |row| row.get::<_, String>(0))?;
+            let mut horizons = std::collections::BTreeMap::new();
+            for row in rows {
+                let record: Value = serde_json::from_str(&row?)?;
+                if let Some(id) = record["payload"]["prediction_id"].as_str() {
+                    horizons.insert(id.to_owned(), record["payload"]["observation"].clone());
+                }
+            }
             for result in &mut results {
+                if let Some(observation) = result["payload"]["prediction"]["prediction_id"]
+                    .as_str()
+                    .and_then(|id| horizons.get(id))
+                {
+                    result["payload"]["horizon_observation"] = observation.clone();
+                }
+
                 if let Some(note) = result["payload"]["prediction"]["prediction_id"]
                     .as_str()
                     .and_then(|id| annotations.get(id))

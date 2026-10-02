@@ -1920,3 +1920,31 @@ tbody tr:hover {
 .shadow-panel .detail-grid b {
   overflow-wrap: anywhere;
 }
+
+.research-result {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+}
+.assist-text {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+[data-testid="operations-panel"] {
+  margin-bottom: 20px;
+}
+[data-testid="operations-panel"] select {
+  color: inherit;
+  background: var(--bg);
+  padding: 8px;
+}
+
+.admission-card {
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.admission-card small {
+  display: block;
+  margin-top: 6px;
+}

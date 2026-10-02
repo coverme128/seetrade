@@ -104,7 +104,7 @@ raw_probabilities = softmax([score, -score, -0.2])
 
 以账户风险预算除以屏障距离加成本得到仓位，同时受到全账户名义价值、全账户杠杆、日剩余风险、流动性容量的共同上限约束。低可信度禁止新风险，DEGRADED 缩减预算并提高概率门槛。
 
-PAPER 只能沿 `Prediction → Qualification → TradePlan → Execution → TradeResult` 链执行。平仓独立于新单资格，不会被日亏损阈值阻止。新预测以外不追单；同一预测内禁止加仓，用保守行为实现 no-martingale。保护性退出优先于减仓间隔 / 次数限制。
+PAPER 只能沿 `Prediction → Qualification → TradePlan → Execution → TradeResult` 链执行。平仓独立于新单资格，不会被日亏损阈值阻止。新预测以外不追单；同一信号不重复加仓；独立新信号需额外通过增量 EV、盈利状态及原止损预算检查。保护性退出优先于减仓间隔 / 次数限制。
 
 恢复读取最后提交的引擎 checkpoint，保留账户和持仓，将行情簿标为失效、模式改回 OBSERVE。旧 checkpoint 中缺少的新字段使用默认值；旧真实模型没有分布 / 分组校准证据时不能恢复交易资格，重新加载旧格式工件会被拒绝。已中断预测记为 INVALIDATED，持仓等待有效报价退出。默认 kill 行为 `hold`，`flatten` 需在配置中明确指定。仅关闭浏览器不会停止核心；Ctrl+C 使核心停止接收、提交最终状态并退出。
 
@@ -115,7 +115,7 @@ PAPER 只能沿 `Prediction → Qualification → TradePlan → Execution → Tr
 | GET `/api/state` | 当前状态、近 100 个结果、配置和模型元数据 |
 | GET `/api/health` | 存储健康、数据源与真钱禁用状态 |
 | GET `/api/history?kind=outcome&limit=500` | 持久化历史，合并独立注释 |
-| POST `/api/control/mode` | OBSERVE / PAPER；拒绝其他模式 |
+| POST `/api/control/mode` | OBSERVE / PAPER；CONFIRM / AUTO 另需执行通道与证据门槛 |
 | POST `/api/control/kill` | `{active: true/false}` |
 | POST `/api/control/config` | 完整版本化风险与研究配置 |
 | POST `/api/control/flatten` | `{symbol: "BTCUSDT"}` 模拟平仓 |
@@ -128,3 +128,52 @@ PAPER 只能沿 `Prediction → Qualification → TradePlan → Execution → Tr
 POST 需要 `X-Micro-Alpha: local`，浏览器 Origin 必须为本机允许地址。金额以 USDT 计，比例采用小数（0.001 = 0.1%），bps 为万分之一，时间戳为毫秒。
 
 `GET /api/state` 还包含 Shadow 指标、逐项门槛、阈值默认值和回退可用状态。控制请求上限 256 KB，界面限制每个模型 / 报告文件 64 KB。历史影子记录可通过 `kind=shadow_outcome` 读取；训练工具仅读取正式 `kind=outcome`。
+
+
+## v0.2 执行与研究扩展
+
+- `live.rs`：真实执行意图、当前账户风险 / AUTO 证据、独立 ADD 与退出、账本闭合。与 PAPER 共用 `Engine::qualify`；真实账户再叠加单独的小额上限。
+- `broker.rs`：仅此模块持有环境变量凭证；签名 REST、合约单位和精度、账户模式、IOC / reduce-only、查单 / 撤单 / 成交和资金费对账。
+- `main.rs`：网络执行在独立异步任务中；先确认日志提交再发送订单，内部回报通过持久化命令回到核心。HTTP 控制不能调用内部回报命令。计时统计不进入重放状态。
+- `research.rs`：持久化定时计划与单任务队列；Python 子进程有超时和退出状态，工件写入独立 job 目录。无自动加载 / 晋升副作用。
+- GBT 工件保存有限数量的三分类梯度提升浅树，由 Rust 读取固定特征索引、阈值与叶输出；每折独立拟合并与 score / logistic 比较。
+- `/api/assist` 只复制当前量化证据，先释放引擎锁，再调用可选本机 Ollama；无工具调用能力，输出不会送回决策核心。
+
+参数研究 `engine/examples/grid.rs` 重放同一引擎与簿事件，保留预测起点、改变期限 / 屏障重新标注；先按时间隔离再选组合，不自动调整生产参数。录制尾部未闭合的路径作为截尾，不能伪造超时标签。
+
+
+## v0.3 / v1.0.3 合同升级
+
+`MarketEvent → book / event-driven features → AlphaEvaluation → Prediction Episode → Qualification → AUTO Admission → RiskDecision → durable intent → submit recheck → broker`。
+
+生产 Clock 每 100ms 检查保护性退出；Alpha 与 Qualification 分别受版本化 cadence 控制（默认各 1000ms）。Evaluation 放在 SymbolState，正式记录只在 Episode 创建、资格晋级和关闭时落盘。同一信号 epoch 消耗后不会按秒或结果保留期重新发布；需先失效 / 反向后重新确认。开场模型、特征和概率不被 live 更新覆盖。闭合样本仍是模型健康、校准和训练的唯一统计单位。
+
+`admission.rs` 位于 deterministic core，输入固定量化快照、账户及订单预留；先 hard fail，再按 priority-v1 排序并分配资本 / 风险 / 并发槽位。OBSERVE / PAPER / CONFIRM 可观察 SHADOW 准入。AUTO 新入场意图必须嵌入同 Episode、同配置、当时 ADMITTED 的决定；在 SUBMITTING 命令持锁执行时再刷新 Evaluation、重新排序和风控，连同新准入记录持久化后才允许网络提交。原始 Qualification 不被 SKIPPED 改写。LLM 与 HTTP 用户命令均无写入准入或 broker 回报的权限。
+
+`horizon.rs` 在首次触达或信号关闭后继续观察至原期限。额外 `outcome_horizon` 补充到期收益，不重新产生 Outcome，不改变首次触达、误差或学习标签；数据中断 / 重启则明确标记这份后续观察不可用。SQLite 历史查询合并后续观察，开场和终止证据保持原样。
+
+升级通过 serde 默认值读取旧 checkpoint，默认 OBSERVE；旧 AUTO 阈值缺省后若低于原普通门槛，重启将其保守提升至普通门槛并记录 config_migration。累计完整性计数从升级开始，旧历史不伪造补计。
+
+拒绝命令也记录为 `RejectedCommand`，连同其产生的最新评估与 SKIPPED 审计一起确认落盘后再返回错误。回放重新执行并验证相同拒绝原因，避免“失败操作改变了内存状态却没有输入记录”的分歧；参数搜索工具也识别此类型。
+
+
+## 本轮四项补齐
+
+执行任务使用共享 HTTP 连接池和独立 Broker 缓存副本，规则刷新通过 watch 发布；账户任务与 BTC / ETH 各自的增仓、减仓、撤单任务分离。减仓不会排在慢账户查询或待核实增仓的网络请求后面；未知减仓仍需对账才可创建后续减仓。JoinSet 生命周期随执行主管任务结束，避免停止主任务后子任务继续发送订单。内部回报仍全部通过原持久化命令边界。完整语义与限制见 [EXECUTION.md](EXECUTION.md)。
+
+`Intent.feedback` 冻结参考，`LiveTrade.feedback` 保存闭合交易成本，`ModelHealth.live` 单独汇总实盘结果并降低可信度。`live_positions` 是服务端生成的风险展示投影，前端不自行重复计算执行决策。字段均兼容旧 checkpoint，旧参考缺失保持 unavailable。
+
+`cross_venue.rs` 保留旧 `cross_venue_lead_bps` 字段以兼容读取，但语义明确为对齐后的 OKX − Binance 一秒收益差。新增 `cross_venue_lag` 使用本机接收时间的过去 60 秒、500ms 网格收益，比较 0 与 ±500/1000/1500/2000ms 相关性；至少 60 对有效收益、相关系数 ≥ 0.5，非零滞后需比零滞后提高至少 0.05。每格只读当时已收到的报价，最长允许 750ms 旧报价；未来数据、缺失、平价和断线历史不补齐。序列断档清空该场所历史。返回时钟口径、领先场所、时差、相关系数和样本数；网络路径也会影响结果，不能解释为因果领先或预测概率。采样一次线性扫描历史，避免每网格重新扫描全队列。
+
+该项仅作行情背景，`micro-v1` 的十维模型输入、模型权重、校准和研究候选类型均未扩充；未增加 OI、强平流或复杂模型，也未重做 UI。
+
+
+## P0–P3 完整性复核修正
+
+`risk.rs::qualification_risk` 只选择账户上下文（模拟 / 真实权益、日预算、已占用风险和可用资金），两者继续走 `Engine::qualify_inner` 的同一公式。真实订单在原额外小额 / 精度边界前，再次检查最新资格与目标；同标的待处理订单属于自身目标，其他标的订单必须预留可用资金。`account_equity` 明确仅为 PAPER 账本，真实权益从 `live.account` 读取，避免将真实权益写入 PAPER 回撤峰值。
+
+`ModelHealth.paper_ev_drift` 与预测 `ev_drift`、PAPER `execution_drift`、实盘 `live` 分开；PAPER 样本按配置 / 模型 / 标的筛选，加仓以新增成本基数加权预期优势。DEGRADED 乘数作用于各上限约束后的目标，防止小额 cap 隐藏减仓动作。
+
+离线 walk-forward 连同 test 样本的 outcome 时间一起 purge；导入验证比较前窗终点和后窗起点，不信任单独的 `test_windows_disjoint=true` 声明。未知 / 失效标签和未知 feature schema 被拒绝。
+
+`assist.rs` 解析 OFF / ASSIST，显式 OFF 优先于旧模型名环境变量；该配置只影响只读解释接口，未进入确定性引擎或改变模型。完整对应与证据见 [ACCEPTANCE-P0-P3.md](ACCEPTANCE-P0-P3.md)。

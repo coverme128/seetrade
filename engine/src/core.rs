@@ -18,10 +18,22 @@ pub struct Venue {
     pub mark: Option<f64>,
     pub index: Option<f64>,
     pub mark_ts: u64,
+    #[serde(default)]
+    pub index_ts: u64,
+    #[serde(default)]
+    pub funding_rate: Option<f64>,
+    #[serde(default)]
+    pub funding_ts: u64,
+    #[serde(default)]
+    pub next_funding_ts: Option<u64>,
     pub prices: VecDeque<(u64, f64)>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SymbolState {
+    #[serde(default)]
+    pub evaluation: Option<AlphaEvaluation>,
+    #[serde(default)]
+    pub consumed_signal_epoch: Option<u64>,
     pub venues: BTreeMap<String, Venue>,
     pub features: Option<Features>,
     pub active: Option<Prediction>,
@@ -61,6 +73,8 @@ pub fn signal_direction(score: f64, previous: &str, c: &Config) -> &'static str 
 impl SymbolState {
     fn new(c: &Config) -> Self {
         Self {
+            evaluation: None,
+            consumed_signal_epoch: None,
             venues: BTreeMap::from([
                 ("binance".into(), Venue::default()),
                 ("okx".into(), Venue::default()),
@@ -83,6 +97,20 @@ impl SymbolState {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Engine {
+    #[serde(skip)]
+    pub telemetry: std::sync::Arc<std::sync::Mutex<crate::telemetry::Telemetry>>,
+    #[serde(default)]
+    pub live: crate::live::LiveState,
+    #[serde(default)]
+    pub research: crate::research::ResearchState,
+    #[serde(default)]
+    pub integrity: IntegrityCounters,
+    #[serde(default)]
+    pub horizon_pending: BTreeMap<String, crate::horizon::HorizonTracker>,
+    #[serde(default)]
+    pub daily_integrity: IntegrityCounters,
+    #[serde(default)]
+    pub admission: crate::admission::AdmissionState,
     pub source: String,
     pub mode: String,
     pub config: Config,
@@ -112,6 +140,13 @@ impl Engine {
     pub fn new(demo: bool) -> Self {
         let config = Config::default();
         Self {
+            telemetry: Default::default(),
+            live: crate::live::LiveState::default(),
+            research: crate::research::ResearchState::default(),
+            integrity: Default::default(),
+            horizon_pending: Default::default(),
+            daily_integrity: Default::default(),
+            admission: Default::default(),
             source: if demo { "demo" } else { "live" }.into(),
             mode: "OBSERVE".into(),
             config_version: 1,
@@ -175,7 +210,21 @@ impl Engine {
         );
     }
     pub fn restart(&mut self) {
+        if self.config.auto_min_net_edge < self.config.min_net_edge {
+            self.config.auto_min_net_edge = self.config.min_net_edge;
+            self.log("config_migration", json!({"reason":"AUTO threshold must not be lower than qualification","auto_min_net_edge":self.config.auto_min_net_edge}));
+        }
         self.mode = "OBSERVE".into();
+        self.live.healthy = false;
+        if self.research.status == "RUNNING" {
+            self.research.status = "FAILED".into();
+            self.research.result = json!({"error":"进程重启中断研究；Champion 未改变"});
+        }
+        for o in self.live.orders.values_mut() {
+            if o.status == "SUBMITTING" {
+                o.status = "UNKNOWN".into();
+            }
+        }
         for s in self.symbols.values_mut() {
             for v in s.venues.values_mut() {
                 v.connected = false;
@@ -183,12 +232,14 @@ impl Engine {
             }
             s.plan = None;
             s.qualification = None;
+            s.evaluation = None;
             s.candidate_direction = "FLAT".into();
             s.candidate_since = self.now;
         }
         for symbol in ["BTCUSDT", "ETHUSDT"] {
             self.invalidate(symbol, "process_restart");
         }
+        self.update_horizons();
         self.log(
             "restart",
             json!({"mode":"OBSERVE","positions_restored":self.positions.len()}),
@@ -242,7 +293,16 @@ impl Engine {
                 {
                     return Err("没有可回退模型或当前模型已变化".into());
                 }
-                if self.mode != "OBSERVE" || !self.positions.is_empty() || !self.storage_healthy {
+                if self.mode != "OBSERVE"
+                    || !self.positions.is_empty()
+                    || !self.storage_healthy
+                    || self.live.orders.values().any(|o| o.pending())
+                    || self
+                        .live
+                        .account
+                        .as_ref()
+                        .is_some_and(|a| a.positions.values().any(|p| p.quantity.abs() > 1e-10))
+                {
                     return Err("回退要求 OBSERVE、无持仓且存储健康".into());
                 }
                 self.pause_shadow("ROLLED_BACK");
@@ -255,8 +315,27 @@ impl Engine {
             }
             "mode" => {
                 let m = payload["mode"].as_str().ok_or("缺少 mode")?;
-                if !["OBSERVE", "PAPER"].contains(&m) {
-                    return Err("CONFIRM / AUTO 尚未通过真钱门槛；此版本不提供真实下单通道".into());
+                if !["OBSERVE", "PAPER", "CONFIRM", "AUTO"].contains(&m) {
+                    return Err("未知模式".into());
+                }
+                if ["CONFIRM", "AUTO"].contains(&m) {
+                    self.live_ready()?;
+                }
+                if m == "AUTO"
+                    && (payload["acknowledge_auto"] != true
+                        || !self.live.auto_allowed
+                        || !self.auto_evidence())
+                {
+                    return Err("AUTO 需要显式授权、独立开启和多窗口成本后验证证据".into());
+                }
+                if m == "PAPER"
+                    && self
+                        .live
+                        .account
+                        .as_ref()
+                        .is_some_and(|a| a.positions.values().any(|p| p.quantity.abs() > 1e-10))
+                {
+                    return Err("请先平掉真实持仓".into());
                 }
                 if self.kill_switch && m == "PAPER" {
                     return Err("请先解除紧急停止".into());
@@ -277,8 +356,15 @@ impl Engine {
                 }
             }
             "config" => {
-                if !self.positions.is_empty() {
-                    return Err("存在模拟持仓时不能修改风险与成本配置，请先平仓".into());
+                if !self.positions.is_empty()
+                    || self.live.orders.values().any(|o| o.pending())
+                    || self
+                        .live
+                        .account
+                        .as_ref()
+                        .is_some_and(|a| a.positions.values().any(|p| p.quantity.abs() > 1e-10))
+                {
+                    return Err("存在持仓或待处理订单时不能修改风险与成本配置，请先平仓".into());
                 }
                 let c: Config =
                     serde_json::from_value(payload.clone()).map_err(|e| e.to_string())?;
@@ -333,6 +419,11 @@ impl Engine {
                     }
                 }
             }
+            "research_schedule" | "research_run" | "research_started" | "research_finished" => {
+                self.research_command(command, payload.clone())?
+            }
+            "execute" | "skip" | "live_flatten" | "broker_config" | "broker_snapshot"
+            | "broker_error" | "broker_order" => self.live_command(command, payload.clone())?,
             _ => return Err("未知操作".into()),
         }
         self.log(command, payload);
@@ -347,8 +438,15 @@ impl Engine {
             return;
         }
         self.now = e.receive_ts;
+        if self.day != self.now / 86_400_000 {
+            self.day = self.now / 86_400_000;
+            self.daily_pnl = 0.;
+            self.daily_integrity = IntegrityCounters::default();
+        }
+        self.settle_funding();
         if let EventData::Clock = e.data {
             self.tick();
+            self.update_horizons();
             return;
         }
         let Some(s) = self.symbols.get_mut(&e.symbol) else {
@@ -390,10 +488,47 @@ impl Engine {
                     v.trades.push_back((e.receive_ts, *quantity, *buy));
                 }
             }
-            EventData::Mark { mark, index, .. } => {
-                v.mark = Some(*mark);
-                v.index = Some(*index);
-                v.mark_ts = e.receive_ts;
+            EventData::Mark {
+                mark,
+                index,
+                funding,
+            } => {
+                if mark.is_finite()
+                    && *mark > 0.
+                    && index.is_finite()
+                    && *index > 0.
+                    && funding.is_finite()
+                    && e.receive_ts.abs_diff(e.exchange_ts) <= self.config.max_stale_ms
+                {
+                    v.mark = Some(*mark);
+                    v.index = Some(*index);
+                    v.mark_ts = e.receive_ts;
+                    v.index_ts = e.receive_ts;
+                    v.funding_rate = Some(*funding);
+                    v.funding_ts = e.receive_ts;
+                }
+            }
+            EventData::Context {
+                mark,
+                index,
+                funding,
+                next_funding_ts,
+            } => {
+                if e.receive_ts.abs_diff(e.exchange_ts) <= self.config.max_stale_ms {
+                    if let Some(p) = mark.filter(|p| p.is_finite() && *p > 0.) {
+                        v.mark = Some(p);
+                        v.mark_ts = e.receive_ts;
+                    }
+                    if let Some(p) = index.filter(|p| p.is_finite() && *p > 0.) {
+                        v.index = Some(p);
+                        v.index_ts = e.receive_ts;
+                    }
+                    if let Some(r) = funding.filter(|r| r.is_finite() && r.abs() <= 0.1) {
+                        v.funding_rate = Some(r);
+                        v.funding_ts = e.receive_ts;
+                        v.next_funding_ts = *next_funding_ts;
+                    }
+                }
             }
             EventData::Health { connected, reason } => {
                 if !connected {
@@ -413,6 +548,10 @@ impl Engine {
         {
             v.trades.pop_front();
         }
+        if invalid {
+            v.prices.clear();
+            self.invalidate(&e.symbol, "market_data_integrity");
+        }
         if e.exchange == "binance" {
             if invalid {
                 self.invalidate(&e.symbol, "market_data_integrity");
@@ -426,8 +565,20 @@ impl Engine {
                 }
             }
         }
+        let f = self.features(&e.symbol);
+        self.symbols.get_mut(&e.symbol).unwrap().features = f;
+        self.update_horizons();
     }
     fn features(&self, symbol: &str) -> Option<Features> {
+        let started = std::time::Instant::now();
+        let result = self.features_inner(symbol);
+        self.telemetry
+            .lock()
+            .unwrap()
+            .record("features", started.elapsed().as_micros() as u64);
+        result
+    }
+    fn features_inner(&self, symbol: &str) -> Option<Features> {
         let s = &self.symbols[symbol];
         let primary = &s.venues["binance"];
         let b = &primary.book;
@@ -456,25 +607,15 @@ impl Engine {
         } else {
             (changes.iter().map(|r| r * r).sum::<f64>() / changes.len() as f64).sqrt()
         };
-        let lag_price = |venue: &Venue| {
-            venue
-                .prices
-                .iter()
-                .rev()
-                .find(|(t, _)| self.now.saturating_sub(*t) >= 1000)
-                .map(|x| x.1)
-        };
-        let lead = match (
-            lag_price(primary),
-            lag_price(&s.venues["okx"]),
-            other.mid(),
-            cross,
-        ) {
-            (Some(p), Some(o), Some(current), Some(_)) => {
-                Some(((current / o - 1.) - (mid / p - 1.)) * 10_000.)
-            }
-            _ => None,
-        };
+        let lead = cross.and_then(|_| {
+            let at = self.now.checked_sub(1000)?;
+            let p = crate::cross_venue::asof(&primary.prices, at, 750)?;
+            let o = crate::cross_venue::asof(&s.venues["okx"].prices, at, 750)?;
+            Some(((other.mid()? / o - 1.) - (mid / p - 1.)) * 10_000.)
+        });
+        let cross_lag = cross.and_then(|_| {
+            crate::cross_venue::estimate(&primary.prices, &s.venues["okx"].prices, self.now)
+        });
         let (buy, sell) = primary
             .trades
             .iter()
@@ -505,12 +646,20 @@ impl Engine {
             depth: bd.min(ad),
             cross_venue_bps: cross,
             cross_venue_lead_bps: lead,
+            cross_venue_lag: cross_lag,
             mark: primary
                 .mark
                 .filter(|_| self.now.saturating_sub(primary.mark_ts) < 10_000),
             index: primary
                 .index
-                .filter(|_| self.now.saturating_sub(primary.mark_ts) < 10_000),
+                .filter(|_| self.now.saturating_sub(primary.index_ts) < 10_000),
+            funding_rate: primary
+                .funding_rate
+                .filter(|_| self.now.saturating_sub(primary.funding_ts) < 60_000),
+            next_funding_ts: primary
+                .next_funding_ts
+                .filter(|_| self.now.saturating_sub(primary.funding_ts) < 60_000),
+            feature_lag_ms: self.now.saturating_sub(b.exchange_ts),
             data_quality: flags,
         })
     }
@@ -537,7 +686,16 @@ impl Engine {
             slippage: 2. * c.slippage_bps / 10_000.,
             impact: c.impact_bps / 10_000.,
             adverse_selection: c.adverse_selection_bps / 10_000.,
-            funding: c.funding_bps / 10_000.,
+            funding: match (f.funding_rate, f.next_funding_ts) {
+                (Some(rate), Some(ts)) if ts > self.now => {
+                    if ts <= self.now + c.horizon * 1000 {
+                        rate.abs()
+                    } else {
+                        0.
+                    }
+                }
+                _ => c.funding_bps / 10_000.,
+            },
             total: 0.,
         };
         cost.total = cost.spread
@@ -555,6 +713,20 @@ impl Engine {
         f: &Features,
         h: &ModelHealth,
     ) -> (Qualification, Option<TradePlan>) {
+        let started = std::time::Instant::now();
+        let result = self.qualify_inner(p, f, h);
+        self.telemetry
+            .lock()
+            .unwrap()
+            .record("qualification", started.elapsed().as_micros() as u64);
+        result
+    }
+    fn qualify_inner(
+        &self,
+        p: &Prediction,
+        f: &Features,
+        h: &ModelHealth,
+    ) -> (Qualification, Option<TradePlan>) {
         let c = &self.config;
         let costs = self.costs(f);
         let probs = p.probabilities();
@@ -562,31 +734,17 @@ impl Engine {
         let loss = probs[if p.direction == "LONG" { 1 } else { 0 }];
         let gross = win * p.target - loss * p.stop;
         let net = gross - costs.total;
-        let equity = self.account_equity().max(0.);
+        let risk = self.qualification_risk(p);
+        let equity = risk.equity;
         let multiplier = if h.trust == "DEGRADED" { 0.5 } else { 1. };
-        let other_notional = self
-            .positions
-            .iter()
-            .filter(|(s, _)| *s != &p.symbol)
-            .map(|(_, p)| p.qty * p.current_price)
-            .sum::<f64>();
-        let other_risk = self
-            .positions
-            .iter()
-            .filter(|(s, _)| *s != &p.symbol)
-            .map(|(_, p)| p.qty * p.current_price * (p.config.stop + self.costs(f).total))
-            .sum::<f64>();
-        let daily_remaining = (c.max_daily_loss
-            + self.daily_pnl
-            + self.positions.values().map(unrealized).sum::<f64>().min(0.)
-            - other_risk)
-            .max(0.);
-        let budget = (equity * c.risk_per_trade * multiplier).min(daily_remaining);
+        let budget = (equity * c.risk_per_trade).min(risk.daily_remaining);
         let capacity = f.depth * c.depth_participation;
         let notional = (budget / (p.stop + costs.total).max(1e-9))
-            .min((c.max_position_notional - other_notional).max(0.))
-            .min((equity * c.max_effective_leverage - other_notional).max(0.))
-            .min(capacity);
+            .min((risk.notional_cap - risk.other_notional).max(0.))
+            .min((equity * c.max_effective_leverage - risk.other_notional).max(0.))
+            .min(risk.available_notional)
+            .min(capacity)
+            * multiplier;
         let leverage = notional / equity.max(1.);
         let buffer = if leverage <= 1. {
             1.
@@ -645,7 +803,8 @@ impl Engine {
         gate(
             "cost",
             "成本可信度",
-            h.execution_drift.is_none_or(|d| d <= c.max_slippage),
+            h.execution_drift.is_none_or(|d| d <= c.max_slippage)
+                && h.live.execution_drift.is_none_or(|d| d <= c.max_slippage),
             format!("总成本 {:.2} bps · 配置假设", costs.total * 10_000.),
         );
         gate(
@@ -669,10 +828,7 @@ impl Engine {
         gate(
             "risk",
             "账户风险预算",
-            self.risk_available()
-                && budget > 0.
-                && notional >= 10.
-                && buffer >= c.min_liquidation_buffer,
+            risk.available && budget > 0. && notional >= 10. && buffer >= c.min_liquidation_buffer,
             format!("预算 ${budget:.2} · 杠杆 {leverage:.2}x"),
         );
         gate(
@@ -747,7 +903,12 @@ impl Engine {
             tp: f.mid * (1. + p.sign() * p.target),
             sl: f.mid * (1. - p.sign() * p.stop),
             horizon: p.horizon,
-            entry_type: "PAPER_MARKET_IOC".into(),
+            entry_type: if risk.live {
+                "LIMIT_IOC"
+            } else {
+                "PAPER_MARKET_IOC"
+            }
+            .into(),
             exit_rules: vec![
                 "TP / SL / Timeout".into(),
                 "Gate 失效、模型 LOW 或负 Net EV → EXIT".into(),
@@ -761,12 +922,14 @@ impl Engine {
         if self.day != day {
             self.daily_pnl = 0.;
             self.day = day;
+            self.daily_integrity = IntegrityCounters::default();
         }
         self.equity_peak = self.equity_peak.max(self.account_equity());
         for symbol in ["BTCUSDT", "ETHUSDT"] {
-            let ready = self.symbols[symbol].venues["binance"]
-                .book
-                .ready(self.now, self.config.max_stale_ms);
+            let ready = self.symbols[symbol]
+                .venues
+                .values()
+                .all(|v| v.connected && v.book.ready(self.now, self.config.max_stale_ms));
             if !ready {
                 self.invalidate(symbol, "stale_feed");
             }
@@ -779,6 +942,21 @@ impl Engine {
             if ready {
                 self.track(symbol, f.mid);
                 self.check_position_barrier(symbol, f.mid);
+            }
+            let previous = self.symbols[symbol].evaluation.as_ref();
+            let alpha_due = previous.is_none_or(|ev| {
+                self.now.saturating_sub(ev.evaluated_at) >= self.config.alpha_eval_interval_ms
+            });
+            let qualification_due = previous.is_none_or(|ev| {
+                self.now.saturating_sub(ev.qualification_evaluated_at)
+                    >= self.config.qualification_eval_interval_ms
+            });
+            if !alpha_due && !qualification_due {
+                continue;
+            }
+            if alpha_due {
+                self.integrity.realtime_evaluations += 1;
+                self.daily_integrity.realtime_evaluations += 1;
             }
             let comparable: Vec<_> = self
                 .outcomes
@@ -793,11 +971,22 @@ impl Engine {
             let trades: Vec<_> = self
                 .trades
                 .iter()
-                .filter(|t| t.position.plan.symbol == symbol)
+                .filter(|t| {
+                    t.position.plan.symbol == symbol
+                        && t.position.config == self.config
+                        && self.outcomes.iter().any(|o| {
+                            o.prediction.prediction_id == t.position.plan.prediction_id
+                                && o.prediction.model_version == self.model.model_version
+                                && o.prediction.config_version == self.config_version
+                        })
+                })
                 .cloned()
                 .collect();
-            let health = self.model.health(&comparable, &trades, &self.config, &f);
-            let direction = if ready {
+            let mut health = self.model.health(&comparable, &trades, &self.config, &f);
+            self.apply_live_feedback(symbol, &mut health);
+            let direction = if !alpha_due {
+                self.symbols[symbol].candidate_direction.as_str()
+            } else if ready {
                 signal_direction(
                     Model::score(&f),
                     &self.symbols[symbol].candidate_direction,
@@ -805,11 +994,12 @@ impl Engine {
                 )
             } else {
                 "FLAT"
-            };
+            }
+            .to_owned();
             {
                 let s = self.symbols.get_mut(symbol).unwrap();
                 if s.candidate_direction != direction {
-                    s.candidate_direction = direction.into();
+                    s.candidate_direction = direction.clone();
                     s.candidate_since = self.now;
                 }
                 s.features = Some(f.clone());
@@ -821,6 +1011,38 @@ impl Engine {
                     }
                 }
             }
+            if self.symbols[symbol].active.as_ref().is_some_and(|p| {
+                direction != p.direction
+                    && self
+                        .now
+                        .saturating_sub(self.symbols[symbol].candidate_since)
+                        >= self.config.signal_confirm_ms
+            }) {
+                self.finish(symbol, "SIGNAL_INVALIDATED", "confirmed_signal_change");
+            }
+            let (raw, cal) = if alpha_due {
+                self.model.probabilities(&f, &self.config)
+            } else {
+                let ev = self.symbols[symbol].evaluation.as_ref().unwrap();
+                (ev.raw_probabilities, ev.calibrated_probabilities)
+            };
+            let previous_eval = self.symbols[symbol].evaluation.clone();
+            self.symbols.get_mut(symbol).unwrap().evaluation = Some(AlphaEvaluation {
+                symbol: symbol.into(),
+                evaluated_at: if alpha_due {
+                    self.now
+                } else {
+                    previous_eval.as_ref().unwrap().evaluated_at
+                },
+                qualification_evaluated_at: previous_eval
+                    .as_ref()
+                    .map_or(0, |v| v.qualification_evaluated_at),
+                raw_probabilities: raw,
+                calibrated_probabilities: cal,
+                features: f.clone(),
+                qualification: previous_eval.as_ref().and_then(|v| v.qualification.clone()),
+                target_position: previous_eval.and_then(|v| v.target_position),
+            });
             let result_held = self.symbols[symbol].last_result.is_some()
                 && self.now.saturating_sub(self.symbols[symbol].completed_at)
                     < self.config.result_hold_ms;
@@ -836,6 +1058,9 @@ impl Engine {
                 );
             }
             let can_predict = ready
+                && alpha_due
+                && self.symbols[symbol].consumed_signal_epoch
+                    != Some(self.symbols[symbol].candidate_since)
                 && direction != "FLAT"
                 && !result_held
                 && self.symbols[symbol].active.is_none()
@@ -852,15 +1077,45 @@ impl Engine {
                 self.transition(symbol, "EMERGING", Some(&id));
                 let (raw, cal) = self.model.probabilities(&f, &self.config);
                 let mut p = Prediction {
+                    episode: EpisodeMetadata {
+                        episode_id: id.clone(),
+                        opened_at: self.now,
+                        last_price_ts: f.ts,
+                        latest_evaluated_at: self.now,
+                        latest_raw_probabilities: Some(raw),
+                        latest_calibrated_probabilities: cal,
+                        latest_feature_snapshot_id: f.feature_snapshot_id.clone(),
+                        upper_barrier: f.mid
+                            * (1.
+                                + if direction == "LONG" {
+                                    self.config.target
+                                } else {
+                                    self.config.stop
+                                }),
+                        lower_barrier: f.mid
+                            * (1.
+                                - if direction == "LONG" {
+                                    self.config.stop
+                                } else {
+                                    self.config.target
+                                }),
+                        signal_epoch: self.symbols[symbol].candidate_since,
+                        ..Default::default()
+                    },
                     prediction_id: id.clone(),
                     symbol: symbol.into(),
                     ts: self.now,
                     horizon: self.config.horizon,
-                    direction: direction.into(),
+                    direction: direction.clone(),
                     target: self.config.target,
                     stop: self.config.stop,
                     start_price: f.mid,
                     current_price: f.mid,
+                    expected_move: cal.map(|v| {
+                        let i = if direction == "LONG" { 0 } else { 1 };
+                        v[i] * self.config.target - v[1 - i] * self.config.stop
+                    }),
+                    signal_strength: (Model::score(&f).abs() / 3.).min(1.),
                     raw_probabilities: raw,
                     calibrated_probabilities: cal,
                     model_version: self.model.model_version.clone(),
@@ -881,10 +1136,24 @@ impl Engine {
                     },
                     plan: None,
                     config_version: self.config_version,
+                    cost_assumptions_bps: Some(
+                        self.config.fee_bps * 2.
+                            + self.config.slippage_bps * 2.
+                            + self.config.impact_bps
+                            + self.config.adverse_selection_bps
+                            + self.config.funding_bps,
+                    ),
                 };
                 let (q, plan) = self.qualify(&p, &f, &health);
+                p.episode.highest_qualification = q.status.clone();
                 p.qualification = q;
                 p.plan = plan;
+                self.integrity.prediction_episodes_opened += 1;
+                self.daily_integrity.prediction_episodes_opened += 1;
+                if p.qualification.status == "QUALIFIED" {
+                    self.integrity.qualified_episodes += 1;
+                    self.daily_integrity.qualified_episodes += 1;
+                }
                 if p.qualification.status == "QUALIFIED" {
                     self.transition(symbol, "QUALIFIED", Some(&p.prediction_id));
                 }
@@ -905,23 +1174,60 @@ impl Engine {
                 }
                 let s = self.symbols.get_mut(symbol).unwrap();
                 s.last_prediction_ts = self.now;
+                s.consumed_signal_epoch = Some(s.candidate_since);
                 s.active = Some(p);
             }
             if let Some(p) = self.symbols[symbol].active.clone() {
                 self.transition(symbol, "TRACKING", Some(&p.prediction_id));
                 // Requalification uses fresh features, probabilities and remaining holding time.
                 let mut fresh = p.clone();
-                let (raw, cal) = self.model.probabilities(&f, &self.config);
                 fresh.raw_probabilities = raw;
                 fresh.calibrated_probabilities = cal;
                 if fresh.config_version != self.config_version {
                     fresh.calibrated_probabilities = None;
                 }
-                let (q, plan) = self.qualify(&fresh, &f, &health);
+                let due = self.now == p.ts
+                    || self.symbols[symbol].evaluation.as_ref().is_none_or(|ev| {
+                        self.now.saturating_sub(ev.qualification_evaluated_at)
+                            >= self.config.qualification_eval_interval_ms
+                    });
+                let (q, plan) = if due {
+                    self.qualify(&fresh, &f, &health)
+                } else {
+                    (
+                        self.symbols[symbol]
+                            .qualification
+                            .clone()
+                            .unwrap_or_else(|| p.qualification.clone()),
+                        self.symbols[symbol].plan.clone(),
+                    )
+                };
+                if q.status == "QUALIFIED" && p.episode.highest_qualification != "QUALIFIED" {
+                    self.integrity.qualified_episodes += 1;
+                    self.daily_integrity.qualified_episodes += 1;
+                    self.log(
+                        "episode_qualification",
+                        json!({"episode_id":p.prediction_id,"highest_qualification":"QUALIFIED"}),
+                    );
+                }
                 {
                     let s = self.symbols.get_mut(symbol).unwrap();
                     s.qualification = Some(q.clone());
                     s.plan = plan.clone();
+                    let ev = s.evaluation.as_mut().unwrap();
+                    if due {
+                        ev.qualification_evaluated_at = self.now;
+                    }
+                    ev.qualification = Some(q.clone());
+                    ev.target_position = plan.clone();
+                    let episode = &mut s.active.as_mut().unwrap().episode;
+                    episode.latest_evaluated_at = ev.evaluated_at;
+                    episode.latest_raw_probabilities = Some(raw);
+                    episode.latest_calibrated_probabilities = cal;
+                    episode.latest_feature_snapshot_id = f.feature_snapshot_id.clone();
+                    if q.status == "QUALIFIED" {
+                        episode.highest_qualification = q.status.clone();
+                    }
                 }
                 if self.positions.contains_key(symbol) {
                     self.rebalance(symbol, &p, &q, plan.as_ref());
@@ -934,6 +1240,11 @@ impl Engine {
                 let s = self.symbols.get_mut(symbol).unwrap();
                 s.qualification = None;
                 s.plan = None;
+                if let Some(ev) = s.evaluation.as_mut() {
+                    ev.qualification = None;
+                    ev.target_position = None;
+                    ev.qualification_evaluated_at = self.now;
+                }
                 if self.positions.contains_key(symbol) {
                     self.close_position(symbol, "PREDICTION_COMPLETED");
                 }
@@ -949,16 +1260,27 @@ impl Engine {
         for (s, r) in pending {
             self.close_position(&s, &r);
         }
+        if self.mode != "AUTO" {
+            self.admission_shadow_tick();
+        }
+        self.live_tick();
+        self.research_tick();
     }
     fn invalidate(&mut self, symbol: &str, reason: &str) {
         if self.symbols[symbol].active.is_some() {
-            self.finish(symbol, "INVALIDATED", reason);
+            let kind = if ["model_changed", "config_changed"].contains(&reason) {
+                "SIGNAL_INVALIDATED"
+            } else {
+                "DATA_INVALIDATED"
+            };
+            self.finish(symbol, kind, reason);
         }
         if self.positions.contains_key(symbol) {
             self.close_position(symbol, "DATA_INVALID_EXIT");
         }
     }
     fn track(&mut self, symbol: &str, price: f64) {
+        let price_ts = self.symbols[symbol].venues["binance"].book.receive_ts;
         let Some(p) = self.symbols.get_mut(symbol).unwrap().active.as_mut() else {
             return;
         };
@@ -971,6 +1293,7 @@ impl Engine {
             })
         } else {
             p.current_price = price;
+            p.episode.last_price_ts = price_ts;
             let m = (price / p.start_price - 1.) * p.sign();
             p.mfe = p.mfe.max(m);
             p.mae = p.mae.max(-m);
@@ -999,6 +1322,14 @@ impl Engine {
             return;
         };
         p.status = "COMPLETED".into();
+        p.episode.closed_at = Some(self.now);
+        p.episode.close_reason = Some(if reason.is_empty() {
+            kind.into()
+        } else {
+            format!("{kind}:{reason}")
+        });
+        self.integrity.prediction_episodes_closed += 1;
+        self.daily_integrity.prediction_episodes_closed += 1;
         let move_ = (p.current_price / p.start_price - 1.) * p.sign();
         let class = if kind == "TARGET_HIT" {
             if p.direction == "LONG" {
@@ -1015,6 +1346,10 @@ impl Engine {
         } else {
             2
         };
+        if class != 2 {
+            p.episode.first_hit = Some(if class == 0 { "UPPER" } else { "LOWER" }.into());
+            p.episode.first_hit_at = Some(self.now);
+        }
         let brier = p
             .probabilities()
             .iter()
@@ -1022,7 +1357,9 @@ impl Engine {
             .map(|(i, v)| (v - if i == class { 1. } else { 0. }).powi(2))
             .sum();
         let timeout = kind.starts_with("TIMEOUT");
+        let horizon_observation = self.watch_horizon(&p, kind);
         let o = Outcome {
+            horizon_observation,
             first_hit_ts: if timeout {
                 p.ts + p.horizon * 1000
             } else {
@@ -1033,9 +1370,9 @@ impl Engine {
             mae: p.mae,
             brier,
             observed_net_edge: move_ - p.qualification.costs.total,
-            learning_eligible: kind != "INVALIDATED",
+            learning_eligible: !kind.ends_with("INVALIDATED"),
             annotation: None,
-            prediction_error: if kind == "INVALIDATED" {
+            prediction_error: if kind.ends_with("INVALIDATED") {
                 reason.into()
             } else if class == 2 {
                 "TIMEOUT".into()
@@ -1179,6 +1516,12 @@ impl Engine {
             expected_cost: basis * q.costs.total,
             expected_edge: q.net_edge,
             cost_basis: basis,
+            alpha_ids: vec![plan.prediction_id.clone()],
+            last_funding_ts: self.now,
+            funding_observed: self.symbols[&symbol]
+                .features
+                .as_ref()
+                .is_some_and(|f| f.next_funding_ts.is_some() && f.funding_rate.is_some()),
         };
         self.log("qualification", json!(q));
         self.log("plan", json!(plan));
@@ -1240,11 +1583,26 @@ impl Engine {
         let due =
             self.now.saturating_sub(p.last_rebalance) >= self.config.rebalance_interval_secs * 1000;
         let reduce = target < current * (1. - self.config.position_deadband) && due;
-        // This conservative V1 never averages down or adds to an existing prediction.
+        let fresh_since = self.symbols[symbol].candidate_since;
+        let alpha_id = format!("alpha-{symbol}-{fresh_since}");
+        let add = self.mode == "PAPER"
+            && due
+            && target > current * (1. + self.config.position_deadband)
+            && fresh_since > p.ts
+            && self.now.saturating_sub(fresh_since) >= self.config.signal_confirm_ms
+            && self.symbols[symbol].candidate_direction == p.plan.direction
+            && !p.alpha_ids.contains(&alpha_id)
+            && p.adjustments < self.config.max_rebalances
+            && q.net_edge >= self.config.incremental_ev
+            && (p.current_price - p.entry_price) * prediction.sign() >= 0.;
+        if add {
+            self.add_position(symbol, target - current, q, &alpha_id);
+            return;
+        }
         let p = self.positions.get_mut(symbol).unwrap();
         p.target_notional = target;
         p.action = "HOLD".into();
-        p.reason = "持续复核；同一预测内不加仓".into();
+        p.reason = "持续复核；只有重新形成的独立信号才可加仓".into();
         if reduce {
             if p.adjustments >= self.config.max_rebalances {
                 self.close_position(symbol, "REBALANCE_LIMIT");
@@ -1252,6 +1610,88 @@ impl Engine {
                 self.reduce_position(symbol, (current - target) / current, "TARGET_RISK_REDUCED");
             }
         }
+    }
+    fn settle_funding(&mut self) {
+        let mut records = vec![];
+        for (symbol, p) in &mut self.positions {
+            let v = &self.symbols[symbol].venues["binance"];
+            if let (Some(ts), Some(rate), Some(mark)) = (v.next_funding_ts, v.funding_rate, v.mark)
+            {
+                if ts > p.ts && ts > p.last_funding_ts && ts <= self.now {
+                    // Paper settlement uses the last announced rate, never pretends to be an exchange debit.
+                    let fresh = self.now.saturating_sub(v.funding_ts) <= 60_000;
+                    let debit = p.qty
+                        * mark
+                        * if fresh {
+                            rate * if p.plan.direction == "LONG" { 1. } else { -1. }
+                        } else {
+                            p.config.funding_bps / 10_000.
+                        };
+                    p.funding += debit;
+                    p.last_funding_ts = ts;
+                    p.funding_observed = true;
+                    records.push(json!({"symbol":symbol,"settlement_ts":ts,"debit":debit,"rate":rate,"estimated":true,"stale_fallback":!fresh}));
+                }
+            }
+        }
+        for r in records {
+            self.log("paper_funding", r);
+        }
+    }
+    fn add_position(&mut self, symbol: &str, requested: f64, q: &Qualification, alpha_id: &str) {
+        if !self.risk_available() || q.status != "QUALIFIED" {
+            return;
+        }
+        let p = self.positions[symbol].clone();
+        let sign = if p.plan.direction == "LONG" { 1. } else { -1. };
+        let mid = p.current_price;
+        // Keep the original absolute stop and deadline; never widen risk to accommodate an add.
+        let stop_distance = ((mid - p.plan.sl) * sign / mid).max(0.);
+        let existing_risk =
+            ((p.entry_price - p.plan.sl) * sign).max(0.) * p.qty + p.qty * mid * q.costs.total;
+        let budget =
+            (self.account_equity() * self.config.risk_per_trade).min(p.plan.planned_max_loss);
+        let allowed = ((budget - existing_risk).max(0.)
+            / (stop_distance + q.costs.total).max(1e-9))
+        .min(requested);
+        if allowed < 10. || allowed * q.net_edge < self.config.min_net_pnl {
+            return;
+        }
+        let config = p.config.clone();
+        let Some(fill) = self.fill(
+            symbol,
+            &p.plan.plan_id,
+            sign > 0.,
+            allowed / (mid * (1. + q.costs.total)),
+            true,
+            &config,
+        ) else {
+            return;
+        };
+        if fill.slippage
+            > config.max_slippage
+                + q.costs.spread / 2.
+                + (config.impact_bps + config.adverse_selection_bps) / 10_000.
+        {
+            return;
+        }
+        let basis = fill.qty * fill.fill_price;
+        let pos = self.positions.get_mut(symbol).unwrap();
+        pos.entry_price = (pos.entry_price * pos.qty + basis) / (pos.qty + fill.qty);
+        pos.qty += fill.qty;
+        pos.fees += fill.fee;
+        pos.expected_edge =
+            (pos.expected_edge * pos.cost_basis + basis * q.net_edge) / (pos.cost_basis + basis);
+        pos.cost_basis += basis;
+        pos.expected_cost += basis * q.costs.total;
+        pos.last_rebalance = self.now;
+        pos.adjustments += 1;
+        pos.action = "ADD".into();
+        pos.reason = "独立信号重新确认，增量 EV 与原止损风险预算通过".into();
+        pos.alpha_ids.push(alpha_id.into());
+        pos.executions.push(fill.clone());
+        self.log("independent_alpha", json!({"alpha_id":alpha_id,"symbol":symbol,"feature_snapshot_id":self.symbols[symbol].features.as_ref().map(|f|&f.feature_snapshot_id),"qualification":q,"amount":basis}));
+        self.log("execution", json!(fill));
     }
     pub fn close_position(&mut self, symbol: &str, reason: &str) {
         self.reduce_position(symbol, 1., reason);
@@ -1294,7 +1734,9 @@ impl Engine {
         if self.positions[symbol].qty < 1e-9 {
             let mut p = self.positions.remove(symbol).unwrap();
             // A conservative reserved funding debit, not an exchange settlement simulation.
-            p.funding = p.cost_basis * p.config.funding_bps / 10_000.;
+            if !p.funding_observed {
+                p.funding += p.cost_basis * p.config.funding_bps / 10_000.;
+            }
             let net = p.realized_pnl - p.fees - p.funding;
             self.realized_pnl += net;
             self.daily_pnl += net;
@@ -1313,6 +1755,8 @@ impl Engine {
                 realized_net_edge: net / p.cost_basis.max(1.),
                 position: p,
             };
+            self.integrity.paper_trades += 1;
+            self.daily_integrity.paper_trades += 1;
             self.log("trade", json!(&t));
             self.trades.push(t);
             if self.trades.len() > 2000 {
@@ -1350,6 +1794,7 @@ impl Engine {
         for s in self.symbols.values_mut() {
             s.plan = None;
             s.qualification = None;
+            s.evaluation = None;
             s.candidate_direction = "FLAT".into();
             s.candidate_since = self.now;
             s.health = model::health(&[], &[], &self.config, false);
@@ -1372,7 +1817,7 @@ impl Engine {
                             .is_some_and(|(z, d)| z <= d.max_z)
                 })
         });
-        let operational_checks = json!({"observe_mode":self.mode == "OBSERVE", "no_positions":self.positions.is_empty(),
+        let operational_checks = json!({"observe_mode":self.mode == "OBSERVE", "no_positions":self.positions.is_empty() && !self.live.orders.values().any(|o|o.pending()) && self.live.account.as_ref().is_none_or(|a|a.positions.values().all(|p|p.quantity.abs()<1e-10)),
             "storage_healthy":self.storage_healthy,"kill_released":!self.kill_switch,"market_ready":market_ready});
         let ready = comparison["ready"] == true
             && operational_checks
@@ -1391,19 +1836,105 @@ impl Engine {
     pub fn view(&self) -> Value {
         let symbols:BTreeMap<_,_>=self.symbols.iter().map(|(name,s)|{
             let venues:BTreeMap<_,_>=s.venues.iter().map(|(name,v)|(name,json!({"connected":v.connected,"ready":v.book.ready(self.now,self.config.max_stale_ms),
-                "age_ms":self.now.saturating_sub(v.book.receive_ts),"exchange_age_ms":self.now.abs_diff(v.book.exchange_ts),"gaps":v.book.gaps,"reconnects":v.reconnects,"error":v.error,"mid":v.book.mid(),"sequence":v.book.sequence}))).collect();
-            (name,json!({"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart,"lifecycle":s.lifecycle,"lifecycle_since":s.lifecycle_since,"signal_direction":s.candidate_direction,"last_result":s.last_result}))
+                "age_ms":self.now.saturating_sub(v.book.receive_ts),"exchange_age_ms":self.now.abs_diff(v.book.exchange_ts),"gaps":v.book.gaps,"reconnects":v.reconnects,"error":v.error,"mid":v.book.mid(),"sequence":v.book.sequence,"mark":v.mark.filter(|_|self.now.saturating_sub(v.mark_ts)<10_000),"index":v.index.filter(|_|self.now.saturating_sub(v.index_ts)<10_000),"funding_rate":v.funding_rate.filter(|_|self.now.saturating_sub(v.funding_ts)<60_000),"next_funding_ts":v.next_funding_ts}))).collect();
+            (name,json!({"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart,"lifecycle":s.lifecycle,"lifecycle_since":s.lifecycle_since,"signal_direction":s.candidate_direction,"last_result":s.last_result,"evaluation":s.evaluation}))
         }).collect();
         json!({"source":self.source,"mode":self.mode,"now":self.now,"config":self.config,"config_version":self.config_version,"model":self.model,
             "shadow":self.shadow_view(),"rollback_available":self.previous_model.is_some(),"shadow_policy_defaults":ShadowPolicy::default(),
             "kill_switch":self.kill_switch,"storage_healthy":self.storage_healthy,"symbols":symbols,"positions":self.positions,
             "outcomes":self.outcomes.iter().rev().take(100).collect::<Vec<_>>(),"trades":self.trades.iter().rev().take(100).collect::<Vec<_>>(),
             "audit":self.audit.iter().rev().take(30).collect::<Vec<_>>(),"account":{"equity":self.account_equity(),"realized_pnl":self.realized_pnl,"daily_pnl":self.daily_pnl,"peak":self.equity_peak},
-            "live_enabled":false,"live_gate_reason":"尚无经过批准的真钱执行适配器与实盘验证证据"})
+            "integrity":self.integrity,"daily_integrity":self.daily_integrity,"admission":self.admission,
+            "telemetry":self.telemetry.lock().unwrap().view(),"execution_metrics":self.execution_metrics(),"research":self.research,"live":self.live,"live_positions":self.live_positions_view(),"live_enabled":self.live_ready().is_ok(),"auto_evidence_ready":self.auto_evidence(),"live_gate_reason":self.live_ready().err()})
     }
 }
 pub fn unrealized(p: &Position) -> f64 {
     (p.current_price - p.entry_price) * p.qty * if p.plan.direction == "LONG" { 1. } else { -1. }
         + p.realized_pnl
         - p.fees
+        - p.funding
+}
+
+#[cfg(test)]
+mod position_tests {
+    use super::*;
+    use crate::feeds::demo_events;
+    fn opened() -> (Engine, Prediction, Qualification, TradePlan) {
+        let mut e = Engine::new(true);
+        for i in 0..8 {
+            for ev in demo_events(i, 1_000_000 + i * 1000) {
+                e.ingest(ev);
+            }
+        }
+        e.mode = "PAPER".into();
+        let mut p = e.symbols["BTCUSDT"].active.clone().unwrap();
+        p.direction = "LONG".into();
+        p.calibrated_probabilities = Some([0.9, 0.05, 0.05]);
+        let mut h = e.symbols["BTCUSDT"].health.clone();
+        h.trust = "NORMAL".into();
+        h.samples = 100;
+        h.calibration_error = 0.;
+        let (q, plan) = e.qualify(&p, e.symbols["BTCUSDT"].features.as_ref().unwrap(), &h);
+        let plan = plan.unwrap();
+        let mut small = plan.clone();
+        small.position_notional *= 0.2;
+        e.open_position(small, &q);
+        (e, p, q, plan)
+    }
+    #[test]
+    fn independent_add_once_no_loss_trigger_and_original_stop_unchanged() {
+        let (mut e, p, q, plan) = opened();
+        let symbol = "BTCUSDT";
+        e.now += 20_000;
+        for v in e.symbols.get_mut(symbol).unwrap().venues.values_mut() {
+            v.book.receive_ts = e.now;
+            v.book.exchange_ts = e.now;
+        }
+        let pos = e.positions.get_mut(symbol).unwrap();
+        pos.current_price = pos.entry_price * 1.00001;
+        let old_qty = pos.qty;
+        let old_sl = pos.plan.sl;
+        let old_ts = pos.ts;
+        // A larger target using the entry signal cannot add.
+        e.rebalance(symbol, &p, &q, Some(&plan));
+        assert_eq!(e.positions[symbol].qty, old_qty);
+        e.symbols.get_mut(symbol).unwrap().candidate_since = e.now - 3000;
+        e.symbols.get_mut(symbol).unwrap().candidate_direction = "LONG".into();
+        e.rebalance(symbol, &p, &q, Some(&plan));
+        let qty = e.positions[symbol].qty;
+        assert!(qty > old_qty);
+        assert_eq!(e.positions[symbol].plan.sl, old_sl);
+        assert_eq!(e.positions[symbol].ts, old_ts);
+        e.now += 20_000;
+        e.rebalance(symbol, &p, &q, Some(&plan));
+        assert_eq!(e.positions[symbol].qty, qty);
+        e.symbols.get_mut(symbol).unwrap().candidate_since = e.now - 3000;
+        e.positions.get_mut(symbol).unwrap().current_price *= 0.999;
+        e.rebalance(symbol, &p, &q, Some(&plan));
+        assert_eq!(e.positions[symbol].qty, qty);
+    }
+    #[test]
+    fn funding_settles_once_with_direction_and_boundary() {
+        let (mut e, _, _, _) = opened();
+        let symbol = "BTCUSDT";
+        let v = e
+            .symbols
+            .get_mut(symbol)
+            .unwrap()
+            .venues
+            .get_mut("binance")
+            .unwrap();
+        v.funding_rate = Some(0.0001);
+        v.next_funding_ts = Some(e.now + 1000);
+        v.funding_ts = e.now;
+        v.mark = Some(100.);
+        let qty = e.positions[symbol].qty;
+        e.settle_funding();
+        assert_eq!(e.positions[symbol].funding, 0.);
+        e.now += 1000;
+        e.settle_funding();
+        assert!((e.positions[symbol].funding - qty * 0.01).abs() < 1e-10);
+        e.settle_funding();
+        assert!((e.positions[symbol].funding - qty * 0.01).abs() < 1e-10);
+    }
 }

@@ -1,0 +1,161 @@
+{
+  "now": 1790924138394,
+  "source": "live",
+  "mode": "OBSERVE",
+  "storage_healthy": true,
+  "kill_switch": false,
+  "execution_metrics": {
+    "ack_p95_ms": null,
+    "fill_p95_ms": null,
+    "orders": 0,
+    "rejected": 0,
+    "rejection_rate": null,
+    "unknown": 0
+  },
+  "live_enabled": false,
+  "live_gate_reason": "执行通道未就绪：",
+  "live_positions": {
+    "BTCUSDT": {
+      "account_age_ms": null,
+      "account_quantity": 0.0,
+      "action": "FLAT",
+      "current_notional": 0.0,
+      "deadline_ts": null,
+      "effective_leverage": null,
+      "entry_price": null,
+      "feedback": {
+        "ev_drift": null,
+        "excluded_samples": 0,
+        "execution_drift": null,
+        "samples": 0,
+        "status": "INSUFFICIENT"
+      },
+      "liquidation_buffer": null,
+      "mark_price": null,
+      "pending": [],
+      "quantity": -0.0,
+      "reason": "",
+      "reconciled": true,
+      "sl": null,
+      "target_leverage": null,
+      "target_notional": 0.0,
+      "tp": null,
+      "unrealized_pnl": null
+    },
+    "ETHUSDT": {
+      "account_age_ms": null,
+      "account_quantity": 0.0,
+      "action": "FLAT",
+      "current_notional": 0.0,
+      "deadline_ts": null,
+      "effective_leverage": null,
+      "entry_price": null,
+      "feedback": {
+        "ev_drift": null,
+        "excluded_samples": 0,
+        "execution_drift": null,
+        "samples": 0,
+        "status": "INSUFFICIENT"
+      },
+      "liquidation_buffer": null,
+      "mark_price": null,
+      "pending": [],
+      "quantity": -0.0,
+      "reason": "",
+      "reconciled": true,
+      "sl": null,
+      "target_leverage": null,
+      "target_notional": 0.0,
+      "tp": null,
+      "unrealized_pnl": null
+    }
+  },
+  "validation": {
+    "rust_tests": 72,
+    "python_tests": 11,
+    "browser_tests": 14,
+    "build": "passed",
+    "rustfmt_clippy_typescript": "passed",
+    "replay_records": 3122,
+    "replay_outcomes": 7,
+    "replay_trades": 0,
+    "replay_sha256": "ca4c88836a96681257e0de2ddaea8fd050dcf2fc91104d49686716b4b9218785",
+    "private_exchange_validation": "not performed; no execution credentials configured"
+  },
+  "live": {
+    "configured": false,
+    "healthy": false,
+    "environment": "",
+    "orders": {},
+    "trades": []
+  },
+  "symbols": {
+    "BTCUSDT": {
+      "feature_schema_version": "micro-v1",
+      "cross_venue_lag": {
+        "clock": "receive_time_500ms_60s_v1",
+        "correlation": 0.8700595815416698,
+        "lag_ms": 0,
+        "leader": "synchronous",
+        "samples": 119,
+        "zero_lag_correlation": 0.8700595815416698
+      },
+      "data_quality": [],
+      "venues": {
+        "binance": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 222,
+          "exchange_age_ms": 38,
+          "gaps": 0,
+          "error": ""
+        },
+        "okx": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 167,
+          "exchange_age_ms": 12,
+          "gaps": 0,
+          "error": ""
+        }
+      },
+      "health_live": {
+        "ev_drift": null,
+        "excluded_samples": 0,
+        "execution_drift": null,
+        "samples": 0,
+        "status": "INSUFFICIENT"
+      }
+    },
+    "ETHUSDT": {
+      "feature_schema_version": "micro-v1",
+      "cross_venue_lag": null,
+      "data_quality": [],
+      "venues": {
+        "binance": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 223,
+          "exchange_age_ms": 32,
+          "gaps": 0,
+          "error": ""
+        },
+        "okx": {
+          "connected": true,
+          "ready": true,
+          "age_ms": 167,
+          "exchange_age_ms": 14,
+          "gaps": 0,
+          "error": ""
+        }
+      },
+      "health_live": {
+        "ev_drift": null,
+        "excluded_samples": 0,
+        "execution_drift": null,
+        "samples": 0,
+        "status": "INSUFFICIENT"
+      }
+    }
+  }
+}

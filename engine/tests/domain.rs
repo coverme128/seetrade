@@ -210,7 +210,7 @@ fn stale_data_invalidates_not_market_loss() {
     let invalid: Vec<_> = e
         .outcomes
         .iter()
-        .filter(|o| o.outcome_type == "INVALIDATED")
+        .filter(|o| o.outcome_type == "DATA_INVALIDATED")
         .collect();
     assert_eq!(invalid.len(), 2);
     assert!(invalid.iter().all(|o| !o.learning_eligible));
@@ -290,6 +290,7 @@ fn calibration_health_downgrades_without_weight_changes() {
         let mut p = p.clone();
         p.prediction_id = format!("p{i}");
         e.outcomes.push(Outcome {
+            horizon_observation: None,
             prediction: p,
             outcome_type: "STOP_HIT".into(),
             first_hit_ts: e.now,
@@ -419,6 +420,9 @@ fn paper_position(e: &mut Engine) {
             config: e.config.clone(),
             expected_cost: 1.,
             expected_edge: 0.001,
+            alpha_ids: vec![],
+            last_funding_ts: 0,
+            funding_observed: false,
             cost_basis: price * 0.01,
         },
     );
@@ -544,6 +548,7 @@ fn paper_mode_executes_only_new_qualified_prediction_and_records_chain() {
         p.prediction_id = format!("history-{i}");
         p.qualification.net_edge = 0.001;
         e.outcomes.push(Outcome {
+            horizon_observation: None,
             prediction: p,
             outcome_type: if i < 16 { "TARGET_HIT" } else { "STOP_HIT" }.into(),
             first_hit_ts: e.now,
@@ -559,6 +564,7 @@ fn paper_mode_executes_only_new_qualified_prediction_and_records_chain() {
     }
     let s = e.symbols.get_mut("BTCUSDT").unwrap();
     s.active = None;
+    s.consumed_signal_epoch = None;
     s.last_prediction_ts = 0;
     e.command("mode", json!({"mode":"PAPER"})).unwrap();
     for x in demo_events(8, 1_008_000) {
@@ -624,7 +630,7 @@ async fn durable_checkpoint_restores_risk_and_annotations_without_rewriting_grou
         .find(|r| r["payload"]["prediction"]["prediction_id"] == id)
         .unwrap();
     assert_eq!(o["payload"]["annotation"], "exchange anomaly");
-    assert_eq!(o["payload"]["outcome_type"], "INVALIDATED");
+    assert_eq!(o["payload"]["outcome_type"], "DATA_INVALIDATED");
     drop(store);
     tokio::time::sleep(std::time::Duration::from_millis(5)).await;
     let (store, restored) = Store::open(&dir, "demo").unwrap();
@@ -756,7 +762,7 @@ fn checkpoint_without_new_fields_restores_and_restarts_safely() {
             .as_ref()
             .unwrap()
             .outcome_type,
-        "INVALIDATED"
+        "DATA_INVALIDATED"
     );
     assert!(e.symbols["BTCUSDT"].active.is_none());
 }
@@ -850,6 +856,7 @@ fn healthy_aggregate_cannot_hide_deterioration_in_current_regime() {
             // Current regime hits 60%, other regime 80%, against predicted 80%.
             let win = if i < 30 { i < 18 } else { i < 86 };
             Outcome {
+                horizon_observation: None,
                 prediction: p,
                 outcome_type: if win { "TARGET_HIT" } else { "STOP_HIT" }.into(),
                 first_hit_ts: e.now,
@@ -870,4 +877,169 @@ fn healthy_aggregate_cannot_hide_deterioration_in_current_regime() {
     assert!((h.regime_calibration_error.unwrap() - 0.2).abs() < 1e-10);
     assert_eq!(h.trust, "DEGRADED");
     assert!(h.retrain_recommended);
+}
+
+#[test]
+fn context_streams_keep_independent_freshness_and_reject_late_values() {
+    let mut e = warm();
+    let ts = e.now;
+    e.ingest(event(
+        ts,
+        0,
+        EventData::Context {
+            mark: Some(101.),
+            index: None,
+            funding: Some(0.0001),
+            next_funding_ts: Some(ts + 1000),
+        },
+    ));
+    e.ingest(event(
+        ts,
+        0,
+        EventData::Context {
+            mark: None,
+            index: Some(100.),
+            funding: None,
+            next_funding_ts: None,
+        },
+    ));
+    let mut late = event(
+        ts,
+        0,
+        EventData::Context {
+            mark: Some(1.),
+            index: None,
+            funding: None,
+            next_funding_ts: None,
+        },
+    );
+    late.exchange_ts -= 20_000;
+    e.ingest(late);
+    let v = &e.symbols["BTCUSDT"].venues["binance"];
+    assert_eq!(v.mark, Some(101.));
+    assert_eq!(v.index, Some(100.));
+    tick(&mut e, ts);
+    let f = e.symbols["BTCUSDT"].features.as_ref().unwrap();
+    assert_eq!(f.funding_rate, Some(0.0001));
+    assert_eq!(e.costs(f).funding, 0.0001);
+    let mut later = f.clone();
+    later.next_funding_ts = Some(ts + 10_000_000);
+    assert_eq!(e.costs(&later).funding, 0.);
+}
+
+#[test]
+fn predictions_distinguish_strength_from_calibrated_payoff() {
+    let e = warm();
+    let p = e.symbols["BTCUSDT"].active.as_ref().unwrap();
+    let probs = p.calibrated_probabilities.unwrap();
+    let i = if p.direction == "LONG" { 0 } else { 1 };
+    assert_eq!(
+        p.expected_move,
+        Some(probs[i] * p.target - probs[1 - i] * p.stop)
+    );
+    assert!((0.0..=1.0).contains(&p.signal_strength));
+    let mut live = Engine::new(false);
+    for step in 0..8 {
+        for ev in demo_events(step, 1_000_000 + step * 1000) {
+            live.ingest(ev);
+        }
+    }
+    assert!(live.symbols["BTCUSDT"]
+        .active
+        .as_ref()
+        .unwrap()
+        .expected_move
+        .is_none());
+}
+
+#[test]
+fn live_fail_closed_accounts_restart_and_auto_permission() {
+    use micro_alpha_engine::live::{AccountPosition, AccountSnapshot};
+    let mut e = warm();
+    e.source = "live".into();
+    assert!(e.command("mode", json!({"mode":"CONFIRM"})).is_err());
+    e.command("broker_config",json!({"configured":true,"venue":"binance","environment":"testnet","cap":100.,"auto_allowed":true})).unwrap();
+    let a = AccountSnapshot {
+        ts: e.now,
+        equity: 1000.,
+        available: 1000.,
+        one_way: true,
+        ..Default::default()
+    };
+    e.command("broker_snapshot", json!(a)).unwrap();
+    assert!(e.live_ready().is_ok());
+    e.command("mode", json!({"mode":"CONFIRM"})).unwrap();
+    assert!(e
+        .command("mode", json!({"mode":"AUTO","acknowledge_auto":true}))
+        .is_err());
+    e.live.account.as_mut().unwrap().positions.insert(
+        "BTCUSDT".into(),
+        AccountPosition {
+            quantity: 0.1,
+            ..Default::default()
+        },
+    );
+    assert!(e.live_ready().is_err());
+    e.live.account.as_mut().unwrap().positions.clear();
+    e.now += 10001;
+    assert!(e.live_ready().is_err());
+    e.restart();
+    assert_eq!(e.mode, "OBSERVE");
+    assert!(!e.live.healthy);
+}
+
+#[test]
+fn scheduled_research_is_single_flight_and_never_changes_champion() {
+    let mut e = warm();
+    let original = serde_json::to_value(&e.model).unwrap();
+    assert!(e
+        .command(
+            "research_schedule",
+            json!({"interval_secs":5,"model":"score"})
+        )
+        .is_err());
+    e.command(
+        "research_schedule",
+        json!({"interval_secs":3600,"model":"logistic"}),
+    )
+    .unwrap();
+    e.now += 3_600_000;
+    e.research_tick();
+    assert_eq!(e.research.status, "QUEUED");
+    let id = e.research.job_id.clone();
+    e.research_tick();
+    assert_eq!(e.research.job_id, id);
+    assert!(e.command("research_run", json!({"model":"gbt"})).is_err());
+    e.command(
+        "research_started",
+        json!({"job_id":id,"output":"data/research/test"}),
+    )
+    .unwrap();
+    e.command(
+        "research_finished",
+        json!({"job_id":id,"ok":true,"result":{"status":"REJECTED"}}),
+    )
+    .unwrap();
+    assert_eq!(e.research.status, "COMPLETED");
+    assert_eq!(serde_json::to_value(&e.model).unwrap(), original);
+}
+
+#[test]
+fn frozen_tree_model_prediction_and_invalid_artifact() {
+    use micro_alpha_engine::model::Stump;
+    let e = warm();
+    let f = e.symbols["BTCUSDT"].features.as_ref().unwrap();
+    let mut m = Model::baseline(true, &e.config);
+    m.model_type = "gradient-boosted-trees".into();
+    m.trees = vec![Stump {
+        feature: 1,
+        threshold: f.book_imbalance - 1.,
+        left: [0., 0., 0.],
+        right: [1., -1., 0.],
+    }];
+    m.validate(true).unwrap();
+    let (raw, _) = m.probabilities(f, &e.config);
+    assert_eq!(raw, model::softmax([1., -1., 0.], 1.));
+    m.trees[0].feature = 10;
+    assert!(m.validate(true).is_err());
 }

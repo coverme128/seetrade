@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import sqlite3
+import contextlib
 from pathlib import Path
 import numpy as np
 
@@ -30,7 +31,8 @@ def target(o):
         return 0 if long else 1
     if o['outcome_type'] in ('STOP_HIT', 'STRONG_OPPOSITE_MOVE'):
         return 1 if long else 0
-    return 2
+    if o['outcome_type'] in ('TIMEOUT', 'TIMEOUT_POSITIVE', 'TIMEOUT_NEGATIVE'): return 2
+    raise ValueError('非市场终止结果不能进入训练标签')
 
 def fit(x, y, steps=300):
     w = np.zeros((3, x.shape[1]))
@@ -42,6 +44,33 @@ def fit(x, y, steps=300):
         penalty[:, 0] = 0
         w -= .08*(gradient+penalty)
     return w
+
+def tree_logits(x, trees):
+    result = np.zeros((len(x), 3))
+    for tree in trees:
+        result += np.where((x[:, tree['feature']] <= tree['threshold'])[:, None], tree['left'], tree['right'])
+    return result
+
+
+def fit_trees(x, y, rounds=40):
+    """Multinomial gradient boosting with shallow stumps; training data only."""
+    logits = np.zeros((len(x), 3)); trees = []
+    splits = [(j, float(t)) for j in range(1, x.shape[1]) for t in np.unique(np.quantile(x[:, j], [.1,.25,.5,.75,.9]))]
+    for _ in range(rounds):
+        residual = np.eye(3)[y] - softmax(logits)
+        best = None
+        for j, threshold in splits:
+            mask = x[:, j] <= threshold
+            if min(mask.sum(), (~mask).sum()) < 10: continue
+            left = .2*residual[mask].mean(axis=0); right = .2*residual[~mask].mean(axis=0)
+            gain = mask.sum()*np.dot(left,left) + (~mask).sum()*np.dot(right,right)
+            if best is None or gain > best[0]: best = (gain,j,threshold,left,right,mask)
+        if best is None: break
+        _,j,t,left,right,mask = best
+        trees.append(dict(feature=j, threshold=t, left=left.tolist(), right=right.tolist()))
+        logits += np.where(mask[:,None],left,right)
+    return trees
+
 
 def calibrate(logits, labels):
     return float(min(np.linspace(.2, 5, 97), key=lambda t: -np.log(np.maximum(softmax(logits,t)[np.arange(len(labels)),labels],1e-12)).mean()))
@@ -96,7 +125,7 @@ def walk_forward(rows):
         test_end = times[end] if end < len(times) else float('inf')
         train = [r for r in rows if r['prediction']['ts'] < cal_start and r['first_hit_ts'] < cal_start]
         cal = [r for r in rows if cal_start <= r['prediction']['ts'] < test_start and r['first_hit_ts'] < test_start]
-        test = [r for r in rows if test_start <= r['prediction']['ts'] < test_end]
+        test = [r for r in rows if test_start <= r['prediction']['ts'] < test_end and r['first_hit_ts'] < test_end]
         if min(map(len, (train, cal, test))) < 20:
             raise ValueError('清除跨界标签后，每轮训练 / 校准 / 验证至少需要 20 条样本')
         folds.append((train, cal, test))
@@ -151,24 +180,29 @@ def regime_probabilities(rows, logits, profiles, calibrations):
     return prob, eligible
 
 
-def fit_fold(train, cal, test):
+def fit_fold(train, cal, test, include_gbt=False):
     arrays = lambda rs: (np.array([vector(r['prediction']['features']) for r in rs]), np.array([target(r) for r in rs]))
     xt, yt = arrays(train); xc, yc = arrays(cal); xv, _ = arrays(test)
     weights = fit(xt, yt)
     profiles = distribution_profile(train)
     fitted = {}
-    for name, cal_logits, test_logits in (
+    models = [
         ('score', np.array([score_logits(r['prediction']['features']) for r in cal]), np.array([score_logits(r['prediction']['features']) for r in test])),
-        ('logistic', xc @ weights.T, xv @ weights.T)):
+        ('logistic', xc @ weights.T, xv @ weights.T)]
+    if include_gbt:
+        trees = fit_trees(xt, yt)
+        models.append(('gbt', tree_logits(xc,trees), tree_logits(xv,trees)))
+    for name, cal_logits, test_logits in models:
         calibrations = fit_regimes(cal, cal_logits, yc, profiles)
         probs, eligible = regime_probabilities(test, test_logits, profiles, calibrations)
         fitted[name] = dict(temperature=calibrate(cal_logits, yc), calibrations=calibrations,
                             probs=probs, eligible=eligible, metrics=metrics(test, probs, eligible))
+    if include_gbt: fitted['gbt']['trees'] = trees
     return weights, profiles, fitted
 
 
 def run(args):
-    with sqlite3.connect(f'file:{Path(args.db).resolve()}?mode=ro', uri=True) as db:
+    with contextlib.closing(sqlite3.connect(f'file:{Path(args.db).resolve()}?mode=ro', uri=True)) as db:
         records = [json.loads(row[0]) for row in db.execute("SELECT payload FROM records WHERE kind='outcome' ORDER BY ts,id")]
     records = [r for r in records if r['source'] == args.source and r['payload']['learning_eligible']]
     if not records: raise ValueError('没有匹配来源的有效自动 Outcome')
@@ -176,14 +210,18 @@ def run(args):
     latest = max(rows, key=lambda o: o['prediction']['ts'])['prediction']
     definition = lambda p: (p['config_version'], p['horizon'], p['target'], p['stop'])
     rows = sorted({o['prediction']['prediction_id']: o for o in rows if definition(o['prediction']) == definition(latest)}.values(), key=lambda r: r['prediction']['ts'])
+    if any(o['prediction']['features'].get('feature_schema_version', 'micro-v1') != 'micro-v1' for o in rows):
+        raise ValueError('训练数据包含不兼容的特征 schema')
+    for outcome in rows: target(outcome)
     if any(not np.isfinite(vector(o['prediction']['features'])).all() for o in rows):
         raise ValueError('特征必须为有限数值')
     if any(o['first_hit_ts'] < o['prediction']['ts'] for o in rows):
         raise ValueError('结果时间不能早于预测时间')
-    windows = []; all_test = []; predictions = {'score': [], 'logistic': []}; eligibility = {'score': [], 'logistic': []}
+    names = ['score','logistic'] + (['gbt'] if args.model=='gbt' else [])
+    windows = []; all_test = []; predictions = {n: [] for n in names}; eligibility = {n: [] for n in names}
     window = lambda rs: {'start': min(r['prediction']['ts'] for r in rs), 'end': max(r['first_hit_ts'] for r in rs), 'samples': len(rs)}
     for number, (train, cal, test) in enumerate(walk_forward(rows), 1):
-        weights, profiles, fitted = fit_fold(train, cal, test)
+        weights, profiles, fitted = fit_fold(train, cal, test, include_gbt=True) if args.model=='gbt' else fit_fold(train,cal,test)
         all_test.extend(test)
         for name in predictions:
             predictions[name].extend(fitted[name]['probs']); eligibility[name].extend(fitted[name]['eligible'])
@@ -209,15 +247,16 @@ def run(args):
               'regime_calibration': bool(regime_reports) and all(r['samples'] >= 20 and r['ece'] <= .12 for r in regime_reports.values()),
               'training_distribution': all(s in profiles and profiles[s]['samples'] >= 20 for s in symbols),
               'tail': chosen['tail_loss_p05'] >= -latest['stop']*3,
-              'baseline_comparison': args.model == 'score' or all(w['logistic']['ece'] <= w['score']['ece'] and w['logistic']['observed_net_edge'] >= w['score']['observed_net_edge'] for w in windows)}
+              'baseline_comparison': args.model == 'score' or all(w['ece'] <= w['score']['ece'] and w['observed_net_edge'] >= w['score']['observed_net_edge'] and (args.model!='gbt' or (w['ece']<=w['logistic']['ece'] and w['observed_net_edge']>=w['logistic']['observed_net_edge'])) for w in windows)}
     stamp = str(latest['ts'])
-    artifact = {'model_version': f'{args.model}-{args.source}-{stamp}', 'model_type': 'logistic-regression' if args.model == 'logistic' else 'deterministic-score',
+    artifact = {'model_version': f'{args.model}-{args.source}-{stamp}', 'model_type': {'score':'deterministic-score','logistic':'logistic-regression','gbt':'gradient-boosted-trees'}[args.model],
                 'feature_schema_version': 'micro-v1', 'label_version': 'first-hit-v1', 'calibration_version': f'regime-temperature-{stamp}',
                 'artifact_hash': 'computed-by-engine-on-load', 'training_window': json.dumps(window(train)), 'validation_window': json.dumps(window(test)),
                 'source': args.source, 'temperature': final['temperature'], 'weights': weights.tolist() if args.model == 'logistic' else None,
                 'validated': all(checks.values()), 'horizon': latest['horizon'], 'target': latest['target'], 'stop': latest['stop'],
-                'cost_bps': (latest['qualification']['costs']['total'] - latest['qualification']['costs']['spread'])*10000,
+                'cost_bps': latest.get('cost_assumptions_bps') if latest.get('cost_assumptions_bps') is not None else (latest['qualification']['costs']['total'] - latest['qualification']['costs']['spread'])*10000,
                 'distributions': profiles, 'regime_calibrations': final['calibrations']}
+    if args.model=='gbt': artifact['trees']=final['trees']
     out = Path(args.output); out.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(artifact, indent=2, allow_nan=False).encode(); (out/'challenger.json').write_bytes(encoded)
     report = {'status': 'PAPER_RESEARCH_GATE_PASS' if all(checks.values()) else 'REJECTED', 'source': args.source,
@@ -236,6 +275,6 @@ def run(args):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--db',required=True);parser.add_argument('--source',choices=['live','demo'],required=True)
-    parser.add_argument('--model',choices=['score','logistic'],default='score');parser.add_argument('--output',default='data/research')
+    parser.add_argument('--model',choices=['score','logistic','gbt'],default='score');parser.add_argument('--output',default='data/research')
     try: run(parser.parse_args())
     except (ValueError,KeyError) as e: parser.exit(2,f'Research rejected: {e}\n')

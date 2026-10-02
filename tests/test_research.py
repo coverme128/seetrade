@@ -35,8 +35,11 @@ def synthetic_rows(count=800):
 class ResearchTests(unittest.TestCase):
     def test_walk_forward_refits_with_purged_boundaries_and_disjoint_tests(self):
         folds = train.walk_forward(synthetic_rows())
-        seen = set(); sizes = []
+        seen = set(); sizes = []; previous_end = None
         for training, cal, test in folds:
+            if previous_end is not None:
+                self.assertLess(previous_end, min(r['prediction']['ts'] for r in test))
+            previous_end = max(r['first_hit_ts'] for r in test)
             sizes.append(len(training))
             self.assertLess(max(r['first_hit_ts'] for r in training), min(r['prediction']['ts'] for r in cal))
             self.assertLess(max(r['first_hit_ts'] for r in cal), min(r['prediction']['ts'] for r in test))
@@ -83,6 +86,11 @@ class ResearchTests(unittest.TestCase):
         self.assertLess(max(r['first_hit_ts'] for r in a),min(r['prediction']['ts'] for r in b))
         self.assertLess(max(r['first_hit_ts'] for r in b),min(r['prediction']['ts'] for r in c))
         self.assertLess(len(a)+len(b)+len(c),len(rows))
+
+    def test_invalidated_and_unknown_results_cannot_become_timeout_labels(self):
+        for kind in ('SIGNAL_INVALIDATED', 'DATA_INVALIDATED', 'INVALIDATED', 'BROKEN'):
+            with self.assertRaisesRegex(ValueError, '不能进入训练'):
+                train.target({'prediction': {'direction': 'LONG'}, 'outcome_type': kind})
 
     def test_logistic_fit_learns_without_changing_input_data(self):
         np=train.np;rng=np.random.default_rng(7);x=np.column_stack([np.ones(600),rng.normal(size=(600,9))]);before=x.copy()
@@ -139,7 +147,39 @@ class ResearchTests(unittest.TestCase):
             self.assertIn('regime_calibrations', artifact)
             self.assertEqual(artifact['source'],'demo');self.assertEqual(len(artifact['weights']),3)
             self.assertEqual(len(report['chronological_test_windows']),3);self.assertIn(report['status'],['REJECTED','PAPER_RESEARCH_GATE_PASS'])
+            args.model='gbt'
+            with contextlib.redirect_stdout(io.StringIO()): train.run(args)
+            tree_artifact=json.loads((root/'model/challenger.json').read_text())
+            self.assertEqual(tree_artifact['model_type'],'gradient-boosted-trees')
+            self.assertTrue(tree_artifact['trees']);self.assertIsNone(tree_artifact['weights'])
             args.source='live'
             with self.assertRaisesRegex(ValueError,'没有匹配来源'):train.run(args)
+
+
+class ExtendedResearchTests(unittest.TestCase):
+    def test_boosting_training_is_deterministic_and_uses_training_only(self):
+        training,cal,test=train.walk_forward(synthetic_rows())[0]
+        x=train.np.array([train.vector(r['prediction']['features']) for r in training])
+        y=train.np.array([train.target(r) for r in training])
+        trees=train.fit_trees(x,y,rounds=5)
+        self.assertEqual(trees,train.fit_trees(x,y,rounds=5))
+        self.assertTrue(trees)
+        probabilities=train.softmax(train.tree_logits(x,trees))
+        self.assertTrue(train.np.allclose(probabilities.sum(axis=1),1))
+        self.assertTrue(all(1<=t['feature']<10 for t in trees))
+        # The executable artifact format has no references to labels or future windows.
+        self.assertEqual(set(trees[0]),{'feature','threshold','left','right'})
+
+    def test_quality_audit_identifies_gap_stale_and_censored_forecast(self):
+        quality=module('quality',ROOT/'research/quality.py')
+        def event(kind,seq,ts=1000,**extra):
+            return dict(type='event',event=dict(event_type=kind,exchange='binance',symbol='BTCUSDT',receive_ts=ts,exchange_ts=1000,sequence_id=seq,**extra))
+        rows=[event('snapshot',10),event('delta',11,first=10,previous=10),event('delta',13,first=13,previous=12),event('trade',14,ts=10000),dict(kind='prediction',payload=dict(prediction_id='pending',ts=1000,horizon=60))]
+        with tempfile.TemporaryDirectory() as d:
+            file=Path(d)/'events.jsonl';file.write_text('\n'.join(json.dumps(r) for r in rows))
+            report=quality.audit(file)
+            self.assertEqual(report['status'],'REVIEW_REQUIRED')
+            self.assertEqual(report['streams']['binance:BTCUSDT:book']['gaps'],1)
+            self.assertEqual(report['unresolved_predictions'],1)
 
 if __name__=='__main__':unittest.main()
