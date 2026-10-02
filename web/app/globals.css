@@ -1883,3 +1883,40 @@ tbody tr:hover {
     scroll-behavior: auto !important;
   }
 }
+
+.shadow-panel {
+  margin-top: 20px;
+}
+.shadow-panel form,
+.shadow-panel .advanced-settings {
+  padding: 0 22px 18px;
+}
+.shadow-panel textarea {
+  width: 100%;
+  padding: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: monospace;
+  resize: vertical;
+}
+.shadow-panel .table-scroll {
+  overflow-x: auto;
+  padding: 12px 22px;
+}
+.shadow-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.shadow-panel th,
+.shadow-panel td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.shadow-panel .detail-grid b {
+  overflow-wrap: anywhere;
+}

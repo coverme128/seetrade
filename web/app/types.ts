@@ -33,6 +33,13 @@ export type Config = {
   position_deadband: number;
   incremental_ev: number;
   kill_behavior: string;
+  signal_enter: number;
+  signal_exit: number;
+  signal_confirm_ms: number;
+  result_hold_ms: number;
+  max_opposite_rate: number;
+  max_mae_stop_multiple: number;
+  high_trust_samples: number;
 };
 export type Features = {
   mid: number;
@@ -173,6 +180,11 @@ export type Health = {
   strong_opposite_rate: number;
   mae_p95: number;
   regime_drift: boolean;
+  regime: string;
+  regime_samples: number;
+  regime_calibration_error: number | null;
+  distribution_score: number | null;
+  distribution_status: string;
   retrain_recommended: boolean;
   reasons: string[];
   bins: { lower: number; count: number; predicted: number; actual: number }[];
@@ -194,12 +206,61 @@ export type SymbolState = {
   >;
   features: Features | null;
   active: Prediction | null;
+  lifecycle: string;
+  lifecycle_since: number;
+  signal_direction: string;
+  last_result: Outcome | null;
   qualification: Qualification | null;
   plan: Plan | null;
   health: Health;
   chart: [number, number][];
 };
+export type ShadowMetrics = {
+  samples: number;
+  selected: number;
+  coverage: number;
+  ece: number;
+  brier: number;
+  expected_net_edge: number;
+  observed_net_edge: number;
+  drawdown: number;
+  tail_p05: number;
+  strong_opposite_rate: number;
+};
+export type ShadowRun = {
+  run_id: string;
+  status: string;
+  started_at: number;
+  config_version: number;
+  champion_version: string;
+  candidate_version: string;
+  candidate_hash: string;
+  policy: Record<string, number>;
+  offline_status: string;
+  operational_checks: Record<string, boolean>;
+  promotion_ready: boolean;
+  comparison: {
+    ready: boolean;
+    checks: Record<string, boolean>;
+    champion: ShadowMetrics;
+    candidate: ShadowMetrics;
+    champion_economics_comparable: boolean;
+    symbols: Record<string, number>;
+    invalid_rate: number;
+    pending: number;
+    retained: number;
+    windows: {
+      window: number;
+      champion: ShadowMetrics;
+      candidate: ShadowMetrics;
+    }[];
+    regimes: Record<string, ShadowMetrics>;
+  };
+};
 export type State = {
+  shadow: ShadowRun | null;
+  rollback_available: boolean;
+  shadow_policy_defaults: Record<string, number>;
   source: string;
   mode: string;
   now: number;

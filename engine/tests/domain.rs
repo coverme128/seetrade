@@ -574,6 +574,12 @@ fn paper_mode_executes_only_new_qualified_prediction_and_records_chain() {
     );
     assert_eq!(p.executions.len(), 1);
     assert!(p.cost_basis <= e.config.max_position_notional);
+    for state in ["QUALIFIED", "TRADE_READY", "TRACKING"] {
+        assert!(e
+            .records
+            .iter()
+            .any(|r| r["kind"] == "prediction_state" && r["payload"]["to"] == state));
+    }
     for kind in ["prediction", "qualification", "plan", "execution"] {
         assert!(e.records.iter().any(|r| r["kind"] == kind));
     }
@@ -629,4 +635,239 @@ async fn durable_checkpoint_restores_risk_and_annotations_without_rewriting_grou
     assert!(!restored.symbols["BTCUSDT"].venues["binance"].book.valid);
     drop(store);
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn neutral_signal_and_hysteresis_prevent_arbitrary_direction() {
+    use micro_alpha_engine::core::signal_direction;
+    let c = Config::default();
+    assert_eq!(signal_direction(0., "FLAT", &c), "FLAT");
+    assert_eq!(signal_direction(0.25, "FLAT", &c), "FLAT");
+    assert_eq!(signal_direction(0.25, "LONG", &c), "LONG");
+    assert_eq!(signal_direction(0.1, "LONG", &c), "FLAT");
+    assert_eq!(signal_direction(-0.25, "SHORT", &c), "SHORT");
+    assert_eq!(signal_direction(-0.4, "LONG", &c), "SHORT");
+    let mut e = Engine::new(true);
+    for i in 0..10 {
+        let ts = 1_000_000 + i * 1000;
+        for x in snapshot(ts, 100_000.) {
+            e.ingest(x);
+        }
+        tick(&mut e, ts);
+    }
+    let s = &e.symbols["BTCUSDT"];
+    assert_eq!(s.candidate_direction, "FLAT");
+    assert_eq!(s.lifecycle, "NO_SIGNAL");
+    assert!(s.active.is_none());
+    assert!(e.outcomes.is_empty());
+}
+
+#[test]
+fn completed_prediction_stays_on_original_card_during_cooldown() {
+    let mut e = warm();
+    let p = e.symbols["BTCUSDT"].active.clone().unwrap();
+    let ts = e.now + 100;
+    let price = p.start_price * (1. + p.sign() * p.target * 1.1);
+    for x in snapshot(ts, price) {
+        e.ingest(x);
+    }
+    assert_eq!(e.symbols["BTCUSDT"].lifecycle, "COMPLETED");
+    for i in 0..4 {
+        let now = ts + i * 1000;
+        let mut xs = snapshot(now, price);
+        if let EventData::Snapshot { bids, .. } = &mut xs[0].data {
+            bids[0][1] = 300.;
+        }
+        for x in xs {
+            e.ingest(x);
+        }
+        tick(&mut e, now);
+        let s = &e.symbols["BTCUSDT"];
+        assert!(s.active.is_none());
+        assert!(s.plan.is_none());
+        assert_eq!(s.lifecycle, "COMPLETED");
+        let last = s.last_result.as_ref().unwrap();
+        assert_eq!(last.prediction.prediction_id, p.prediction_id);
+        assert_eq!(last.prediction.raw_probabilities, p.raw_probabilities);
+        assert_eq!(last.outcome_type, "TARGET_HIT");
+    }
+    let states: Vec<_> = e
+        .records
+        .iter()
+        .filter(|r| r["kind"] == "prediction_state" && r["payload"]["symbol"] == "BTCUSDT")
+        .filter_map(|r| r["payload"]["to"].as_str())
+        .collect();
+    for state in ["WATCH", "EMERGING", "TRACKING", "COMPLETED"] {
+        assert!(states.contains(&state));
+    }
+    let view = e.view();
+    assert_eq!(
+        view["symbols"]["BTCUSDT"]["last_result"]["prediction"]["prediction_id"],
+        p.prediction_id
+    );
+}
+
+#[test]
+fn checkpoint_without_new_fields_restores_and_restarts_safely() {
+    let mut original = warm();
+    original.daily_pnl = -17.;
+    let mut value = serde_json::to_value(original).unwrap();
+    for key in [
+        "signal_enter",
+        "signal_exit",
+        "signal_confirm_ms",
+        "result_hold_ms",
+        "max_opposite_rate",
+        "max_mae_stop_multiple",
+        "high_trust_samples",
+    ] {
+        value["config"].as_object_mut().unwrap().remove(key);
+    }
+    for key in ["distributions", "regime_calibrations"] {
+        value["model"].as_object_mut().unwrap().remove(key);
+    }
+    for symbol in value["symbols"].as_object_mut().unwrap().values_mut() {
+        for key in [
+            "lifecycle",
+            "lifecycle_since",
+            "last_result",
+            "completed_at",
+        ] {
+            symbol.as_object_mut().unwrap().remove(key);
+        }
+        for key in [
+            "regime",
+            "regime_samples",
+            "regime_calibration_error",
+            "distribution_score",
+            "distribution_status",
+        ] {
+            symbol["health"].as_object_mut().unwrap().remove(key);
+        }
+    }
+    let mut e: Engine = serde_json::from_value(value).unwrap();
+    e.restart();
+    assert_eq!(e.daily_pnl, -17.);
+    assert_eq!(e.mode, "OBSERVE");
+    assert_eq!(e.config.signal_enter, 0.35);
+    assert_eq!(
+        e.symbols["BTCUSDT"]
+            .last_result
+            .as_ref()
+            .unwrap()
+            .outcome_type,
+        "INVALIDATED"
+    );
+    assert!(e.symbols["BTCUSDT"].active.is_none());
+}
+
+#[test]
+fn training_distribution_and_sparse_regime_block_trade_qualification() {
+    use micro_alpha_engine::model::{Distribution, RegimeCalibration};
+    let mut e = warm();
+    let f = e.symbols["BTCUSDT"].features.clone().unwrap();
+    e.model.source = "live".into();
+    let d = Distribution {
+        mean: Model::vector(&f),
+        scale: vec![0.1; 10],
+        max_z: 6.,
+        volatility_boundary: f.volatility + 0.001,
+        spread_boundary: f.spread_bps + 2.,
+        samples: 100,
+    };
+    e.model.distributions.insert("BTCUSDT".into(), d.clone());
+    e.model.distributions.insert("ETHUSDT".into(), d);
+    e.model.regime_calibrations.insert(
+        "BTCUSDT:NORMAL".into(),
+        RegimeCalibration {
+            temperature: 2.,
+            samples: 50,
+        },
+    );
+    assert!(e.model.validate(false).is_ok());
+    assert_eq!(e.model.distribution_score(&f), Some(0.));
+    assert!(e.model.probabilities(&f, &e.config).1.is_some());
+    let mut unusual = f.clone();
+    unusual.momentum += 0.1;
+    let h = e.model.health(&[], &[], &e.config, &unusual);
+    assert_eq!(h.distribution_status, "OUT_OF_DISTRIBUTION");
+    assert!(h.regime_drift);
+    let (q, plan) = e.qualify(&strong_prediction(&e), &unusual, &h);
+    assert!(q.reasons.iter().any(|s| s == "regime"));
+    assert!(plan.is_none());
+    unusual = f.clone();
+    unusual.volatility += 0.002;
+    assert_eq!(e.model.regime(&unusual), "BTCUSDT:HIGH_VOL");
+    assert!(e.model.probabilities(&unusual, &e.config).1.is_none());
+    assert_eq!(e.model.health(&[], &[], &e.config, &unusual).trust, "LOW");
+    e.model.distributions.get_mut("BTCUSDT").unwrap().scale[1] = 0.;
+    assert!(e.model.validate(false).is_err());
+    e.model.distributions.clear();
+    assert!(e.model.validate(false).is_err());
+    assert_eq!(
+        e.model.health(&[], &[], &e.config, &f).distribution_status,
+        "UNAVAILABLE"
+    );
+    assert!(
+        e.model.probabilities(&f, &e.config).1.is_none(),
+        "missing profile must not reuse old calibration"
+    );
+}
+
+#[test]
+fn healthy_aggregate_cannot_hide_deterioration_in_current_regime() {
+    use micro_alpha_engine::model::{Distribution, RegimeCalibration};
+    let e = warm();
+    let f = e.symbols["BTCUSDT"].features.clone().unwrap();
+    let mut m = e.model.clone();
+    m.source = "live".into();
+    m.distributions.insert(
+        "BTCUSDT".into(),
+        Distribution {
+            mean: Model::vector(&f),
+            scale: vec![1.; 10],
+            max_z: 6.,
+            volatility_boundary: f.volatility + 0.0001,
+            spread_boundary: f.spread_bps + 2.,
+            samples: 100,
+        },
+    );
+    m.regime_calibrations.insert(
+        "BTCUSDT:NORMAL".into(),
+        RegimeCalibration {
+            temperature: 1.,
+            samples: 50,
+        },
+    );
+    let rows: Vec<_> = (0..100)
+        .map(|i| {
+            let mut p = strong_prediction(&e);
+            p.features = f.clone();
+            p.qualification.net_edge = 0.001;
+            if i >= 30 {
+                p.features.volatility += 0.0002;
+            }
+            // Current regime hits 60%, other regime 80%, against predicted 80%.
+            let win = if i < 30 { i < 18 } else { i < 86 };
+            Outcome {
+                prediction: p,
+                outcome_type: if win { "TARGET_HIT" } else { "STOP_HIT" }.into(),
+                first_hit_ts: e.now,
+                final_move: 0.,
+                mfe: 0.,
+                mae: 0.0001,
+                prediction_error: String::new(),
+                brier: 0.1,
+                observed_net_edge: 0.001,
+                learning_eligible: true,
+                annotation: None,
+            }
+        })
+        .collect();
+    let h = m.health(&rows, &[], &e.config, &f);
+    assert!(h.calibration_error < e.config.calibration_warning);
+    assert_eq!(h.regime_samples, 30);
+    assert!((h.regime_calibration_error.unwrap() - 0.2).abs() < 1e-10);
+    assert_eq!(h.trust, "DEGRADED");
+    assert!(h.retrain_recommended);
 }

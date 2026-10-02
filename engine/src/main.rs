@@ -8,7 +8,6 @@ use axum::{
 use micro_alpha_engine::{
     core::Engine,
     feeds,
-    model::Model,
     storage::{Batch, Journal, Store},
     types::*,
 };
@@ -46,13 +45,23 @@ async fn main() -> Result<()> {
     if engine.now > 0 {
         engine.restart();
     }
-    if let Some(i) = args.iter().position(|a| a == "--model") {
-        let bytes = std::fs::read(args.get(i + 1).context("--model needs artifact file")?)?;
-        let mut model: Model = serde_json::from_slice(&bytes)?;
-        model.validate(demo).map_err(anyhow::Error::msg)?;
-        model.artifact_hash = format!("{:x}", Sha256::digest(&bytes));
-        engine.log("model_load", json!(&model));
-        engine.model = model;
+    if args.iter().any(|a| a == "--model") {
+        anyhow::bail!("直接 --model 替换已停用；请用 --challenger <模型> --report <报告> 开始影子验证，在界面通过检查后晋升。已有 checkpoint 模型仍可恢复。");
+    }
+    if let Some(i) = args.iter().position(|a| a == "--challenger") {
+        let j = args
+            .iter()
+            .position(|a| a == "--report")
+            .context("--challenger requires --report")?;
+        let artifact =
+            std::fs::read_to_string(args.get(i + 1).context("--challenger needs file")?)?;
+        let report: Value = serde_json::from_slice(&std::fs::read(
+            args.get(j + 1).context("--report needs file")?,
+        )?)?;
+        engine.now = engine.now.max(feeds::now_ms());
+        engine
+            .command("shadow_start", json!({"artifact":artifact,"report":report}))
+            .map_err(anyhow::Error::msg)?;
     }
     let initial = serde_json::to_string(&engine)?;
     store
@@ -138,7 +147,7 @@ async fn main() -> Result<()> {
         .route("/api/health", get(health))
         .route("/api/history", get(history))
         .route("/api/control/{command}", post(control))
-        .layer(DefaultBodyLimit::max(32 * 1024))
+        .layer(DefaultBodyLimit::max(256 * 1024))
         .with_state(app.clone());
     tracing::info!("Micro Alpha running at 127.0.0.1:8787 · source={source} · mode=OBSERVE");
     axum::serve(listener, router)

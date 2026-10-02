@@ -37,6 +37,13 @@ pub struct Config {
     pub position_deadband: f64,
     pub incremental_ev: f64,
     pub kill_behavior: String,
+    pub signal_enter: f64,
+    pub signal_exit: f64,
+    pub signal_confirm_ms: u64,
+    pub result_hold_ms: u64,
+    pub max_opposite_rate: f64,
+    pub max_mae_stop_multiple: f64,
+    pub high_trust_samples: usize,
 }
 impl Default for Config {
     fn default() -> Self {
@@ -75,6 +82,13 @@ impl Default for Config {
             position_deadband: 0.15,
             incremental_ev: 0.0003,
             kill_behavior: "hold".into(),
+            signal_enter: 0.35,
+            signal_exit: 0.15,
+            signal_confirm_ms: 2000,
+            result_hold_ms: 5000,
+            max_opposite_rate: 0.2,
+            max_mae_stop_multiple: 3.,
+            high_trust_samples: 100,
         }
     }
 }
@@ -130,6 +144,13 @@ impl Config {
             || self.position_deadband > 0.8
             || self.rebalance_interval_secs < 5
             || self.max_rebalances > 10
+            || self.signal_enter <= self.signal_exit
+            || self.signal_enter > 3.
+            || !(1000..=30_000).contains(&self.signal_confirm_ms)
+            || !(1000..=60_000).contains(&self.result_hold_ms)
+            || self.max_opposite_rate > 0.5
+            || !(1.0..=10.0).contains(&self.max_mae_stop_multiple)
+            || !(self.min_samples..=1000).contains(&self.high_trust_samples)
             || !["hold", "flatten"].contains(&self.kill_behavior.as_str())
         {
             return Err("配置超出个人版风险边界，请检查资金、杠杆、期限与阈值".into());
@@ -374,4 +395,14 @@ pub struct ModelHealth {
     pub retrain_recommended: bool,
     pub reasons: Vec<String>,
     pub bins: Vec<CalibrationBin>,
+    #[serde(default)]
+    pub regime: String,
+    #[serde(default)]
+    pub regime_samples: usize,
+    #[serde(default)]
+    pub regime_calibration_error: Option<f64>,
+    #[serde(default)]
+    pub distribution_score: Option<f64>,
+    #[serde(default)]
+    pub distribution_status: String,
 }

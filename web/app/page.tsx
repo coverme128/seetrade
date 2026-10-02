@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { ShadowPanel } from "./shadow-panel";
 import type {
   Config,
   Health,
@@ -240,6 +241,9 @@ export default function Home() {
     [historyRows, setHistoryRows] = useState<Outcome[] | null>(null);
   const [draft, setDraft] = useState<Config | null>(null),
     [gatesExpanded, setGatesExpanded] = useState(false);
+  useEffect(() => {
+    if (tab === "settings" && state && !draft) setDraft({ ...state.config });
+  }, [tab, state, draft]);
   const refresh = useCallback(async () => {
     try {
       const r = await fetch("/api/state", {
@@ -348,7 +352,9 @@ export default function Home() {
     plan = s?.plan,
     f = s?.features,
     h = s?.health;
-  const probs = p?.calibrated_probabilities || p?.raw_probabilities;
+  const card = p || s?.last_result?.prediction;
+  const result = !p ? s?.last_result : null;
+  const probs = card?.calibrated_probabilities || card?.raw_probabilities;
   const position = state?.positions[symbol];
   const isDemo = state?.source === "demo";
   const displayedOutcomes = (historyRows || state?.outcomes || []).filter(
@@ -726,30 +732,33 @@ export default function Home() {
                         </div>
                         <span className="caption">CORE VIEW</span>
                       </div>
-                      {p && probs ? (
+                      {card && probs ? (
                         <>
                           <div className="direction-row">
                             <div
-                              className={`direction ${p.direction === "LONG" ? "positive" : "negative"}`}
+                              className={`direction ${card.direction === "LONG" ? "positive" : "negative"}`}
                             >
                               <Icon name="arrow" size={31} />
-                              {p.direction}
+                              {card.direction}
                               <span>
-                                {p.direction === "LONG" ? "看多" : "看空"}
+                                {card.direction === "LONG" ? "看多" : "看空"}
                               </span>
                             </div>
-                            <Badge tone="muted">跟踪中</Badge>
+                            <Badge tone="muted">
+                              {result ? "已完成 · 上次判断" : "跟踪中"}
+                            </Badge>
                           </div>
                           <div className="prediction-sentence">
-                            未来 <b className="mono">{p.horizon}s</b> 内<br />
+                            {result ? "原预测" : "未来"}{" "}
+                            <b className="mono">{card.horizon}s</b> 内<br />
                             <strong>
-                              {p.direction === "LONG" ? "+" : "−"}
-                              {pct(p.target)}
+                              {card.direction === "LONG" ? "+" : "−"}
+                              {pct(card.target)}
                             </strong>{" "}
                             <span>先于</span>{" "}
                             <b>
-                              {p.direction === "LONG" ? "−" : "+"}
-                              {pct(p.stop)}
+                              {card.direction === "LONG" ? "−" : "+"}
+                              {pct(card.stop)}
                             </b>
                           </div>
                           <div className="probability-bar">
@@ -783,20 +792,70 @@ export default function Home() {
                           <div className="prediction-footer">
                             <span className="status-dot" />
                             <span>
-                              {p.calibrated_probabilities
+                              {card.calibrated_probabilities
                                 ? isDemo
                                   ? "演示校准 · 非真实验证"
                                   : "冻结模型 · 已校准"
                                 : "原始概率 · 尚未校准"}
                             </span>
-                            <span className="mono">
-                              {state.model.model_version}
-                            </span>
+                            <span className="mono">{card.model_version}</span>
                           </div>
+                          {result && (
+                            <div
+                              className="key-values padded"
+                              data-testid="prediction-result"
+                            >
+                              <div>
+                                <span>自动结果</span>
+                                <b>
+                                  {outcomes[result.outcome_type] ||
+                                    result.outcome_type}
+                                </b>
+                              </div>
+                              <div>
+                                <span>实际方向收益 / 原目标</span>
+                                <b>
+                                  {pct(result.final_move)} / {pct(card.target)}
+                                </b>
+                              </div>
+                              <div>
+                                <span>MFE / MAE</span>
+                                <b>
+                                  {pct(result.mfe)} / {pct(result.mae)}
+                                </b>
+                              </div>
+                              <div>
+                                <span>学习资格</span>
+                                <b>
+                                  {result.learning_eligible
+                                    ? "纳入自动样本"
+                                    : "数据失效 · 排除"}
+                                </b>
+                              </div>
+                              <button
+                                type="button"
+                                className="text-button"
+                                onClick={() => setSelected(result)}
+                              >
+                                查看结果详情
+                              </button>
+                            </div>
+                          )}
                         </>
                       ) : (
-                        <Empty>等待连续行情与稳定方向，随后创建正式预测</Empty>
+                        <Empty>
+                          {s.signal_direction === "FLAT"
+                            ? "FLAT · 中性观察，等待信号离开中性区间"
+                            : "等待方向持续稳定，随后创建正式预测"}
+                        </Empty>
                       )}
+                      <p
+                        className="panel-note"
+                        data-testid="prediction-lifecycle"
+                      >
+                        当前状态 {s.lifecycle} · 候选方向 {s.signal_direction}
+                        。结果保留至下一次正式预测，原始判断不会重写。
+                      </p>
                     </section>
                     <section className="panel qualification">
                       <div className="panel-heading">
@@ -1258,7 +1317,33 @@ export default function Home() {
                           <b
                             className={h.regime_drift ? "warning" : "positive"}
                           >
-                            {h.regime_drift ? "偏离" : "未触发"}
+                            {{
+                              UNAVAILABLE: "缺少训练分布",
+                              SYNTHETIC_ONLY: "仅合成演示",
+                              IN_DISTRIBUTION: "训练分布内",
+                              OUT_OF_DISTRIBUTION: "超出训练分布",
+                            }[h.distribution_status] || "待评估"}
+                          </b>
+                        </div>
+                        <div>
+                          <span>当前市场状态</span>
+                          <b>{h.regime}</b>
+                        </div>
+                        <div>
+                          <span>状态内样本 / ECE</span>
+                          <b>
+                            {h.regime_samples} /{" "}
+                            {h.regime_calibration_error === null
+                              ? "—"
+                              : pct(h.regime_calibration_error)}
+                          </b>
+                        </div>
+                        <div>
+                          <span>最大标准化偏差</span>
+                          <b>
+                            {h.distribution_score === null
+                              ? "—"
+                              : money(h.distribution_score, 2)}
                           </b>
                         </div>
                         <div>
@@ -1281,20 +1366,28 @@ export default function Home() {
                       <Badge tone="muted">冻结参数</Badge>
                     </div>
                     <div className="detail-grid">
-                      {Object.entries(state.model).map(([k, v]) => (
-                        <div key={k}>
-                          <span>{k}</span>
-                          <b className="mono">{String(v)}</b>
-                        </div>
-                      ))}
+                      {Object.entries(state.model)
+                        .filter(([, v]) => v !== null && typeof v !== "object")
+                        .map(([k, v]) => (
+                          <div key={k}>
+                            <span>{k}</span>
+                            <b className="mono">{String(v)}</b>
+                          </div>
+                        ))}
                     </div>
                     <p className="panel-note">
-                      研究工具可生成 Challenger
-                      报告；模型需由用户明确选择后，通过核心启动参数加载。演示模型仅可加载至
-                      DEMO 数据空间。
+                      参数保持冻结。候选模型须先通过离线报告与影子验证，再由用户在下方晋升。
+                      演示模型只能用于 DEMO 数据空间。
                     </p>
                   </section>
                 </>
+              )}
+              {tab === "health" && (
+                <ShadowPanel
+                  state={state}
+                  disabled={!connected || busy}
+                  command={command}
+                />
               )}
               {tab === "settings" && draft && (
                 <form
@@ -1423,6 +1516,13 @@ export default function Home() {
                             "rebalance_interval_secs",
                             "position_deadband",
                             "incremental_ev",
+                            "signal_enter",
+                            "signal_exit",
+                            "signal_confirm_ms",
+                            "result_hold_ms",
+                            "max_opposite_rate",
+                            "max_mae_stop_multiple",
+                            "high_trust_samples",
                           ] as (keyof Config)[]
                         ).map((key) => (
                           <label className="field" key={key}>
@@ -1446,7 +1546,9 @@ export default function Home() {
                       <p className="muted">
                         高级字段采用内部单位：比例使用小数，bps
                         为万分之一，时间字段按名称使用秒或毫秒。同一预测内暂不加仓，incremental_ev
-                        为保留参数。
+                        为保留参数。signal_enter / signal_exit
+                        为方向进入与退出评分阈值，前者须更大；signal_confirm_ms
+                        为方向确认时间，result_hold_ms 为结果最短保留时间。
                       </p>
                     </details>
                     <div className="settings-footer">

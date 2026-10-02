@@ -1,0 +1,74 @@
+{
+  "source": "live",
+  "mode": "OBSERVE",
+  "timestamp": 1790906794495,
+  "storage_healthy": true,
+  "model": "score-v1-unvalidated",
+  "config_version": 7,
+  "positions": 0,
+  "trades_in_recent_cache": 0,
+  "symbols": {
+    "BTCUSDT": {
+      "lifecycle": "TRACKING",
+      "signal_direction": "LONG",
+      "last_result_present": true,
+      "distribution_status": "UNAVAILABLE",
+      "trust": "LOW",
+      "venues": {
+        "binance": {
+          "age_ms": 40,
+          "connected": true,
+          "error": "",
+          "exchange_age_ms": 381,
+          "gaps": 0,
+          "mid": 84968.15,
+          "ready": true,
+          "reconnects": 18,
+          "sequence": 11713825730344
+        },
+        "okx": {
+          "age_ms": 0,
+          "connected": true,
+          "error": "",
+          "exchange_age_ms": 413,
+          "gaps": 0,
+          "mid": 84965.25,
+          "ready": true,
+          "reconnects": 0,
+          "sequence": 343415308059
+        }
+      }
+    },
+    "ETHUSDT": {
+      "lifecycle": "TRACKING",
+      "signal_direction": "SHORT",
+      "last_result_present": true,
+      "distribution_status": "UNAVAILABLE",
+      "trust": "LOW",
+      "venues": {
+        "binance": {
+          "age_ms": 16,
+          "connected": true,
+          "error": "",
+          "exchange_age_ms": 405,
+          "gaps": 0,
+          "mid": 2716.7349999999997,
+          "ready": true,
+          "reconnects": 15,
+          "sequence": 11713825732999
+        },
+        "okx": {
+          "age_ms": 0,
+          "connected": true,
+          "error": "",
+          "exchange_age_ms": 413,
+          "gaps": 0,
+          "mid": 2716.375,
+          "ready": true,
+          "reconnects": 0,
+          "sequence": 341304583351
+        }
+      }
+    }
+  }
+}

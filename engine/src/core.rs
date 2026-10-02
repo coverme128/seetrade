@@ -1,6 +1,7 @@
 use crate::{
     book::Book,
     model::{self, Model},
+    shadow::{ShadowPolicy, ShadowRun},
     types::*,
 };
 use serde::{Deserialize, Serialize};
@@ -31,6 +32,31 @@ pub struct SymbolState {
     pub health: ModelHealth,
     pub candidate_direction: String,
     pub candidate_since: u64,
+    #[serde(default = "no_signal")]
+    pub lifecycle: String,
+    #[serde(default)]
+    pub lifecycle_since: u64,
+    #[serde(default)]
+    pub last_result: Option<Outcome>,
+    #[serde(default)]
+    pub completed_at: u64,
+}
+fn no_signal() -> String {
+    "NO_SIGNAL".into()
+}
+
+pub fn signal_direction(score: f64, previous: &str, c: &Config) -> &'static str {
+    if score >= c.signal_enter {
+        "LONG"
+    } else if score <= -c.signal_enter {
+        "SHORT"
+    } else if previous == "LONG" && score > c.signal_exit {
+        "LONG"
+    } else if previous == "SHORT" && score < -c.signal_exit {
+        "SHORT"
+    } else {
+        "FLAT"
+    }
 }
 impl SymbolState {
     fn new(c: &Config) -> Self {
@@ -46,8 +72,12 @@ impl SymbolState {
             qualification: None,
             plan: None,
             health: model::health(&[], &[], c, false),
-            candidate_direction: String::new(),
+            candidate_direction: "FLAT".into(),
             candidate_since: 0,
+            lifecycle: no_signal(),
+            lifecycle_since: 0,
+            last_result: None,
+            completed_at: 0,
         }
     }
 }
@@ -58,6 +88,10 @@ pub struct Engine {
     pub config: Config,
     pub config_version: u64,
     pub model: Model,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shadow: Option<ShadowRun>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous_model: Option<Model>,
     pub now: u64,
     pub counter: u64,
     pub kill_switch: bool,
@@ -88,6 +122,8 @@ impl Engine {
             ]),
             equity_peak: config.equity,
             config,
+            shadow: None,
+            previous_model: None,
             now: 0,
             counter: 0,
             kill_switch: false,
@@ -105,7 +141,17 @@ impl Engine {
     pub fn log(&mut self, kind: &str, payload: Value) {
         let record = json!({"kind":kind,"ts":self.now,"source":self.source,"payload":payload});
         self.records.push(record.clone());
-        if !["prediction", "outcome", "features", "qualification", "plan"].contains(&kind) {
+        if ![
+            "prediction",
+            "outcome",
+            "features",
+            "qualification",
+            "plan",
+            "shadow_prediction",
+            "shadow_outcome",
+        ]
+        .contains(&kind)
+        {
             self.audit.push(record);
             if self.audit.len() > 100 {
                 self.audit.remove(0);
@@ -116,6 +162,18 @@ impl Engine {
         self.counter += 1;
         format!("{prefix}-{}-{}", self.now, self.counter)
     }
+    fn transition(&mut self, symbol: &str, state: &str, prediction_id: Option<&str>) {
+        let s = self.symbols.get_mut(symbol).unwrap();
+        if s.lifecycle == state {
+            return;
+        }
+        let previous = std::mem::replace(&mut s.lifecycle, state.into());
+        s.lifecycle_since = self.now;
+        self.log(
+            "prediction_state",
+            json!({"symbol":symbol,"from":previous,"to":state,"prediction_id":prediction_id}),
+        );
+    }
     pub fn restart(&mut self) {
         self.mode = "OBSERVE".into();
         for s in self.symbols.values_mut() {
@@ -125,6 +183,8 @@ impl Engine {
             }
             s.plan = None;
             s.qualification = None;
+            s.candidate_direction = "FLAT".into();
+            s.candidate_since = self.now;
         }
         for symbol in ["BTCUSDT", "ETHUSDT"] {
             self.invalidate(symbol, "process_restart");
@@ -136,6 +196,63 @@ impl Engine {
     }
     pub fn command(&mut self, command: &str, payload: Value) -> Result<(), String> {
         match command {
+            "shadow_start" => {
+                if self.shadow.as_ref().is_some_and(|s| s.status == "RUNNING") {
+                    return Err("请先停止当前影子验证，再载入新候选模型".into());
+                }
+                let artifact = payload["artifact"].as_str().ok_or("缺少模型文件内容")?;
+                let policy: ShadowPolicy = if payload.get("policy").is_some() {
+                    serde_json::from_value(payload["policy"].clone()).map_err(|e| e.to_string())?
+                } else {
+                    ShadowPolicy::default()
+                };
+                let mut run = ShadowRun::prepare(
+                    artifact,
+                    payload["report"].clone(),
+                    policy,
+                    &self.model,
+                    &self.config,
+                    self.now,
+                    self.config_version,
+                )?;
+                run.run_id = self.id("shadow");
+                self.shadow = Some(run);
+            }
+            "shadow_stop" => {
+                self.check_shadow_id(&payload)?;
+                self.pause_shadow("STOPPED");
+            }
+            "shadow_promote" => {
+                self.check_shadow_id(&payload)?;
+                let evidence = self.shadow_view().ok_or("没有影子验证")?;
+                if evidence["promotion_ready"] != true {
+                    return Err("晋升检查未全部通过，请查看样本、指标、当前行情与账户状态".into());
+                }
+                let candidate = self.shadow.as_ref().unwrap().candidate.clone();
+                self.pause_shadow("PROMOTED");
+                self.clear_predictions_for_model_change();
+                let previous = std::mem::replace(&mut self.model, candidate);
+                self.previous_model = Some(previous);
+                self.mode = "OBSERVE".into();
+                self.log("model_promotion", json!({"model":self.model.model_version,"hash":self.model.artifact_hash,"evidence":evidence,"mode":"OBSERVE"}));
+            }
+            "model_rollback" => {
+                if payload["current_hash"] != self.model.artifact_hash
+                    || self.previous_model.is_none()
+                {
+                    return Err("没有可回退模型或当前模型已变化".into());
+                }
+                if self.mode != "OBSERVE" || !self.positions.is_empty() || !self.storage_healthy {
+                    return Err("回退要求 OBSERVE、无持仓且存储健康".into());
+                }
+                self.pause_shadow("ROLLED_BACK");
+                self.clear_predictions_for_model_change();
+                self.model = self.previous_model.take().unwrap();
+                self.log(
+                    "model_rollback_result",
+                    json!({"model":self.model.model_version,"hash":self.model.artifact_hash}),
+                );
+            }
             "mode" => {
                 let m = payload["mode"].as_str().ok_or("缺少 mode")?;
                 if !["OBSERVE", "PAPER"].contains(&m) {
@@ -171,6 +288,13 @@ impl Engine {
                 {
                     return Err("已有交易后不能修改初始资金；请使用独立数据目录建立新账户".into());
                 }
+                if self
+                    .shadow
+                    .as_ref()
+                    .is_some_and(|run| run.status == "RUNNING")
+                {
+                    self.pause_shadow("PAUSED_CONFIG");
+                }
                 self.config = c;
                 self.config_version += 1;
                 for s in self.symbols.values_mut() {
@@ -199,6 +323,15 @@ impl Engine {
                     .find(|o| o.prediction.prediction_id == id)
                     .ok_or("结果不在当前会话缓存中")?;
                 o.annotation = Some(note.into());
+                for s in self.symbols.values_mut() {
+                    if let Some(last) = s
+                        .last_result
+                        .as_mut()
+                        .filter(|r| r.prediction.prediction_id == id)
+                    {
+                        last.annotation = Some(note.into());
+                    }
+                }
             }
             _ => return Err("未知操作".into()),
         }
@@ -548,7 +681,14 @@ impl Engine {
             !h.regime_drift
                 && f.cross_venue_bps
                     .is_some_and(|v| v.abs() <= c.max_cross_venue_bps),
-            "跨市场偏离与分布检查".into(),
+            format!(
+                "{} · {} · 最大偏差 {}",
+                h.regime,
+                h.distribution_status,
+                h.distribution_score
+                    .map(|z| format!("{z:.2}"))
+                    .unwrap_or_else(|| "无训练分布".into())
+            ),
         );
         gate(
             "freshness",
@@ -577,7 +717,7 @@ impl Engine {
         let qualified = reasons.is_empty();
         let qualification = Qualification {
             prediction_id: p.prediction_id.clone(),
-            gate_version: "gate-v1".into(),
+            gate_version: "gate-v2".into(),
             status: if qualified {
                 "QUALIFIED"
             } else {
@@ -631,6 +771,9 @@ impl Engine {
                 self.invalidate(symbol, "stale_feed");
             }
             let Some(f) = self.features(symbol) else {
+                if self.symbols[symbol].last_result.is_none() {
+                    self.transition(symbol, "NO_SIGNAL", None);
+                }
                 continue;
             };
             if ready {
@@ -653,14 +796,15 @@ impl Engine {
                 .filter(|t| t.position.plan.symbol == symbol)
                 .cloned()
                 .collect();
-            let regime = f.volatility > self.config.max_volatility
-                || f.cross_venue_bps
-                    .is_some_and(|v| v.abs() > self.config.max_cross_venue_bps);
-            let health = model::health(&comparable, &trades, &self.config, regime);
-            let direction = if Model::score(&f) >= 0. {
-                "LONG"
+            let health = self.model.health(&comparable, &trades, &self.config, &f);
+            let direction = if ready {
+                signal_direction(
+                    Model::score(&f),
+                    &self.symbols[symbol].candidate_direction,
+                    &self.config,
+                )
             } else {
-                "SHORT"
+                "FLAT"
             };
             {
                 let s = self.symbols.get_mut(symbol).unwrap();
@@ -677,7 +821,23 @@ impl Engine {
                     }
                 }
             }
+            let result_held = self.symbols[symbol].last_result.is_some()
+                && self.now.saturating_sub(self.symbols[symbol].completed_at)
+                    < self.config.result_hold_ms;
+            if self.symbols[symbol].active.is_none() && !result_held {
+                self.transition(
+                    symbol,
+                    if direction == "FLAT" {
+                        "NO_SIGNAL"
+                    } else {
+                        "WATCH"
+                    },
+                    None,
+                );
+            }
             let can_predict = ready
+                && direction != "FLAT"
+                && !result_held
                 && self.symbols[symbol].active.is_none()
                 && self
                     .now
@@ -686,9 +846,10 @@ impl Engine {
                 && self
                     .now
                     .saturating_sub(self.symbols[symbol].candidate_since)
-                    >= 2000;
+                    >= self.config.signal_confirm_ms;
             if can_predict {
                 let id = self.id("prediction");
+                self.transition(symbol, "EMERGING", Some(&id));
                 let (raw, cal) = self.model.probabilities(&f, &self.config);
                 let mut p = Prediction {
                     prediction_id: id.clone(),
@@ -724,13 +885,30 @@ impl Engine {
                 let (q, plan) = self.qualify(&p, &f, &health);
                 p.qualification = q;
                 p.plan = plan;
+                if p.qualification.status == "QUALIFIED" {
+                    self.transition(symbol, "QUALIFIED", Some(&p.prediction_id));
+                }
+                if p.plan.is_some() {
+                    self.transition(symbol, "TRADE_READY", Some(&p.prediction_id));
+                }
                 self.log("features", json!(&f));
                 self.log("prediction", json!(&p));
+                if let Some(pair) = self
+                    .shadow
+                    .as_mut()
+                    .and_then(|run| run.predict(&p, &self.model, &self.config))
+                {
+                    self.log(
+                        "shadow_prediction",
+                        json!({"run_id":self.shadow.as_ref().unwrap().run_id,"prediction":pair}),
+                    );
+                }
                 let s = self.symbols.get_mut(symbol).unwrap();
                 s.last_prediction_ts = self.now;
                 s.active = Some(p);
             }
             if let Some(p) = self.symbols[symbol].active.clone() {
+                self.transition(symbol, "TRACKING", Some(&p.prediction_id));
                 // Requalification uses fresh features, probabilities and remaining holding time.
                 let mut fresh = p.clone();
                 let (raw, cal) = self.model.probabilities(&f, &self.config);
@@ -870,6 +1048,18 @@ impl Engine {
             outcome_type: kind.into(),
         };
         self.log("outcome", json!(&o));
+        if let Some(pair) = self.shadow.as_mut().and_then(|run| run.finish(&o)) {
+            self.log(
+                "shadow_outcome",
+                json!({"run_id":self.shadow.as_ref().unwrap().run_id,"outcome":pair}),
+            );
+        }
+        self.transition(symbol, "COMPLETED", Some(&o.prediction.prediction_id));
+        let s = self.symbols.get_mut(symbol).unwrap();
+        s.last_result = Some(o.clone());
+        s.completed_at = self.now;
+        s.qualification = None;
+        s.plan = None;
         self.outcomes.push(o);
         if self.outcomes.len() > 2000 {
             self.outcomes.remove(0);
@@ -1130,13 +1320,82 @@ impl Engine {
             }
         }
     }
+    fn check_shadow_id(&self, payload: &Value) -> Result<(), String> {
+        if self
+            .shadow
+            .as_ref()
+            .is_none_or(|run| payload["run_id"] != run.run_id)
+        {
+            return Err("影子验证已变化，请刷新后重试".into());
+        }
+        Ok(())
+    }
+    fn pause_shadow(&mut self, status: &str) {
+        let Some(run) = self.shadow.as_mut() else {
+            return;
+        };
+        let pending: Vec<_> = run.pending.keys().cloned().collect();
+        run.pending.clear();
+        run.status = status.into();
+        let id = run.run_id.clone();
+        self.log(
+            "shadow_status",
+            json!({"run_id":id,"status":status,"cancelled_predictions":pending}),
+        );
+    }
+    fn clear_predictions_for_model_change(&mut self) {
+        for symbol in ["BTCUSDT", "ETHUSDT"] {
+            self.invalidate(symbol, "model_changed");
+        }
+        for s in self.symbols.values_mut() {
+            s.plan = None;
+            s.qualification = None;
+            s.candidate_direction = "FLAT".into();
+            s.candidate_since = self.now;
+            s.health = model::health(&[], &[], &self.config, false);
+        }
+    }
+    pub fn shadow_view(&self) -> Option<Value> {
+        let run = self.shadow.as_ref()?;
+        let comparison = run.comparison(&self.model, self.config_version, self.now);
+        let market_ready = self.symbols.values().all(|s| {
+            s.venues
+                .values()
+                .all(|v| v.connected && v.book.ready(self.now, self.config.max_stale_ms))
+                && s.features.as_ref().is_some_and(|f| {
+                    self.now.saturating_sub(f.ts) <= self.config.max_stale_ms
+                        && run.candidate.probabilities(f, &self.config).1.is_some()
+                        && run
+                            .candidate
+                            .distribution_score(f)
+                            .zip(run.candidate.distributions.get(&f.symbol))
+                            .is_some_and(|(z, d)| z <= d.max_z)
+                })
+        });
+        let operational_checks = json!({"observe_mode":self.mode == "OBSERVE", "no_positions":self.positions.is_empty(),
+            "storage_healthy":self.storage_healthy,"kill_released":!self.kill_switch,"market_ready":market_ready});
+        let ready = comparison["ready"] == true
+            && operational_checks
+                .as_object()
+                .unwrap()
+                .values()
+                .all(|v| v == true);
+        Some(
+            json!({"run_id":run.run_id,"status":run.status,"started_at":run.started_at,"config_version":run.config_version,
+            "champion_version":run.champion_version,"candidate_version":run.candidate.model_version,"candidate_hash":run.candidate.artifact_hash,
+            "policy":run.policy,"offline_status":run.offline_report["status"],"comparison":comparison,
+            "operational_checks":operational_checks,"promotion_ready":ready,
+            "recent_outcomes":run.outcomes.iter().rev().take(20).collect::<Vec<_>>()}),
+        )
+    }
     pub fn view(&self) -> Value {
         let symbols:BTreeMap<_,_>=self.symbols.iter().map(|(name,s)|{
             let venues:BTreeMap<_,_>=s.venues.iter().map(|(name,v)|(name,json!({"connected":v.connected,"ready":v.book.ready(self.now,self.config.max_stale_ms),
                 "age_ms":self.now.saturating_sub(v.book.receive_ts),"exchange_age_ms":self.now.abs_diff(v.book.exchange_ts),"gaps":v.book.gaps,"reconnects":v.reconnects,"error":v.error,"mid":v.book.mid(),"sequence":v.book.sequence}))).collect();
-            (name,json!({"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart}))
+            (name,json!({"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart,"lifecycle":s.lifecycle,"lifecycle_since":s.lifecycle_since,"signal_direction":s.candidate_direction,"last_result":s.last_result}))
         }).collect();
         json!({"source":self.source,"mode":self.mode,"now":self.now,"config":self.config,"config_version":self.config_version,"model":self.model,
+            "shadow":self.shadow_view(),"rollback_available":self.previous_model.is_some(),"shadow_policy_defaults":ShadowPolicy::default(),
             "kill_switch":self.kill_switch,"storage_healthy":self.storage_healthy,"symbols":symbols,"positions":self.positions,
             "outcomes":self.outcomes.iter().rev().take(100).collect::<Vec<_>>(),"trades":self.trades.iter().rev().take(100).collect::<Vec<_>>(),
             "audit":self.audit.iter().rev().take(30).collect::<Vec<_>>(),"account":{"equity":self.account_equity(),"realized_pnl":self.realized_pnl,"daily_pnl":self.daily_pnl,"peak":self.equity_peak},
