@@ -1,0 +1,27 @@
+{
+  "name": "micro-alpha-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "format": "prettier --write app tests next.config.ts playwright.config.ts tsconfig.json package.json",
+    "format:check": "prettier --check app tests next.config.ts playwright.config.ts tsconfig.json package.json"
+  },
+  "dependencies": {
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "prettier": "3.9.9",
+    "typescript": "^5.8"
+  }
+}

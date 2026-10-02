@@ -1,0 +1,41 @@
+{
+  "source": "live",
+  "mode": "OBSERVE",
+  "config_version": 5,
+  "counts": {
+    "config": 4,
+    "features": 32,
+    "kill": 4,
+    "mode": 3,
+    "outcome": 30,
+    "prediction": 32,
+    "restart": 1
+  },
+  "funded_live_orders": 0,
+  "venues": {
+    "BTCUSDT": {
+      "binance": {
+        "gaps": 0,
+        "connected": true,
+        "exchange_age_ms": 1087
+      },
+      "okx": {
+        "gaps": 0,
+        "connected": true,
+        "exchange_age_ms": 604
+      }
+    },
+    "ETHUSDT": {
+      "binance": {
+        "gaps": 0,
+        "connected": true,
+        "exchange_age_ms": 407
+      },
+      "okx": {
+        "gaps": 0,
+        "connected": true,
+        "exchange_age_ms": 603
+      }
+    }
+  }
+}
