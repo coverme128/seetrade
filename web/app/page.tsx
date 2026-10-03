@@ -1,6 +1,13 @@
 "use client";
 import { AdmissionCard, IntegrityPanel } from "./admission-panel";
 import OperationsPanel from "./operations-panel";
+import OpportunityPanel, { OpportunityBadge } from "./opportunity-panel";
+import {
+  currentOpportunity,
+  openingOpportunity,
+  sortOutcomes,
+  type OpportunitySort,
+} from "./opportunity";
 import { useCallback, useEffect, useState } from "react";
 import { ShadowPanel } from "./shadow-panel";
 import type {
@@ -245,6 +252,13 @@ export default function Home() {
     [historyRows, setHistoryRows] = useState<Outcome[] | null>(null);
   const [draft, setDraft] = useState<Config | null>(null),
     [gatesExpanded, setGatesExpanded] = useState(false);
+  const [opportunitySort, setOpportunitySort] =
+    useState<OpportunitySort>("quality");
+  const [wallNow, setWallNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setWallNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   useEffect(() => {
     if (tab === "settings" && state && !draft) setDraft({ ...state.config });
   }, [tab, state, draft]);
@@ -575,6 +589,15 @@ export default function Home() {
             </div>
           ) : (
             <>
+              {(tab === "overview" || tab === "history") && (
+                <OpportunityPanel
+                  state={state}
+                  symbol={symbol}
+                  connected={connected}
+                  now={wallNow}
+                  onSelect={setSymbol}
+                />
+              )}
               {(tab === "health" ||
                 tab === "settings" ||
                 state.live?.configured) && (
@@ -780,6 +803,28 @@ export default function Home() {
                           <h2>核心判断</h2>
                         </div>
                         <span className="caption">CORE VIEW</span>
+                      </div>
+                      <div
+                        className="opportunity-card-grade"
+                        data-testid="prediction-opportunity-grade"
+                      >
+                        <OpportunityBadge
+                          opportunity={
+                            result
+                              ? openingOpportunity(result)
+                              : currentOpportunity(
+                                  state,
+                                  symbol,
+                                  connected,
+                                  wallNow,
+                                )
+                          }
+                        />
+                        <small className="muted">
+                          {result
+                            ? "开场等级 · 已完成，非当前机会"
+                            : "当前等级 · 随最新资格更新"}
+                        </small>
                       </div>
                       {card && probs ? (
                         <>
@@ -1272,6 +1317,8 @@ export default function Home() {
                     </div>
                     <OutcomeTable
                       rows={displayedOutcomes.slice(0, 5)}
+                      sort={opportunitySort}
+                      onSort={setOpportunitySort}
                       onSelect={(o) => {
                         setSelected(o);
                         setAnnotation(o.annotation || "");
@@ -1333,6 +1380,8 @@ export default function Home() {
                     {historyKind === "prediction" ? (
                       <OutcomeTable
                         rows={displayedOutcomes}
+                        sort={opportunitySort}
+                        onSort={setOpportunitySort}
                         onSelect={(o) => {
                           setSelected(o);
                           setAnnotation(o.annotation || "");
@@ -1790,6 +1839,12 @@ export default function Home() {
               {outcomes[selected.outcome_type]}
             </Badge>
             <p className="muted mono">{selected.prediction.prediction_id}</p>
+            <div className="opportunity-card-grade">
+              <OpportunityBadge opportunity={openingOpportunity(selected)} />
+              <small className="muted">
+                开场等级 · {openingOpportunity(selected).reason}
+              </small>
+            </div>
             <div className="detail-grid">
               {[
                 ["方向", selected.prediction.direction],
@@ -1942,90 +1997,134 @@ function Summary({
 }
 function OutcomeTable({
   rows,
+  sort,
+  onSort,
   onSelect,
 }: {
   rows: Outcome[];
+  sort: OpportunitySort;
+  onSort: (sort: OpportunitySort) => void;
   onSelect: (o: Outcome) => void;
 }) {
-  return rows.length ? (
-    <div className="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>时间 / 标的</th>
-            <th>判断</th>
-            <th>预测概率</th>
-            <th>实际结果</th>
-            <th>方向收益</th>
-            <th>MFE / MAE</th>
-            <th>详情</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((o) => (
-            <tr key={o.prediction.prediction_id}>
-              <td>
-                <b>{o.prediction.symbol}</b>
-                <small>{time(o.prediction.ts)}</small>
-              </td>
-              <td>
-                <span
-                  className={
-                    o.prediction.direction === "LONG" ? "positive" : "negative"
-                  }
+  return (
+    <>
+      <div className="opportunity-table-tools">
+        <label>
+          排序{" "}
+          <select
+            aria-label="预测记录排序"
+            value={sort}
+            onChange={(e) => onSort(e.target.value as OpportunitySort)}
+          >
+            <option value="quality">机会等级优先</option>
+            <option value="time">预测时间最新</option>
+          </select>
+        </label>
+        <span>
+          历史按开场资格分级，同级合格记录按净优势排序；实际结果独立展示。
+        </span>
+      </div>
+      {rows.length ? (
+        <div className="table-scroll">
+          <table data-testid="opportunity-history-table">
+            <thead>
+              <tr>
+                <th>时间 / 标的</th>
+                <th>判断</th>
+                <th>开场机会等级</th>
+                <th>开场净优势</th>
+                <th>预测概率</th>
+                <th>实际结果</th>
+                <th>方向收益</th>
+                <th>MFE / MAE</th>
+                <th>详情</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortOutcomes(rows, sort).map((o) => (
+                <tr
+                  key={o.prediction.prediction_id}
+                  data-episode-id={o.prediction.prediction_id}
+                  data-level={openingOpportunity(o).level}
+                  className={`opportunity-row opportunity-${openingOpportunity(o).level}`}
                 >
-                  {o.prediction.direction}
-                </span>
-                <small>{o.prediction.horizon}s</small>
-              </td>
-              <td className="mono">
-                {pct(
-                  (o.prediction.calibrated_probabilities ||
-                    o.prediction.raw_probabilities)[
-                    o.prediction.direction === "LONG" ? 0 : 1
-                  ],
-                  1,
-                )}
-                <small>
-                  {o.prediction.calibrated_probabilities ? "校准" : "原始"}
-                </small>
-              </td>
-              <td>
-                <Badge
-                  tone={
-                    o.outcome_type === "TARGET_HIT"
-                      ? "positive"
-                      : o.outcome_type.endsWith("INVALIDATED")
-                        ? "muted"
-                        : "warning"
-                  }
-                >
-                  {outcomes[o.outcome_type] || o.outcome_type}
-                </Badge>
-              </td>
-              <td
-                className={`mono ${o.final_move >= 0 ? "positive" : "negative"}`}
-              >
-                {signed(o.final_move * 100, "%")}
-              </td>
-              <td className="mono muted">
-                {pct(o.mfe)} / {pct(o.mae)}
-              </td>
-              <td>
-                <button
-                  aria-label={`查看预测 ${o.prediction.prediction_id}`}
-                  onClick={() => onSelect(o)}
-                >
-                  <Icon name="chevron" size={15} />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <Empty>尚无已完成预测。系统会自动跟踪屏障触达或超时，无需手动标记。</Empty>
+                  <td>
+                    <b>{o.prediction.symbol}</b>
+                    <small>{time(o.prediction.ts)}</small>
+                  </td>
+                  <td>
+                    <span
+                      className={
+                        o.prediction.direction === "LONG"
+                          ? "positive"
+                          : "negative"
+                      }
+                    >
+                      {o.prediction.direction}
+                    </span>
+                    <small>{o.prediction.horizon}s</small>
+                  </td>
+                  <td className="mono">
+                    <OpportunityBadge opportunity={openingOpportunity(o)} />
+                    <small>开场评估 · 已结束</small>
+                  </td>
+                  <td className="mono">
+                    {openingOpportunity(o).netEdge == null
+                      ? "—"
+                      : signed(openingOpportunity(o).netEdge! * 100, "%")}
+                  </td>
+                  <td className="mono">
+                    {pct(
+                      (o.prediction.calibrated_probabilities ||
+                        o.prediction.raw_probabilities)[
+                        o.prediction.direction === "LONG" ? 0 : 1
+                      ],
+                      1,
+                    )}
+                    <small>
+                      {o.prediction.calibrated_probabilities ? "校准" : "原始"}
+                    </small>
+                  </td>
+                  <td>
+                    <Badge
+                      tone={
+                        o.outcome_type === "TARGET_HIT"
+                          ? "positive"
+                          : o.outcome_type.endsWith("INVALIDATED")
+                            ? "muted"
+                            : "warning"
+                      }
+                    >
+                      {outcomes[o.outcome_type] || o.outcome_type}
+                    </Badge>
+                  </td>
+                  <td
+                    className={`mono ${o.final_move >= 0 ? "positive" : "negative"}`}
+                  >
+                    {signed(o.final_move * 100, "%")}
+                  </td>
+                  <td className="mono muted">
+                    {pct(o.mfe)} / {pct(o.mae)}
+                  </td>
+                  <td>
+                    <button
+                      aria-label={`查看预测 ${o.prediction.prediction_id}`}
+                      onClick={() => onSelect(o)}
+                    >
+                      <Icon name="chevron" size={15} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <Empty>
+          尚无已完成预测。系统会自动跟踪屏障触达或超时，无需手动标记。
+        </Empty>
+      )}
+    </>
   );
 }
 function TradeTable({

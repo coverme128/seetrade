@@ -7,8 +7,13 @@ flowchart LR
     B[Binance 深度 / 成交 / Mark WS] --> N[规范化 MarketEvent]
     O[OKX 深度 / 成交 WS] --> N
     N --> C[Rust 确定性核心]
-    C --> F[本地簿 / 特征 / 预测]
+    C --> L[本地簿 / 连续标签跟踪]
+    L --> M[轻量 Market Pulse]
+    M --> T[组合触发 / 状态调度]
+    T --> F[完整特征 / 预测评估]
     F --> G[资格 / 模型健康 / 风险]
+    C --> X[即时数据 / 持仓保护]
+    X --> G
     G --> P[模拟成交 / 持仓 / 退出]
     C --> Q[有界记录通道]
     Q --> D[后台 SQLite / JSONL]
@@ -29,7 +34,7 @@ Binance 建立深度连接后请求 REST snapshot，再验证覆盖 snapshot 的
 
 Risk / Data 检查先于 Alpha 调度。数据异常立即清除资格、终止不可信的在途预测并重建 Pulse 基线；风险恶化直接调用原有风险评估 / 退出逻辑。保护性网络任务仍与账户查询独立。Pulse 不接入 LLM、网络请求或消息队列；所有时点由输入事件提供，计算耗时只进入不参与重放的 telemetry。
 
-`trigger_analytics.rs` 关联触发、评估、Episode、资格、AUTO 准入、确认成交和结果。完整原始关联持久化；API 保留最近 2,000 个已结束触发及未完成关联。`replay_compare.rs` 仅在离线研究中使用固定步进参考，不提供生产模式开关。逐项公式、统计分母、配置版本迁移和验证边界见 [v1.0.4 验收记录](ACCEPTANCE.md)。本文下方 v1.0.3 的每秒评估说明作为旧版机制保留；生产节奏以本节为准。
+`trigger_analytics.rs` 关联触发、评估、Episode、资格、AUTO 准入、确认成交和结果。完整原始关联持久化；API 保留最近 2,000 个已结束触发及未完成关联。`replay_compare.rs` 仅在离线研究中使用固定步进参考，不提供生产模式开关。逐项公式、统计分母、配置版本迁移和验证边界见 [v1.0.4 验收记录](ACCEPTANCE.md)。操作与排障见 [运行时指南](RUNTIME-GUIDE.md) 和 [运维手册](OPERATIONS.md)。
 
 ## 与推荐架构的差异
 
@@ -49,11 +54,11 @@ UI 通过本地同源 API 读取，控制操作要求自定义请求标记并校
 
 ### 计算频率与预测生命周期
 
-每个标的一次只跟踪一条预测。默认评分达到 ±0.35 才进入 LONG / SHORT，保持原方向只需超过 ±0.15，回到中性区间为 FLAT；FLAT 不建立方向预测。方向持续稳定两秒后建立，最短创建间隔五秒，上条结果结束后至少保留五秒。进入 / 退出阈值、确认时长与结果保留时长均可配置。特征每秒更新；价格屏障对每个有效簿事件检查。超时后的价格不能改写先前结果。错向跳空保留实际尾部损失，不按止损价裁剪。
+每个标的一次只跟踪一条预测。默认评分达到 ±0.35 才进入 LONG / SHORT，保持原方向只需超过 ±0.15，回到中性区间为 FLAT；FLAT 不建立方向预测。方向持续稳定两秒后建立，最短创建间隔五秒，上条结果结束后至少保留五秒。进入 / 退出阈值、确认时长与结果保留时长均可配置。完整特征随运行时调度更新：候选默认 1.5 秒，Episode / 持仓约 1 秒，IDLE 无固定完整评估；价格屏障仍对每个有效簿事件检查。超时后的价格不能改写先前结果。错向跳空保留实际尾部损失，不按止损价裁剪。
 
 生命周期转移写入 `prediction_state` 审计记录：`NO_SIGNAL → WATCH → EMERGING`，通过资格与计划检查时追加 `QUALIFIED → TRADE_READY`，正式预测进入 `TRACKING → COMPLETED`。未通过门槛的观察预测直接跟踪，不伪造合格状态；资格中间状态可能在同一次核心计算完成，页面显示最新状态。原卡片在完成时变为结果卡并标记“上次判断”，直到下一条正式预测。
 
-正式 `Prediction` 保存建立时的方向、概率、起点、屏障、期限、模型及配置版本；只持续更新跟踪价格、MFE / MAE 与状态。每秒的重新资格检查使用一份临时预测副本，将其中的概率更新为最新值，因此界面当前资格与原始判断可以不同。当前概率模型没有针对“剩余持有时间”重新建模；到期处理由独立的 Outcome / 持仓超时规则完成。
+正式 `Prediction` 保存建立时的方向、概率、起点、屏障、期限、模型及配置版本；只持续更新跟踪价格、MFE / MAE 与状态。Episode / 持仓阶段约每秒的重新资格检查使用一份临时预测副本，将其中的概率更新为最新值，因此界面当前资格与原始判断可以不同。当前概率模型没有针对“剩余持有时间”重新建模；到期处理由独立的 Outcome / 持仓超时规则完成。
 
 源码入口：[调度与时钟](../engine/src/main.rs)、[特征、预测、资格与结果](../engine/src/core.rs)、[界面轮询及展示](../web/app/page.tsx)。当前实时性意味着持续处理最新收到的数据；网络或进程调度延迟仍需通过新鲜度门槛处理。
 
@@ -189,3 +194,23 @@ POST 需要 `X-Micro-Alpha: local`，浏览器 Origin 必须为本机允许地�
 离线 walk-forward 连同 test 样本的 outcome 时间一起 purge；导入验证比较前窗终点和后窗起点，不信任单独的 `test_windows_disjoint=true` 声明。未知 / 失效标签和未知 feature schema 被拒绝。
 
 `assist.rs` 解析 OFF / ASSIST，显式 OFF 优先于旧模型名环境变量；该配置只影响只读解释接口，未进入确定性引擎或改变模型。完整对应与证据见 [ACCEPTANCE-P0-P3.md](ACCEPTANCE-P0-P3.md)。
+
+
+## 运行时诊断与审计接口补充
+
+`GET /api/state` 的 `symbols[symbol]` 包含 `runtime_state`、`pulse`、`trigger_decision`、`trigger_origin` 和 `full_evaluations`；顶层包含 `trigger_config`、`trigger_config_version`、`trigger_analytics`。Pulse 是最近采样，完整特征和 Evaluation 是最近完整评估；IDLE 时两者不保证同步更新，读取时应同时查看时间戳与行情就绪状态。
+
+`GET /api/trigger-analytics` 返回 `{report, recent_links}`：报告按保留范围计算，明细按触发建立时间倒序最多 100 条。它不是全历史分页接口。`GET /api/history?kind=market_pulse_trigger&limit=100` 返回持久化包装记录数组，默认 100 条、上限 500 条、按写入顺序倒序；超过此范围的完整研究应读 SQLite 或封存 Journal。
+
+| 持久化事件 | 关联字段 |
+|---|---|
+| `market_pulse_trigger` | `trigger_id`、家族、严重度、归一化快照、配置版本 |
+| `trigger_evaluation` | `trigger_id` → `alpha_evaluation_id` |
+| `trigger_candidate_closed` | `trigger_id`，数据 / 配置 / 重启关闭时附原因 |
+| `prediction` | `episode.origin_trigger_id` → `prediction_id` |
+| `episode_qualification` / `auto_admission` | `episode_id`；准入同时区分 LIVE / SHADOW 上下文 |
+| `paper_entry` / `broker_order` | 预测编号与确认成交；提交意图不计漏斗执行 |
+| `outcome` / `trade` / `live_trade` | 预测、PAPER、交易所结果独立；资金费修正更新原 Live Trade |
+| `protection_trigger` / `protection_result` | 保护 `id` 关联原因、评估和处理动作；EXIT 动作不等于交易所已确认平仓 |
+
+控制配置仍走 `POST /api/control/trigger_config`，请求体为完整配置对象，需 `X-Micro-Alpha: local` 和允许的本机 Origin；界面负责提交。未知字段和非法值被拒绝，省略字段会填默认值。实际范围与修改副作用见 [配置说明](EXECUTION.md#参数边界与配置所属位置)。

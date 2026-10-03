@@ -85,6 +85,7 @@ export type Costs = {
   total: number;
 };
 export type Qualification = {
+  prediction_id?: string;
   status: string;
   net_edge: number;
   gross_edge: number;
@@ -231,6 +232,10 @@ export type Health = {
   bins: { lower: number; count: number; predicted: number; actual: number }[];
 };
 export type SymbolState = {
+  evaluation?: {
+    evaluated_at: number;
+    qualification_evaluated_at: number;
+  } | null;
   runtime_state?: "IDLE" | "CANDIDATE" | "ACTIVE" | "IN_POSITION";
   full_evaluations?: number;
   pulse?: unknown;

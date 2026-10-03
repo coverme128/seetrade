@@ -1,6 +1,6 @@
 # 个人运行与执行账户配置
 
-本文对应当前个人版实现。硬件和软件准备见 [README](../README.md#运行配置与账户)，完整验收及尚未通过的生产门禁见 [P0–P3 验收](ACCEPTANCE-P0-P3.md)。原始产品合同中的配置名称与本程序环境变量并非一一同名；以下以实际代码为准。
+本文对应当前个人版实现。硬件和软件准备见 [README](../README.md#运行配置与账户)，当前升级验收与证据边界见 [v1.0.4 验收](ACCEPTANCE.md)，原功能阶段见 [P0–P3 验收](ACCEPTANCE-P0-P3.md)。日常操作见 [运行时指南](RUNTIME-GUIDE.md) 和 [运维手册](OPERATIONS.md)。原始产品合同中的配置名称与本程序环境变量并非一一同名；以下以实际代码为准。
 
 ## 按使用方式准备
 
@@ -28,13 +28,13 @@ test -e .env.local || cp .env.example .env.local
 chmod 600 .env.local
 ```
 
-Rust 核心和 `scripts/dev.sh` **不会自动读取 `.env.local`**，每个用于启动的新终端都要显式加载。字符串值使用 shell 单引号，尤其是含 `$` 等 shell 字符的口令。以下命令在项目根目录运行：
+Rust 核心、`scripts/start.sh` 和 `scripts/dev.sh` **不会自动读取 `.env.local`**，每个用于启动的新终端都要显式加载。字符串值使用 shell 单引号，尤其是含 `$` 等 shell 字符的口令。以下命令在项目根目录运行：
 
 ```bash
 set -a
 source .env.local
 set +a
-./scripts/dev.sh
+./scripts/start.sh
 ```
 
 环境变量修改后需重新加载并重启核心。网页刷新不会使新凭证生效。当前验证数据位于 `data/live-validation`；模板使用 `data/personal`，不设置变量时使用 `data`。需要保留当前采集、配置、模型和样本时，将 `MICRO_ALPHA_DATA` 设为原目录；换目录会创建独立数据空间，不能据此认为历史已丢失。
@@ -184,7 +184,7 @@ CONFIRM 与 ADD 的 SUBMITTING 边界也重新计算最新资格、方向、真�
 
 此升级无需新增环境变量、交易所 Key、数据库服务或 GPU。继续使用原行情与执行配置；公共行情与 OBSERVE / PAPER 仍不需要交易所凭证。核心和网页版本为 v0.4.0。
 
-进入“执行与研究”，展开运行触发诊断与配置，读取当前配置后编辑 JSON 并保存。只允许 OBSERVE、无持仓且无待处理订单。保存会推进触发配置和全局配置版本、关闭旧候选 / Episode、暂停 Shadow 并重新预热；配置保存在当前数据目录，重启保留。旧数据空间首次升级也推进配置版本，旧历史保留但不冒充新版本样本。
+进入“模型健康 → 执行与研究”，展开运行触发诊断与配置，读取当前配置后编辑 JSON 并保存。只允许 OBSERVE、无持仓且无待处理订单。保存会推进触发配置和全局配置版本、关闭旧候选 / Episode、暂停 Shadow 并重新预热；配置保存在当前数据目录，重启保留。旧数据空间首次升级也推进配置版本，旧历史保留但不冒充新版本样本。
 
 | 配置 | 默认与含义 |
 |---|---|
@@ -201,3 +201,37 @@ CONFIRM 与 ADD 的 SUBMITTING 边界也重新计算最新资格、方向、真�
 | `protection_data_stale` / `protection_book_gap` | 必须开启，服务端拒绝关闭 |
 
 完整范围由 `TriggerConfig::validate` 校验，未知字段与非法值会拒绝。推荐先保留默认值，用封存录制执行离线对照，再人工决定是否调整；系统不会根据短期表现自动修改阈值。固定步进只用于离线研究，不是常驻运行模式。验收和对照命令见 [当前验收记录](ACCEPTANCE.md)。
+
+
+### 参数边界与配置所属位置
+
+所有时间范围包含端点；z 与比例必须为有限数值。以下范围来自当前 `TriggerConfig::validate`，不是交易策略建议。
+
+| 参数 | 服务端接受范围 |
+|---|---|
+| `normalization_method` | 仅 `robust_z_v1` |
+| `sample_interval_ms` | 整数 100–1000 |
+| `normalization_window_ms` | 整数 10000–600000；窗口 / 采样间隔的整数商 ≤ 2048 |
+| `warmup_samples` | 整数 8–512，且样本数 × 采样间隔 ≤ 窗口 |
+| `abnormal_z` | 1–20 |
+| `extreme_z` | 大于 `abnormal_z`，且 ≤ 50 |
+| `combination_window_ms` | 整数 100–2000 |
+| `debounce_ms` | 整数 250–10000 |
+| `candidate_ttl_ms` | 整数 3000–60000 |
+| `candidate_full_eval_interval_ms` | 整数 1000–2000 |
+| `active_full_eval_interval_ms` / `position_full_eval_interval_ms` | 必须为 1000 |
+| `depth_drop_fraction` | 0.1–0.9 |
+| `enabled_families` | 恰好四个布尔值 |
+| 四个风险保护开关 | 布尔值；建议保留默认开启 |
+| 两个数据保护开关 | 必须为 `true` |
+
+窗口实际最多保留 2,048 个样本。未知 JSON 字段被拒绝；当前反序列化会对省略字段填入源码默认值，因此应从界面载入完整当前 JSON 后编辑，避免把省略字段误当成“保持原值”。保存相同配置也会推进版本。
+
+| 配置层 | 设置位置 | 生效方式 |
+|---|---|---|
+| 数据目录、执行场所、凭证、AI / Python | 启动终端环境，或显式加载 `.env.local` | 重启核心；前端刷新不生效 |
+| 风险、成本、屏障、AUTO 准入 | “风险设置” | 服务端校验后保存到当前数据空间，推进全局配置版本 |
+| Pulse、候选节奏、触发及保护开关 | “模型健康 → 执行与研究 → 运行触发诊断与配置” | OBSERVE 空仓保存，推进触发及全局配置版本、重新预热 |
+| 定时模型研究 | “模型健康 → 执行与研究” | 保存研究计划；只生成候选，不自动晋升 |
+
+触发配置没有对应的 `MICRO_ALPHA_TRIGGER_*` 环境变量；不要把合同中的点分组名称直接添加到 `.env.local`。保留同一数据目录才能恢复其中的配置、模型、账本和历史。
