@@ -42,7 +42,7 @@ fn tick(e: &mut Engine, ts: u64) {
     e.ingest(event(ts, 0, EventData::Clock));
 }
 fn warm() -> Engine {
-    let mut e = Engine::new(true);
+    let mut e = Engine::new_reference(true);
     for i in 0..8 {
         for event in demo_events(i, 1_000_000 + i * 1000) {
             e.ingest(event);
@@ -313,7 +313,7 @@ fn calibration_health_downgrades_without_weight_changes() {
 }
 #[test]
 fn baseline_uncalibrated_and_demo_model_cannot_load_live() {
-    let e = Engine::new(false);
+    let e = Engine::new_reference(false);
     let f = Features::default();
     assert!(e.model.probabilities(&f, &e.config).1.is_none());
     let demo = Model::baseline(true, &e.config);
@@ -335,8 +335,8 @@ fn invalid_config_does_not_mutate_state() {
 }
 #[test]
 fn replay_is_identical_with_commands_and_checkpoints() {
-    let mut a = Engine::new(true);
-    let mut b = Engine::new(true);
+    let mut a = Engine::new_reference(true);
+    let mut b = Engine::new_reference(true);
     for i in 0..240 {
         for event in demo_events(i, 1_000_000 + i * 1000) {
             a.ingest(event.clone());
@@ -653,7 +653,7 @@ fn neutral_signal_and_hysteresis_prevent_arbitrary_direction() {
     assert_eq!(signal_direction(0.1, "LONG", &c), "FLAT");
     assert_eq!(signal_direction(-0.25, "SHORT", &c), "SHORT");
     assert_eq!(signal_direction(-0.4, "LONG", &c), "SHORT");
-    let mut e = Engine::new(true);
+    let mut e = Engine::new_reference(true);
     for i in 0..10 {
         let ts = 1_000_000 + i * 1000;
         for x in snapshot(ts, 100_000.) {
@@ -938,7 +938,7 @@ fn predictions_distinguish_strength_from_calibrated_payoff() {
         Some(probs[i] * p.target - probs[1 - i] * p.stop)
     );
     assert!((0.0..=1.0).contains(&p.signal_strength));
-    let mut live = Engine::new(false);
+    let mut live = Engine::new_reference(false);
     for step in 0..8 {
         for ev in demo_events(step, 1_000_000 + step * 1000) {
             live.ingest(ev);

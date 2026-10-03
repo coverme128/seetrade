@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 fn warm() -> Engine {
-    let mut e = Engine::new(true);
+    let mut e = Engine::new_reference(true);
     for i in 0..8 {
         for event in demo_events(i, 1_000_000 + i * 1000) {
             e.ingest(event);

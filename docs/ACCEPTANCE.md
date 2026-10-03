@@ -1,4 +1,109 @@
-# 交付与验收 · v0.3 / 合同 v1.0.3 · 2026-10-02
+# 交付与验收 · v0.4 / 合同 v1.0.4 · 2026-10-03
+
+
+## v1.0.4 Runtime Trigger 升级
+
+原始升级包的 15 份合同和 Manifest 已逐文件校验 SHA-256，并原样保存在 [spec-v1.0.4](spec-v1.0.4/UPGRADE-CONTRACT.md)。ZIP SHA-256：`ff1e89ff2a976ca07183e7678c5e4acdad526b888353581b63cedc68109f7c1f`。本节描述运行时增量；下方 v1.0.2 / v1.0.3 表格保留为历史验收记录，其“所有标的每秒完整评估”调度已由本节替代。
+
+### 六批次对应
+
+| 批次 | 实现 |
+|---|---|
+| 01 Market Pulse / 状态 | `market_pulse.rs`、`trigger_policy.rs`、`core.rs`；连续维护规范簿与成交，IDLE 只做轻量检测，IDLE / CANDIDATE / ACTIVE / IN_POSITION 与 Episode 生命周期分离 |
+| 02 四类 Alpha Trigger | 订单流、主动成交、盘口压力 / 深度、价格速度；逐标的历史 robust-z；NORMAL / ABNORMAL / EXTREME；任一 EXTREME 或同窗两个不同 ABNORMAL 才唤醒 |
+| 03 评估节奏 | 有效触发立即完整评估；候选默认 1.5 秒 / 10 秒 TTL，Episode 和持仓默认 1 秒；同一上下文保留 trigger ID，更强证据只升级上下文；结束后保留既有 signal epoch，避免同向重复发布 |
+| 04 Risk / Data 保护 | 风险恶化、账户异常、断档 / 坏簿 / 断连 / 过期 / 时间偏差可即时打断 cadence；当前核心的 Qualification、Position、Live Exit 决定后续动作，DATA 立即清除可执行资格 |
+| 05 漏斗 / 回放对照 | `trigger_analytics.rs` 保存关联；`/api/trigger-analytics`、历史 API 与折叠诊断面板可查询；`trigger_compare` 离线比较事件驱动与固定步进，报告潜在漏机会 |
+| 06 迁移 / 回归 / 运行 | 旧状态默认字段恢复，原历史不重写；旧合同测试用固定步进研究夹具保留控制实验，新增生产事件调度、门槛、账户异常即时保护与比较测试；实际结果见本节验收证据 |
+
+### 实际指标与工程默认值
+
+Pulse 只使用 Binance 主场所的规范盘口与成交，OKX 仍参加完整特征、资格与数据保护。四类指标每标的独立，归一化只读取当前采样之前的历史：
+
+| 家族 | 原始轻量指标 |
+|---|---|
+| ORDER_FLOW_CHANGE | 簿内递推 OFI 的绝对值、相邻 Pulse 的 OFI 变化绝对值 |
+| AGGRESSIVE_TRADE_BURST | 最近 1 秒有符号成交名义金额 / 总名义金额的绝对值、`ln(1 + 总成交名义金额)`；Pulse 窗口最多保留 4,096 笔 |
+| BOOK_IMBALANCE_DEPTH | 前 20 档 bid / ask 名义深度失衡绝对值、相邻采样总深度下降比例 |
+| PRICE_VELOCITY | 相邻采样中间价收益 / 实际秒数的绝对值、速度变化绝对值 |
+
+对每个指标计算 `max(0, (x - median(history)) / max(1.4826 × MAD, 0.05 × abs(median), 1e-9))`，上限 1,000。每个家族取其两个归一化指标最大值。MAD 与尺度下限来自该资产自己的历史；`1e-9` 只是避免除零，不是统一价格涨幅触发线。
+
+默认配置：方法 `robust_z_v1`，采样间隔 250 ms，滚动窗口 120 秒，预热 32 个历史样本，ABNORMAL 为 z ≥ 3，EXTREME 为 z ≥ 6，同窗 1,000 ms，debounce 2,000 ms，候选 TTL 10,000 ms / cadence 1,500 ms，ACTIVE / IN_POSITION cadence 均 1,000 ms。各家族和风险保护默认启用；额外相对深度塌陷为下降 50%，同样可版本化配置。它们是观察 / 回放起点，不构成有效 Alpha 或最优阈值结论。
+
+候选 / Episode 未结束时，重复相同触发不新建业务对象；更强家族 / 严重度可更新同一 ID 并立即评估。上下文结束后，同一持续异常需先回归非组合触发状态，才能再次触发。Pulse tick 不单独落为业务记录，原行情仍连续录制。Data 异常清除受影响的基线并重新预热；新鲜 snapshot 等待首个 bridge delta 期间禁止新计划，超时 / 断档继续 fail-closed。
+
+风险触发沿用已有价差、深度、最大滑点、波动和止损预算。滑点触发量是“半价差 + 配置滑点 + 冲击”的代理，实际执行漂移仍由原有 Model Health / Live Feedback 处理。真实持仓触及原 TP / SL、账户查询异常也直接进入原风险路径；不会等待下一次 Alpha Clock，更不会等待账户查询完成才允许运行独立减仓任务。
+
+### 分析口径与使用入口
+
+`market_pulse_trigger`、`trigger_evaluation`、`trigger_candidate_closed`、`protection_trigger`、`protection_result` 与已有 prediction / qualification / admission / execution / outcome / trade 一起持久化。Episode 添加可选的 `origin_trigger_id` / `origin_trigger_families`；旧历史缺失时保持缺失，不补造。Trigger 事件保存实际交换所 / 接收时点、严重度、归一化快照、配置版本和调度前状态。
+
+分析按家族及组合分组，提供 trigger / full evaluation / episode / qualified / AUTO admitted / executed 数量、结果分布、有效 Outcome 的观察净优势、PAPER 与 Live 实际净损益及无 Episode 候选率。只有 LIVE 上下文的 ADMITTED 才计入 AUTO 准入；ACK 或提交意图不计执行，需确认非零成交。资金费调整覆盖同一 Live Trade，不重复增加笔数。
+
+内存 / API 为最近最多 2,000 个已结束触发加未结束关联，报告注明范围与淘汰数，不冒充全历史累计。全部原始事件仍在 SQLite / JSONL。分母明确：Episode / Trigger；Qualified / Episode；Admitted / Qualified；Executed / Episode；已结束无 Episode 候选 / Trigger（未结束及数据中断不计无边际信号；重启 / 配置切换也不计）。
+
+```bash
+source scripts/env.sh
+# 可重复的安静 → 已知突发 → 触达目标夹具
+cargo run --locked --example trigger_fixture -- data/trigger-fixture.jsonl
+# 独立离线对照，不提供生产运行模式切换
+cargo run --locked --example trigger_compare -- data/trigger-fixture.jsonl
+# 同样可以对完整真实录制执行研究对照
+cargo run --locked --example trigger_compare -- data/live-validation/live-SESSION.jsonl
+./scripts/replay-check.sh
+curl -s http://127.0.0.1:8787/api/trigger-analytics
+```
+
+对照从录制起点的冻结模型 / 配置冷启动，两路均为 OBSERVE；仅沿用风险 / 触发配置命令，忽略且计数模型晋升、账户、交易等控制记录。因此它是策略研究重算，不是订单账本原样回放。候选匹配采取相同 symbol / direction / config、开场时间相差不超过候选 TTL 的一对一匹配。“潜在有用”参考 Episode 必须有效闭合，且曾 QUALIFIED，或观察净优势与开场预期净优势均为正。末尾未闭合结果截尾，不伪造 timeout。Canonical 原样重放仍使用 `--replay`。
+
+### 迁移、回退与证据边界
+
+生产启动强制事件驱动；研究用固定步进标记不能从 checkpoint 恢复为生产模式，也不在界面 / 控制 API 暴露。旧 v1.0.3 状态首次升级会初始化触发配置版本 1 并推进全局配置版本，原模型、风险预算、账本、历史结果保留，新运行样本单独积累。重启仍回到 OBSERVE、重新建立行情簿，未确认订单仍需对账。旧 Journal 无触发版本时，离线 canonical replay 使用原固定步进政策；新字段改变序列化摘要，旧摘要保留为历史文件。
+
+修改触发参数只允许 OBSERVE 且无持仓 / 待处理订单，校验范围、推进触发和全局配置版本、结束原候选 / Episode、暂停正在运行的 Shadow；不会自动改生产阈值。界面只在原有折叠技术区域补充配置、来源和漏斗，不新增扫描器、交易所、标的或主卡片。
+
+回退需先停止实例，在无未完成真实订单 / 持仓时切回原 v1.0.3 部署和对应备份；保留新增触发日志。已有真实执行状态先对账，不能用旧 checkpoint 回滚成交事实。固定步进回退是部署操作，不是用户常驻开关。
+
+
+### 本轮回归与可重复证据
+
+- Rust 96 项通过（原 79 项 + 16 项运行时测试 + 1 项真实执行保护集成测试）。原领域 / 执行 / Episode / Admission / Shadow 夹具显式使用固定步进参考构造，保留 v1.0.3 控制实验；新增测试直接使用生产事件驱动构造，覆盖静默、四家族、组合、候选过期、同向去重、门槛、数据失败、持仓保护、迁移和确定性。
+- Rustfmt、Clippy `-D warnings`、TypeScript、Next.js 生产构建通过；Python 14 项研究回归通过。
+- 浏览器 15 项通过，含新折叠诊断 / 版本化配置、旧预测结果和 AUTO 展示、手机布局。测试使用独立 `data/v104-browser` 合成实例，不修改真实采集的配置；首次启动须先等待 BTC 出现闭合结果，两个旧卡片测试依赖此数据前提。
+- 原 240 秒固定步进夹具仍为 7 个闭合结果、0 交易；当前直接计算与 canonical replay 摘要均为 `364418f87d3bc3f7c02f37daef0af7cfcb331437153c5b7391a22cf0f4bd5832`。v0.3 摘要保存在 `fixtures/demo-240-v0.3.sha256`，新序列化字段引起摘要变化。
+- 新 240 秒夹具：12,480 个输入事件、54 次完整评估、2 个 Episode、2 个 TARGET_HIT、0 交易；直接与 canonical 摘要均为 `74fd883c2ffc98c49c3688ef6600260541d344045db69d9eab79f2918d93ffe5`。参考路径为 480 次评估，同样 2 个 Episode / Outcome；评估减少 88.75%，两次潜在有效机会一对一匹配，未重复发布。详见 [回放证据](runtime-trigger-replay.json)。
+- 封存真实录制 `live-1790927814755.jsonl`：30,049 个事件；事件驱动 221 次评估、11 个 Episode，参考 300 次评估、13 个 Episode，减少 26.33%。参考有效机会分母为 0，因此**不能据此计算或宣称真实漏机会率为零**。4 条非配置控制记录被显式排除；末尾未闭合 Episode 截尾。详见 [真实录制研究对照](runtime-trigger-real-comparison.json)。
+- 真实旧会话起点包含已填充的整数价格键订单簿，曾暴露 Journal tagged-enum 反序列化问题；已保留格式、修复起点解析并新增非空簿往返测试，真实封存对照跑通。
+
+### G1–G6 门禁结果
+
+| 门禁 | 结果与依据 |
+|---|---|
+| G1 IDLE_EFFICIENCY | PASS；5 分钟静默夹具持续维护健康簿和图表，完整评估为 0；真实回放也减少评估 |
+| G2 TRIGGER_DETERMINISM | PASS；四家族分级、组合、预热、去重与配置测试；两套 canonical 黄金摘要一致 |
+| G3 EPISODE_COMPATIBILITY | PASS；连续机会仅一个 Episode，未交易结果照常闭合；旧 7 结果基线保留，新夹具 2 个目标结果 |
+| G4 PROTECTION | PASS（代码 / 模拟网关）；全部文档数据与风险注入；确认部分成交后账户异常无需等 Clock 即生成独立 reduce-only 退出；旧慢账户网关保护回归通过 |
+| G5 AUTO_REGRESSION | PASS（代码 / 模拟网关）；保留资格、成本、LOW、准入、发送前复核与去重；触发不能越过原门槛 |
+| G6 TRIGGER_ANALYTICS | PASS；来源链、漏斗、确认成交和资金费去重；固定步进对照；全部关闭触发的反向夹具准确报告两次漏机会 |
+
+诊断界面仍位于原折叠区域，见 [运行触发截图](screenshots/runtime-trigger.png)。G4 / G5 的自动测试不等价于交易所私有模拟账户或真实资金验收。
+
+### G7 持续运行结果与交付边界
+
+**G7：本机 release / OBSERVE 的 5 分钟限定窗口 PASS；长期及私有账户运行不在本轮验收范围内。** 原 `data/live-validation` 升级恢复，风险配置版本从 34 推进到 35，触发配置版本 1。61 次采样均为四路公共行情就绪、存储健康、OBSERVE、无执行凭证 / 持仓 / 订单；请求失败 0，核心状态最大滞后 121 ms。RSS 为 71,420–94,888 KB，采样 CPU 为 1.6–42.1%（`ps` 口径）。此窗口内 BTC / ETH 完整评估分别 252 / 244 次，触发事件 53 条，任一秒最多 2 条；16 个 Episode ID 无重复。
+
+最后一次采样的完整评估 P95 为 588 µs，Pulse P95 为 149 µs；checkpoint 序列化 P95 为 18,604 µs，输入队列最近窗口最大延迟 10 ms。耗时分布是本机近期窗口，不能推导成交延迟或资金安全保证。原始采样与持久化审计统计见 [优化构建运行证据](runtime-trigger-smoke.json)。
+
+开发构建的对照观察在并行编译时出现最高 55053 ms 状态积压，**不通过运行就绪判断**；记录保存在 [开发构建压力证据](runtime-trigger-debug-stress.json)，没有用失败样本替换成功证据。个人持续运行新增 `./scripts/start.sh`，使用优化核心与生产前端；`dev.sh` 仅作开发调试。此次优化没有放松订单持久化、发送前数据新鲜度或风险门槛。
+
+实现范围已覆盖升级包六批次，G1–G6 的功能 / 回归门禁及上述限定 G7 观察通过。真实模型仍需校准与当前版本证据，交易所私有模拟账户、小额实盘和长期稳定性仍待独立验收；本轮没有使用私有凭证或真实资金订单。
+
+### 合同自查
+
+没有增加主卡片、模型家族、交易所、标的、OI 或强平流。四类 Alpha 只决定何时评估；模型、资格、AUTO 准入、风控和执行仍有各自门槛。当前阈值是合成夹具和有限真实录制可复现的初始基线，并非统计优化结果。建议每次准备调整阈值、出现市场状态变化或积累新一批封存录制时，重复 `trigger_compare`，保留对照报告后再人工调整；没有自动参数改写或模型晋升。
+
+## v1.0.3 历史基线
 
 完整 P0–P3 的 12 阶段、修正内容、迁移 / 回退与实际门禁状态见 [ACCEPTANCE-P0-P3.md](ACCEPTANCE-P0-P3.md)。
 

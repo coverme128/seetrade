@@ -23,6 +23,14 @@ Binance 建立深度连接后请求 REST snapshot，再验证覆盖 snapshot 的
 
 参考核对（2026-10-02）：[Binance 订单簿同步](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly)、[Binance WS 路径](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect)、[OKX API](https://www.okx.com/docs-v5/en/)、[OKX checksum 废弃说明](https://www.okx.com/en-gb/help/okx-order-book-channels-checksum-field-deprecation)。
 
+## v1.0.4 运行时调度
+
+行情事件始终更新规范簿、成交和标签路径；`market_pulse.rs` 用有限窗口维护每标的轻量指标，默认每 250 ms 计算一次因果 robust-z。`trigger_policy.rs` 区分 IDLE / CANDIDATE / ACTIVE / IN_POSITION：IDLE 不周期调用完整特征与模型，满足一项 EXTREME 或两项不同 ABNORMAL 才立即唤醒；候选有 TTL，Episode 与持仓保持约 1 秒复核。触发上下文和正式 Episode 是不同对象，连续方向沿用原 signal epoch 去重。
+
+Risk / Data 检查先于 Alpha 调度。数据异常立即清除资格、终止不可信的在途预测并重建 Pulse 基线；风险恶化直接调用原有风险评估 / 退出逻辑。保护性网络任务仍与账户查询独立。Pulse 不接入 LLM、网络请求或消息队列；所有时点由输入事件提供，计算耗时只进入不参与重放的 telemetry。
+
+`trigger_analytics.rs` 关联触发、评估、Episode、资格、AUTO 准入、确认成交和结果。完整原始关联持久化；API 保留最近 2,000 个已结束触发及未完成关联。`replay_compare.rs` 仅在离线研究中使用固定步进参考，不提供生产模式开关。逐项公式、统计分母、配置版本迁移和验证边界见 [v1.0.4 验收记录](ACCEPTANCE.md)。本文下方 v1.0.3 的每秒评估说明作为旧版机制保留；生产节奏以本节为准。
+
 ## 与推荐架构的差异
 
 保留 Rust 热路径、Python 研究与 TypeScript UI。将 PostgreSQL / MinIO 简化为单机 SQLite / 文件，降低个人部署成本。每秒状态快照的序列化仍在核心锁内，持久化提交在独立线程；这不是低延迟实盘系统的性能保证，未来高吞吐扩展应使用不可变增量快照并增加吞吐压测。
@@ -115,6 +123,8 @@ PAPER 只能沿 `Prediction → Qualification → TradePlan → Execution → Tr
 | 路径 | 行为 |
 |---|---|
 | GET `/api/state` | 当前状态、近 100 个结果、配置和模型元数据 |
+| GET `/api/trigger-analytics` | 有范围说明的触发漏斗和最近关联明细 |
+| POST `/api/control/trigger_config` | 完整触发配置；仅 OBSERVE、空仓且无待处理订单；推进配置版本并重新预热 |
 | GET `/api/health` | 存储健康、数据源与真钱禁用状态 |
 | GET `/api/history?kind=outcome&limit=500` | 持久化历史，合并独立注释 |
 | POST `/api/control/mode` | OBSERVE / PAPER；CONFIRM / AUTO 另需执行通道与证据门槛 |

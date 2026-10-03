@@ -44,6 +44,8 @@ async fn main() -> Result<()> {
     let dir = std::env::var("MICRO_ALPHA_DATA").unwrap_or_else(|_| "data".into());
     let (store, restored) = Store::open(std::path::Path::new(&dir), source)?;
     let mut engine = restored.unwrap_or_else(|| Engine::new(demo));
+    // Research reference policy can never be restored as a production runtime switch.
+    engine.reference_runtime = false;
     if engine.now > 0 {
         engine.restart();
     }
@@ -183,6 +185,7 @@ async fn main() -> Result<()> {
     let router = Router::new()
         .route("/api/state", get(state))
         .route("/api/health", get(health))
+        .route("/api/trigger-analytics", get(trigger_analytics))
         .route("/api/assist", post(assist))
         .route("/api/history", get(history))
         .route("/api/control/{command}", post(control))
@@ -270,6 +273,16 @@ async fn state(State(app): State<Shared>) -> Json<Value> {
         "OFF"
     });
     Json(snapshot)
+}
+async fn trigger_analytics(State(app): State<Shared>) -> Json<Value> {
+    let e = app.engine.lock().await;
+    let mut links: Vec<_> = e.trigger_analytics.links.values().collect();
+    links.sort_by(|a, b| {
+        b.ts.cmp(&a.ts)
+            .then_with(|| b.trigger_id.cmp(&a.trigger_id))
+    });
+    links.truncate(100);
+    Json(json!({"report": e.trigger_analytics.report(), "recent_links":links}))
 }
 async fn health(State(app): State<Shared>) -> Json<Value> {
     let e = app.engine.lock().await;
@@ -376,7 +389,13 @@ fn replay(path: &str) -> Result<()> {
         match serde_json::from_str::<Journal>(&line)
             .with_context(|| format!("invalid journal line {}", count + 1))?
         {
-            Journal::Start { engine: e } => engine = Some(*e),
+            Journal::Start { engine: mut e } => {
+                // Legacy recordings contain no trigger version and used the fixed-step policy.
+                if e.trigger_config_version == 0 {
+                    e.reference_runtime = true;
+                }
+                engine = Some(*e);
+            }
             Journal::Event { event } => engine
                 .as_mut()
                 .context("journal missing start")?
@@ -923,7 +942,7 @@ mod persistence_tests {
             feeds::now_ms()
         ));
         let (store, _) = Store::open(&dir, "live").unwrap();
-        let mut e = Engine::new(true);
+        let mut e = Engine::new_reference(true);
         for i in 0..8 {
             for event in feeds::demo_events(i, 1_000_000 + i * 1000) {
                 e.ingest(event);
@@ -1061,7 +1080,7 @@ mod execution_tests {
             feeds::now_ms()
         ));
         let (store, _) = Store::open(&dir, "live").unwrap();
-        let mut e = Engine::new(true);
+        let mut e = Engine::new_reference(true);
         for i in 0..8 {
             for event in feeds::demo_events(i, 1000000 + i * 1000) {
                 e.ingest(event);

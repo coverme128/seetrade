@@ -16,6 +16,8 @@ export default function OperationsPanel({
   const [interval, setInterval] = useState("0");
   const [brief, setBrief] = useState("");
   const [loading, setLoading] = useState(false);
+  const [triggerDraft, setTriggerDraft] = useState("");
+  const [triggerError, setTriggerError] = useState("");
   const live = state.live;
   const position = state.live_positions?.[symbol];
   const number = (n: number | null | undefined, digits = 2) =>
@@ -37,6 +39,68 @@ export default function OperationsPanel({
             : "未配置执行账户"}
         </span>
       </div>
+      {state.trigger_config && (
+        <details className="raw-metrics" data-testid="trigger-diagnostics">
+          <summary>运行触发诊断与配置</summary>
+          <p>
+            {symbol} · {state.symbols[symbol]?.runtime_state ?? "IDLE"} ·
+            完整评估 {state.symbols[symbol]?.full_evaluations ?? 0} 次 ·
+            触发配置版本
+            {state.trigger_config_version}
+          </p>
+          <p className="muted">
+            触发只表示值得评估，不代表买卖信号。阈值是待回放验证的工程默认值；
+            原有资格、准入和风险门槛继续生效。修改配置会重新积累当前版本样本。
+          </p>
+          <pre className="research-result">
+            {JSON.stringify(
+              {
+                origin: state.symbols[symbol]?.trigger_origin,
+                pulse: state.symbols[symbol]?.pulse,
+                funnel: state.trigger_analytics,
+                full_evaluation_latency: state.telemetry?.full_alpha_evaluation,
+              },
+              null,
+              2,
+            )}
+          </pre>
+          <button
+            disabled={busy}
+            onClick={() =>
+              setTriggerDraft(JSON.stringify(state.trigger_config, null, 2))
+            }
+          >
+            载入当前触发配置
+          </button>
+          {triggerDraft && (
+            <>
+              <textarea
+                aria-label="触发配置 JSON"
+                rows={12}
+                value={triggerDraft}
+                onChange={(event) => setTriggerDraft(event.target.value)}
+              />
+              <button
+                disabled={busy || state.mode !== "OBSERVE"}
+                onClick={async () => {
+                  try {
+                    const value: unknown = JSON.parse(triggerDraft);
+                    setTriggerError("");
+                    await command("trigger_config", value);
+                  } catch {
+                    setTriggerError(
+                      "配置必须为有效 JSON；服务端还会检查范围和持仓状态。",
+                    );
+                  }
+                }}
+              >
+                保存触发配置（仅 OBSERVE 空仓）
+              </button>
+              {triggerError && <p className="warning">{triggerError}</p>}
+            </>
+          )}
+        </details>
+      )}
       <p className="muted">
         {state.live_gate_reason ||
           "账户与执行通道已就绪；每笔订单仍须通过当前预测和风险检查。"}

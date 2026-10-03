@@ -319,6 +319,8 @@ pub struct TradePlan {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EpisodeMetadata {
+    pub origin_trigger_id: Option<String>,
+    pub origin_trigger_families: Vec<String>,
     pub episode_id: String,
     pub opened_at: u64,
     pub closed_at: Option<u64>,

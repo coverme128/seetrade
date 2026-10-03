@@ -712,7 +712,7 @@ mod tests {
     use super::*;
     use crate::{core::Engine, feeds::demo_events};
     fn intent() -> Intent {
-        let mut e = Engine::new(true);
+        let mut e = Engine::new_reference(true);
         for i in 0..8 {
             for ev in demo_events(i, 1_000_000 + i * 1000) {
                 e.ingest(ev);
@@ -994,7 +994,7 @@ mod okx_tests {
             .unwrap();
         });
         // Reuse a real engine-generated, risk-approved intent via serde fixture construction.
-        let mut e = crate::core::Engine::new(true);
+        let mut e = crate::core::Engine::new_reference(true);
         for i in 0..8 {
             for v in crate::feeds::demo_events(i, 1_000_000 + i * 1000) {
                 e.ingest(v);

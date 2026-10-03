@@ -1,0 +1,6755 @@
+{
+  "schema": "runtime-trigger-observe-smoke-v1",
+  "duration_seconds": 300,
+  "build": "cargo build --locked --release",
+  "source": "live",
+  "private_execution_tested": false,
+  "scope": "bounded local OBSERVE test; not a long-duration or private-account certification",
+  "samples": [
+    {
+      "wall_ms": 1790993211350,
+      "api_ms": 55,
+      "state_lag_ms": 34,
+      "rss_kb": 71420,
+      "cpu_percent": 11.5,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 900,
+        "prediction_episodes_opened": 899,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34011
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 68,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 385,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 51,
+              "exchange_age_ms": 393,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 67,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993203246-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 458,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 51,
+              "exchange_age_ms": 387,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 12985,
+          "p95_us": 18073,
+          "samples": 158
+        },
+        "core_ingest": {
+          "max_us": 1150,
+          "p50_us": 11,
+          "p95_us": 122,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 110,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 135
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2004,
+          "p50_us": 333,
+          "p95_us": 638,
+          "samples": 135
+        },
+        "ingest_queue_delay": {
+          "max_us": 17000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 209,
+          "p50_us": 0,
+          "p95_us": 98,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 31,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 124
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993216330,
+      "api_ms": 30,
+      "state_lag_ms": 50,
+      "rss_kb": 80272,
+      "cpu_percent": 11.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 900,
+        "prediction_episodes_opened": 900,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34020
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 73,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 44,
+              "exchange_age_ms": 419,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 13,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 71,
+          "episode_id": "prediction-1790993214879-1231",
+          "trigger_id": "trigger-ETHUSDT-1790993213366-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 44,
+              "exchange_age_ms": 408,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 23,
+              "exchange_age_ms": 423,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 12979,
+          "p95_us": 17562,
+          "samples": 171
+        },
+        "core_ingest": {
+          "max_us": 19961,
+          "p50_us": 13,
+          "p95_us": 132,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 110,
+          "p50_us": 37,
+          "p95_us": 60,
+          "samples": 144
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2004,
+          "p50_us": 334,
+          "p95_us": 633,
+          "samples": 144
+        },
+        "ingest_queue_delay": {
+          "max_us": 12000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 245,
+          "p50_us": 0,
+          "p95_us": 104,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 31,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 132
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993221336,
+      "api_ms": 33,
+      "state_lag_ms": 50,
+      "rss_kb": 80720,
+      "cpu_percent": 28.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 901,
+        "prediction_episodes_opened": 900,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34030
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 78,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 411,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 31,
+              "exchange_age_ms": 423,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 76,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 408,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 31,
+              "exchange_age_ms": 417,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13015,
+          "p95_us": 17562,
+          "samples": 183
+        },
+        "core_ingest": {
+          "max_us": 19961,
+          "p50_us": 12,
+          "p95_us": 137,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 110,
+          "p50_us": 37,
+          "p95_us": 60,
+          "samples": 154
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2004,
+          "p50_us": 335,
+          "p95_us": 633,
+          "samples": 154
+        },
+        "ingest_queue_delay": {
+          "max_us": 15000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 245,
+          "p50_us": 0,
+          "p95_us": 110,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 31,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 141
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993226341,
+      "api_ms": 33,
+      "state_lag_ms": 62,
+      "rss_kb": 80796,
+      "cpu_percent": 29.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 901,
+        "prediction_episodes_opened": 900,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34037
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 83,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 43,
+              "exchange_age_ms": 416,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 23,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 78,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993224667-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 23,
+              "exchange_age_ms": 431,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 23,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13110,
+          "p95_us": 17562,
+          "samples": 194
+        },
+        "core_ingest": {
+          "max_us": 12295,
+          "p50_us": 13,
+          "p95_us": 141,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 65,
+          "samples": 161
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 335,
+          "p95_us": 633,
+          "samples": 161
+        },
+        "ingest_queue_delay": {
+          "max_us": 15000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 349,
+          "p50_us": 0,
+          "p95_us": 120,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 146
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993231345,
+      "api_ms": 33,
+      "state_lag_ms": 39,
+      "rss_kb": 81704,
+      "cpu_percent": 9.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 901,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34045
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 87,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 387,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 41,
+              "exchange_age_ms": 403,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 82,
+          "episode_id": "prediction-1790993227779-1232",
+          "trigger_id": "trigger-ETHUSDT-1790993224667-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 31,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 397,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13110,
+          "p95_us": 17535,
+          "samples": 207
+        },
+        "core_ingest": {
+          "max_us": 12295,
+          "p50_us": 14,
+          "p95_us": 147,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 65,
+          "samples": 169
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 336,
+          "p95_us": 633,
+          "samples": 169
+        },
+        "ingest_queue_delay": {
+          "max_us": 13000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 349,
+          "p50_us": 0,
+          "p95_us": 126,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 155
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993236348,
+      "api_ms": 32,
+      "state_lag_ms": 62,
+      "rss_kb": 86892,
+      "cpu_percent": 19.9,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 901,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34055
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 92,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 405,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 423,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 87,
+          "episode_id": "prediction-1790993227779-1232",
+          "trigger_id": "trigger-ETHUSDT-1790993224667-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 466,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 417,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13045,
+          "p95_us": 17355,
+          "samples": 221
+        },
+        "core_ingest": {
+          "max_us": 842,
+          "p50_us": 16,
+          "p95_us": 154,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 179
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 338,
+          "p95_us": 633,
+          "samples": 179
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 349,
+          "p50_us": 0,
+          "p95_us": 133,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 165
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993241357,
+      "api_ms": 33,
+      "state_lag_ms": 51,
+      "rss_kb": 86044,
+      "cpu_percent": 26.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 901,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34065
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 97,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 383,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 403,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 92,
+          "episode_id": "prediction-1790993227779-1232",
+          "trigger_id": "trigger-ETHUSDT-1790993224667-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 466,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 397,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13173,
+          "p95_us": 17535,
+          "samples": 236
+        },
+        "core_ingest": {
+          "max_us": 1102,
+          "p50_us": 16,
+          "p95_us": 169,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 189
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 341,
+          "p95_us": 633,
+          "samples": 189
+        },
+        "ingest_queue_delay": {
+          "max_us": 31000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 349,
+          "p50_us": 0,
+          "p95_us": 141,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 175
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993246364,
+      "api_ms": 31,
+      "state_lag_ms": 48,
+      "rss_kb": 81892,
+      "cpu_percent": 8.9,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 902,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34071
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 102,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 65,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 393,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 388,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 387,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13173,
+          "p95_us": 17355,
+          "samples": 246
+        },
+        "core_ingest": {
+          "max_us": 1102,
+          "p50_us": 15,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 195
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 341,
+          "p95_us": 633,
+          "samples": 195
+        },
+        "ingest_queue_delay": {
+          "max_us": 31000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 349,
+          "p50_us": 0,
+          "p95_us": 148,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 180
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993251373,
+      "api_ms": 31,
+      "state_lag_ms": 47,
+      "rss_kb": 82948,
+      "cpu_percent": 14.9,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 902,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34076
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 107,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 461,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 261,
+              "exchange_age_ms": 183,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 398,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 170,
+              "exchange_age_ms": 277,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13173,
+          "p95_us": 17472,
+          "samples": 256
+        },
+        "core_ingest": {
+          "max_us": 2408,
+          "p50_us": 15,
+          "p95_us": 171,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 200
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 633,
+          "samples": 200
+        },
+        "ingest_queue_delay": {
+          "max_us": 11000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 153,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 20,
+          "samples": 185
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993256376,
+      "api_ms": 27,
+      "state_lag_ms": 40,
+      "rss_kb": 89456,
+      "cpu_percent": 18.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 902,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34081
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 112,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 12,
+              "exchange_age_ms": 449,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 373,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 416,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 367,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13184,
+          "p95_us": 17355,
+          "samples": 266
+        },
+        "core_ingest": {
+          "max_us": 2408,
+          "p50_us": 14,
+          "p95_us": 178,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 65,
+          "samples": 205
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 630,
+          "samples": 205
+        },
+        "ingest_queue_delay": {
+          "max_us": 11000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 159,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 20,
+          "samples": 190
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993261383,
+      "api_ms": 25,
+      "state_lag_ms": 27,
+      "rss_kb": 84324,
+      "cpu_percent": 12.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 902,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34085
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 116,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 31,
+              "exchange_age_ms": 427,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 453,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 52,
+              "exchange_age_ms": 410,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 447,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13234,
+          "p95_us": 17535,
+          "samples": 275
+        },
+        "core_ingest": {
+          "max_us": 935,
+          "p50_us": 14,
+          "p95_us": 184,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 38,
+          "p95_us": 71,
+          "samples": 209
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 633,
+          "samples": 209
+        },
+        "ingest_queue_delay": {
+          "max_us": 7000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 194
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993266392,
+      "api_ms": 25,
+      "state_lag_ms": 38,
+      "rss_kb": 84416,
+      "cpu_percent": 4.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 902,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34090
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 121,
+          "episode_id": "prediction-1790993209680-1230",
+          "trigger_id": "trigger-BTCUSDT-1790993203505-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 37,
+              "exchange_age_ms": 427,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 455,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 37,
+              "exchange_age_ms": 428,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 449,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13234,
+          "p95_us": 17472,
+          "samples": 284
+        },
+        "core_ingest": {
+          "max_us": 935,
+          "p50_us": 13,
+          "p95_us": 181,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 71,
+          "samples": 214
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 633,
+          "samples": 214
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 21,
+          "samples": 199
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993271400,
+      "api_ms": 26,
+      "state_lag_ms": 26,
+      "rss_kb": 85892,
+      "cpu_percent": 3.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 901,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34094
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 125,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 405,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 19,
+              "exchange_age_ms": 435,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 93,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 432,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 19,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13224,
+          "p95_us": 17472,
+          "samples": 294
+        },
+        "core_ingest": {
+          "max_us": 935,
+          "p50_us": 13,
+          "p95_us": 172,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 71,
+          "samples": 218
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 633,
+          "samples": 218
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 20,
+          "samples": 202
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993276426,
+      "api_ms": 42,
+      "state_lag_ms": 34,
+      "rss_kb": 84912,
+      "cpu_percent": 8.5,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 902,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34101
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 129,
+          "episode_id": "prediction-1790993275980-1233",
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 78,
+              "exchange_age_ms": 385,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 37,
+              "exchange_age_ms": 417,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 96,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 37,
+              "exchange_age_ms": 426,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 37,
+              "exchange_age_ms": 411,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13191,
+          "p95_us": 17535,
+          "samples": 306
+        },
+        "core_ingest": {
+          "max_us": 932,
+          "p50_us": 12,
+          "p95_us": 161,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 225
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 630,
+          "samples": 225
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 162,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 20,
+          "samples": 204
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993281428,
+      "api_ms": 35,
+      "state_lag_ms": 49,
+      "rss_kb": 84956,
+      "cpu_percent": 34.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34110
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 134,
+          "episode_id": "prediction-1790993275980-1233",
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 63,
+              "exchange_age_ms": 396,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 24,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 100,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 5,
+              "exchange_age_ms": 461,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 24,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13189,
+          "p95_us": 17535,
+          "samples": 317
+        },
+        "core_ingest": {
+          "max_us": 932,
+          "p50_us": 12,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 69,
+          "samples": 234
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 630,
+          "samples": 234
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 2382,
+          "p50_us": 0,
+          "p95_us": 162,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 20,
+          "samples": 214
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993286451,
+      "api_ms": 48,
+      "state_lag_ms": 57,
+      "rss_kb": 85036,
+      "cpu_percent": 30.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34120
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 139,
+          "episode_id": "prediction-1790993275980-1233",
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 379,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 415,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 105,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 462,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 409,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13191,
+          "p95_us": 17535,
+          "samples": 331
+        },
+        "core_ingest": {
+          "max_us": 932,
+          "p50_us": 13,
+          "p95_us": 175,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 65,
+          "samples": 244
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 604,
+          "samples": 244
+        },
+        "ingest_queue_delay": {
+          "max_us": 12000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 344,
+          "p50_us": 0,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 224
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993291440,
+      "api_ms": 29,
+      "state_lag_ms": 60,
+      "rss_kb": 85036,
+      "cpu_percent": 23.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34129
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 143,
+          "episode_id": "prediction-1790993275980-1233",
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 76,
+              "exchange_age_ms": 391,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 26,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 110,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 76,
+              "exchange_age_ms": 392,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 26,
+              "exchange_age_ms": 423,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13224,
+          "p95_us": 17535,
+          "samples": 346
+        },
+        "core_ingest": {
+          "max_us": 729,
+          "p50_us": 12,
+          "p95_us": 175,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 37,
+          "p95_us": 65,
+          "samples": 253
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 604,
+          "samples": 253
+        },
+        "ingest_queue_delay": {
+          "max_us": 12000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 274,
+          "p50_us": 0,
+          "p95_us": 159,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 233
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993296451,
+      "api_ms": 30,
+      "state_lag_ms": 47,
+      "rss_kb": 85140,
+      "cpu_percent": 12.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 903,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34139
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 149,
+          "episode_id": "prediction-1790993275980-1233",
+          "trigger_id": "trigger-BTCUSDT-1790993269785-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 467,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 405,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 114,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 384,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 399,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13237,
+          "p95_us": 17535,
+          "samples": 359
+        },
+        "core_ingest": {
+          "max_us": 729,
+          "p50_us": 12,
+          "p95_us": 178,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 65,
+          "samples": 263
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 343,
+          "p95_us": 592,
+          "samples": 263
+        },
+        "ingest_queue_delay": {
+          "max_us": 7000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 316,
+          "p50_us": 0,
+          "p95_us": 160,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 243
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993301458,
+      "api_ms": 29,
+      "state_lag_ms": 54,
+      "rss_kb": 85288,
+      "cpu_percent": 24.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 904,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34150
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 154,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 465,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 49,
+              "exchange_age_ms": 405,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 120,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 392,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 49,
+              "exchange_age_ms": 399,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13240,
+          "p95_us": 17535,
+          "samples": 375
+        },
+        "core_ingest": {
+          "max_us": 1331,
+          "p50_us": 10,
+          "p95_us": 178,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 65,
+          "samples": 274
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 345,
+          "p95_us": 592,
+          "samples": 274
+        },
+        "ingest_queue_delay": {
+          "max_us": 8000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 316,
+          "p50_us": 0,
+          "p95_us": 158,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 253
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993306467,
+      "api_ms": 32,
+      "state_lag_ms": 43,
+      "rss_kb": 90476,
+      "cpu_percent": 11.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 904,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34159
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 158,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993301504-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 19,
+              "exchange_age_ms": 443,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 68,
+              "exchange_age_ms": 385,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 125,
+          "episode_id": "prediction-1790993277880-1234",
+          "trigger_id": "trigger-ETHUSDT-1790993274514-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 68,
+              "exchange_age_ms": 392,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 68,
+              "exchange_age_ms": 379,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13277,
+          "p95_us": 17472,
+          "samples": 388
+        },
+        "core_ingest": {
+          "max_us": 1331,
+          "p50_us": 10,
+          "p95_us": 178,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 283
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 345,
+          "p95_us": 588,
+          "samples": 283
+        },
+        "ingest_queue_delay": {
+          "max_us": 8000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 316,
+          "p50_us": 0,
+          "p95_us": 160,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 258
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993311473,
+      "api_ms": 31,
+      "state_lag_ms": 92,
+      "rss_kb": 89940,
+      "cpu_percent": 32.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 905,
+        "prediction_episodes_opened": 903,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34168
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 161,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993301504-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 77,
+              "exchange_age_ms": 382,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 17,
+              "exchange_age_ms": 428,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 131,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 17,
+              "exchange_age_ms": 447,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 17,
+              "exchange_age_ms": 422,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13277,
+          "p95_us": 17535,
+          "samples": 401
+        },
+        "core_ingest": {
+          "max_us": 1009,
+          "p50_us": 11,
+          "p95_us": 171,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 65,
+          "samples": 292
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 345,
+          "p95_us": 588,
+          "samples": 292
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 316,
+          "p50_us": 0,
+          "p95_us": 157,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 262
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993316487,
+      "api_ms": 36,
+      "state_lag_ms": 108,
+      "rss_kb": 90084,
+      "cpu_percent": 2.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 905,
+        "prediction_episodes_opened": 904,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34174
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 164,
+          "episode_id": "prediction-1790993313399-1235",
+          "trigger_id": "trigger-BTCUSDT-1790993313399-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 285,
+              "exchange_age_ms": 178,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 324,
+              "exchange_age_ms": 130,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 134,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 315,
+              "exchange_age_ms": 151,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 324,
+              "exchange_age_ms": 124,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13310,
+          "p95_us": 17562,
+          "samples": 413
+        },
+        "core_ingest": {
+          "max_us": 1148,
+          "p50_us": 8,
+          "p95_us": 150,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 65,
+          "samples": 298
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 345,
+          "p95_us": 588,
+          "samples": 298
+        },
+        "ingest_queue_delay": {
+          "max_us": 39000,
+          "p50_us": 0,
+          "p95_us": 3000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 370,
+          "p50_us": 0,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 266
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993321491,
+      "api_ms": 32,
+      "state_lag_ms": 111,
+      "rss_kb": 90328,
+      "cpu_percent": 3.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 906,
+        "prediction_episodes_opened": 905,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34184
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 169,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 64,
+              "exchange_age_ms": 379,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 15,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 139,
+          "episode_id": "prediction-1790993316479-1236",
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 65,
+              "exchange_age_ms": 376,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 16,
+              "exchange_age_ms": 423,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13322,
+          "p95_us": 17546,
+          "samples": 423
+        },
+        "core_ingest": {
+          "max_us": 1148,
+          "p50_us": 8,
+          "p95_us": 171,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 308
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 346,
+          "p95_us": 588,
+          "samples": 308
+        },
+        "ingest_queue_delay": {
+          "max_us": 39000,
+          "p50_us": 0,
+          "p95_us": 3000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 370,
+          "p50_us": 0,
+          "p95_us": 159,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 276
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993326500,
+      "api_ms": 31,
+      "state_lag_ms": 86,
+      "rss_kb": 86456,
+      "cpu_percent": 9.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 906,
+        "prediction_episodes_opened": 905,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34193
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 173,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993321598-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 445,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 395,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 144,
+          "episode_id": "prediction-1790993316479-1236",
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 446,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 389,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13430,
+          "p95_us": 17946,
+          "samples": 435
+        },
+        "core_ingest": {
+          "max_us": 1161,
+          "p50_us": 13,
+          "p95_us": 200,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 65,
+          "samples": 317
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 347,
+          "p95_us": 592,
+          "samples": 317
+        },
+        "ingest_queue_delay": {
+          "max_us": 36000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 180,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 281
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993331505,
+      "api_ms": 28,
+      "state_lag_ms": 51,
+      "rss_kb": 91704,
+      "cpu_percent": 19.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 906,
+        "prediction_episodes_opened": 906,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34202
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 177,
+          "episode_id": "prediction-1790993327279-1237",
+          "trigger_id": "trigger-BTCUSDT-1790993321598-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 403,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 455,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 149,
+          "episode_id": "prediction-1790993316479-1236",
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 412,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 449,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13472,
+          "p95_us": 17946,
+          "samples": 449
+        },
+        "core_ingest": {
+          "max_us": 1161,
+          "p50_us": 11,
+          "p95_us": 178,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 326
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 351,
+          "p95_us": 592,
+          "samples": 326
+        },
+        "ingest_queue_delay": {
+          "max_us": 19000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 189,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 291
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993336513,
+      "api_ms": 28,
+      "state_lag_ms": 32,
+      "rss_kb": 91708,
+      "cpu_percent": 6.9,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 906,
+        "prediction_episodes_opened": 906,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34212
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 182,
+          "episode_id": "prediction-1790993327279-1237",
+          "trigger_id": "trigger-BTCUSDT-1790993321598-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 14,
+              "exchange_age_ms": 374,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 14,
+              "exchange_age_ms": 428,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 154,
+          "episode_id": "prediction-1790993316479-1236",
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 14,
+              "exchange_age_ms": 393,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 14,
+              "exchange_age_ms": 422,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13494,
+          "p95_us": 17889,
+          "samples": 462
+        },
+        "core_ingest": {
+          "max_us": 939,
+          "p50_us": 11,
+          "p95_us": 177,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 336
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 351,
+          "p95_us": 592,
+          "samples": 336
+        },
+        "ingest_queue_delay": {
+          "max_us": 16000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 191,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 301
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993341530,
+      "api_ms": 35,
+      "state_lag_ms": 51,
+      "rss_kb": 86500,
+      "cpu_percent": 38.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 906,
+        "prediction_episodes_opened": 906,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34222
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 187,
+          "episode_id": "prediction-1790993327279-1237",
+          "trigger_id": "trigger-BTCUSDT-1790993321598-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 85,
+              "exchange_age_ms": 374,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 94,
+              "exchange_age_ms": 330,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 159,
+          "episode_id": "prediction-1790993316479-1236",
+          "trigger_id": "trigger-ETHUSDT-1790993311364-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 94,
+              "exchange_age_ms": 317,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 94,
+              "exchange_age_ms": 324,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13506,
+          "p95_us": 18092,
+          "samples": 476
+        },
+        "core_ingest": {
+          "max_us": 827,
+          "p50_us": 11,
+          "p95_us": 187,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 346
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 353,
+          "p95_us": 588,
+          "samples": 346
+        },
+        "ingest_queue_delay": {
+          "max_us": 9000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 192,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 311
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993346535,
+      "api_ms": 32,
+      "state_lag_ms": 41,
+      "rss_kb": 92564,
+      "cpu_percent": 1.6,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 908,
+        "prediction_episodes_opened": 906,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34229
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 189,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 459,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 140,
+              "exchange_age_ms": 315,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 164,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 408,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 409,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13507,
+          "p95_us": 18092,
+          "samples": 486
+        },
+        "core_ingest": {
+          "max_us": 2002,
+          "p50_us": 11,
+          "p95_us": 184,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 353
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 351,
+          "p95_us": 588,
+          "samples": 353
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 182,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 313
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993351537,
+      "api_ms": 26,
+      "state_lag_ms": 49,
+      "rss_kb": 87356,
+      "cpu_percent": 2.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 908,
+        "prediction_episodes_opened": 907,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34232
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 189,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 463,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 421,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 167,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 436,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 415,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13518,
+          "p95_us": 18092,
+          "samples": 493
+        },
+        "core_ingest": {
+          "max_us": 2002,
+          "p50_us": 12,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 64,
+          "samples": 356
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 353,
+          "p95_us": 592,
+          "samples": 356
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 468,
+          "p50_us": 0,
+          "p95_us": 182,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 316
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993356550,
+      "api_ms": 33,
+      "state_lag_ms": 65,
+      "rss_kb": 87368,
+      "cpu_percent": 6.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 908,
+        "prediction_episodes_opened": 907,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34237
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 189,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 464,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 172,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 10,
+              "exchange_age_ms": 451,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 418,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13529,
+          "p95_us": 18073,
+          "samples": 503
+        },
+        "core_ingest": {
+          "max_us": 2448,
+          "p50_us": 12,
+          "p95_us": 164,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 361
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 354,
+          "p95_us": 588,
+          "samples": 361
+        },
+        "ingest_queue_delay": {
+          "max_us": 3000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 332,
+          "p50_us": 0,
+          "p95_us": 171,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 321
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993361554,
+      "api_ms": 30,
+      "state_lag_ms": 51,
+      "rss_kb": 92632,
+      "cpu_percent": 32.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 908,
+        "prediction_episodes_opened": 908,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34245
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 192,
+          "episode_id": "prediction-1790993361381-1239",
+          "trigger_id": "trigger-BTCUSDT-1790993358295-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 19,
+              "exchange_age_ms": 444,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 49,
+              "exchange_age_ms": 406,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 177,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 19,
+              "exchange_age_ms": 445,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 49,
+              "exchange_age_ms": 400,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13544,
+          "p95_us": 18314,
+          "samples": 515
+        },
+        "core_ingest": {
+          "max_us": 2448,
+          "p50_us": 13,
+          "p95_us": 166,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 369
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 357,
+          "p95_us": 597,
+          "samples": 369
+        },
+        "ingest_queue_delay": {
+          "max_us": 18000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 266,
+          "p50_us": 0,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 328
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993366559,
+      "api_ms": 29,
+      "state_lag_ms": 80,
+      "rss_kb": 87792,
+      "cpu_percent": 12.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 909,
+        "prediction_episodes_opened": 908,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34254
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 196,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 92,
+              "exchange_age_ms": 364,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 24,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 182,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 76,
+              "exchange_age_ms": 387,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 24,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13556,
+          "p95_us": 18220,
+          "samples": 528
+        },
+        "core_ingest": {
+          "max_us": 1567,
+          "p50_us": 14,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 378
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 357,
+          "p95_us": 604,
+          "samples": 378
+        },
+        "ingest_queue_delay": {
+          "max_us": 20000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 368,
+          "p50_us": 0,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 19,
+          "samples": 336
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993371569,
+      "api_ms": 31,
+      "state_lag_ms": 54,
+      "rss_kb": 88420,
+      "cpu_percent": 6.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 909,
+        "prediction_episodes_opened": 908,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34259
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 196,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 41,
+              "exchange_age_ms": 428,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 64,
+              "exchange_age_ms": 394,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 187,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 3,
+              "exchange_age_ms": 467,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 71,
+              "exchange_age_ms": 388,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13564,
+          "p95_us": 18568,
+          "samples": 537
+        },
+        "core_ingest": {
+          "max_us": 1567,
+          "p50_us": 15,
+          "p95_us": 171,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 383
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 358,
+          "p95_us": 597,
+          "samples": 383
+        },
+        "ingest_queue_delay": {
+          "max_us": 20000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 368,
+          "p50_us": 0,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 341
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993376563,
+      "api_ms": 25,
+      "state_lag_ms": 39,
+      "rss_kb": 94888,
+      "cpu_percent": 42.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 909,
+        "prediction_episodes_opened": 909,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34268
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 200,
+          "episode_id": "prediction-1790993376343-1240",
+          "trigger_id": "trigger-BTCUSDT-1790993373695-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 51,
+              "exchange_age_ms": 417,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 69,
+              "exchange_age_ms": 385,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 192,
+          "episode_id": "prediction-1790993349579-1238",
+          "trigger_id": "trigger-ETHUSDT-1790993343385-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 468,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 69,
+              "exchange_age_ms": 379,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13564,
+          "p95_us": 18568,
+          "samples": 553
+        },
+        "core_ingest": {
+          "max_us": 947,
+          "p50_us": 13,
+          "p95_us": 173,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 36,
+          "p95_us": 60,
+          "samples": 392
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 360,
+          "p95_us": 601,
+          "samples": 392
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 348
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993381574,
+      "api_ms": 29,
+      "state_lag_ms": 39,
+      "rss_kb": 93792,
+      "cpu_percent": 19.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 910,
+        "prediction_episodes_opened": 909,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34278
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 205,
+          "episode_id": "prediction-1790993376343-1240",
+          "trigger_id": "trigger-BTCUSDT-1790993373695-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 62,
+              "exchange_age_ms": 404,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 82,
+              "exchange_age_ms": 374,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 197,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993378473-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 465,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 82,
+              "exchange_age_ms": 368,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13530,
+          "p95_us": 18314,
+          "samples": 566
+        },
+        "core_ingest": {
+          "max_us": 1181,
+          "p50_us": 13,
+          "p95_us": 174,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 402
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 359,
+          "p95_us": 597,
+          "samples": 402
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 168,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 354
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993386583,
+      "api_ms": 32,
+      "state_lag_ms": 40,
+      "rss_kb": 93868,
+      "cpu_percent": 15.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 910,
+        "prediction_episodes_opened": 910,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34286
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 209,
+          "episode_id": "prediction-1790993376343-1240",
+          "trigger_id": "trigger-BTCUSDT-1790993373695-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 394,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 90,
+              "exchange_age_ms": 366,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 201,
+          "episode_id": "prediction-1790993384879-1241",
+          "trigger_id": "trigger-ETHUSDT-1790993378473-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 463,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 90,
+              "exchange_age_ms": 360,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13544,
+          "p95_us": 18314,
+          "samples": 579
+        },
+        "core_ingest": {
+          "max_us": 1181,
+          "p50_us": 14,
+          "p95_us": 185,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 60,
+          "samples": 410
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 359,
+          "p95_us": 597,
+          "samples": 410
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 172,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 361
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993391576,
+      "api_ms": 25,
+      "state_lag_ms": 42,
+      "rss_kb": 88628,
+      "cpu_percent": 24.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 911,
+        "prediction_episodes_opened": 910,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34297
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 214,
+          "episode_id": "prediction-1790993376343-1240",
+          "trigger_id": "trigger-BTCUSDT-1790993373695-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 61,
+              "exchange_age_ms": 401,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 81,
+              "exchange_age_ms": 375,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 207,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993389305-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 81,
+              "exchange_age_ms": 380,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 81,
+              "exchange_age_ms": 369,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13544,
+          "p95_us": 18314,
+          "samples": 595
+        },
+        "core_ingest": {
+          "max_us": 816,
+          "p50_us": 15,
+          "p95_us": 193,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 421
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 359,
+          "p95_us": 592,
+          "samples": 421
+        },
+        "ingest_queue_delay": {
+          "max_us": 9000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 177,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 368
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993396583,
+      "api_ms": 25,
+      "state_lag_ms": 30,
+      "rss_kb": 87604,
+      "cpu_percent": 9.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 911,
+        "prediction_episodes_opened": 910,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34305
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 219,
+          "episode_id": "prediction-1790993376343-1240",
+          "trigger_id": "trigger-BTCUSDT-1790993373695-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 380,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 200,
+              "exchange_age_ms": 256,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 210,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993389305-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 90,
+              "exchange_age_ms": 379,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 450,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13564,
+          "p95_us": 18220,
+          "samples": 608
+        },
+        "core_ingest": {
+          "max_us": 816,
+          "p50_us": 14,
+          "p95_us": 192,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 429
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 359,
+          "p95_us": 592,
+          "samples": 429
+        },
+        "ingest_queue_delay": {
+          "max_us": 9000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 177,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 373
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993401593,
+      "api_ms": 26,
+      "state_lag_ms": 113,
+      "rss_kb": 88816,
+      "cpu_percent": 9.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 912,
+        "prediction_episodes_opened": 910,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34312
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 224,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993397694-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 417,
+              "exchange_age_ms": 43,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 317,
+              "exchange_age_ms": 129,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 212,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 397,
+              "exchange_age_ms": 68,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 327,
+              "exchange_age_ms": 123,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13564,
+          "p95_us": 18220,
+          "samples": 619
+        },
+        "core_ingest": {
+          "max_us": 1061,
+          "p50_us": 14,
+          "p95_us": 175,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 436
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 359,
+          "p95_us": 592,
+          "samples": 436
+        },
+        "ingest_queue_delay": {
+          "max_us": 12000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 179,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 373
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993406603,
+      "api_ms": 27,
+      "state_lag_ms": 100,
+      "rss_kb": 87716,
+      "cpu_percent": 34.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 911,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34322
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 230,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 36,
+              "exchange_age_ms": 426,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 406,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 216,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993401578-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 465,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 400,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13600,
+          "p95_us": 18314,
+          "samples": 630
+        },
+        "core_ingest": {
+          "max_us": 2312,
+          "p50_us": 11,
+          "p95_us": 175,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 446
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 360,
+          "p95_us": 592,
+          "samples": 446
+        },
+        "ingest_queue_delay": {
+          "max_us": 18000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 379,
+          "p50_us": 0,
+          "p95_us": 177,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 378
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993411616,
+      "api_ms": 31,
+      "state_lag_ms": 37,
+      "rss_kb": 87716,
+      "cpu_percent": 18.0,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 911,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34329
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 234,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 5,
+              "exchange_age_ms": 450,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 26,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "IDLE",
+          "full_evaluations": 219,
+          "episode_id": null,
+          "trigger_id": null,
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 34,
+              "exchange_age_ms": 405,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 26,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13612,
+          "p95_us": 18220,
+          "samples": 642
+        },
+        "core_ingest": {
+          "max_us": 2312,
+          "p50_us": 10,
+          "p95_us": 175,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 453
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 360,
+          "p95_us": 592,
+          "samples": 453
+        },
+        "ingest_queue_delay": {
+          "max_us": 18000,
+          "p50_us": 0,
+          "p95_us": 3000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 378
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993416620,
+      "api_ms": 29,
+      "state_lag_ms": 40,
+      "rss_kb": 93064,
+      "cpu_percent": 18.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34336
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 238,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 116,
+              "exchange_age_ms": 345,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 116,
+              "exchange_age_ms": 329,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 222,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 116,
+              "exchange_age_ms": 312,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 116,
+              "exchange_age_ms": 323,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13612,
+          "p95_us": 18568,
+          "samples": 654
+        },
+        "core_ingest": {
+          "max_us": 2312,
+          "p50_us": 12,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 58,
+          "samples": 460
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 363,
+          "p95_us": 592,
+          "samples": 460
+        },
+        "ingest_queue_delay": {
+          "max_us": 18000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 170,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 387
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993421623,
+      "api_ms": 26,
+      "state_lag_ms": 30,
+      "rss_kb": 87828,
+      "cpu_percent": 34.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34346
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 243,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 432,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 38,
+              "exchange_age_ms": 416,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 227,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 38,
+              "exchange_age_ms": 421,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 38,
+              "exchange_age_ms": 410,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13612,
+          "p95_us": 18568,
+          "samples": 665
+        },
+        "core_ingest": {
+          "max_us": 1162,
+          "p50_us": 13,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 470
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 364,
+          "p95_us": 588,
+          "samples": 470
+        },
+        "ingest_queue_delay": {
+          "max_us": 13000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 164,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 397
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993426699,
+      "api_ms": 58,
+      "state_lag_ms": 106,
+      "rss_kb": 88988,
+      "cpu_percent": 6.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34354
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 247,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 29,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 29,
+              "exchange_age_ms": 416,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 231,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 441,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 29,
+              "exchange_age_ms": 410,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13612,
+          "p95_us": 18568,
+          "samples": 674
+        },
+        "core_ingest": {
+          "max_us": 1162,
+          "p50_us": 13,
+          "p95_us": 152,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 478
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 364,
+          "p95_us": 588,
+          "samples": 478
+        },
+        "ingest_queue_delay": {
+          "max_us": 10000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 154,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 405
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993431684,
+      "api_ms": 35,
+      "state_lag_ms": 91,
+      "rss_kb": 93080,
+      "cpu_percent": 8.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34364
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 252,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 428,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 416,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 236,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 2,
+              "exchange_age_ms": 459,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 410,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13629,
+          "p95_us": 18314,
+          "samples": 684
+        },
+        "core_ingest": {
+          "max_us": 1364,
+          "p50_us": 14,
+          "p95_us": 152,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 488
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 365,
+          "p95_us": 584,
+          "samples": 488
+        },
+        "ingest_queue_delay": {
+          "max_us": 14000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 156,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 415
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993436690,
+      "api_ms": 32,
+      "state_lag_ms": 77,
+      "rss_kb": 87976,
+      "cpu_percent": 18.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34374
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 257,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 406,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 396,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 241,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 463,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 390,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13629,
+          "p95_us": 18314,
+          "samples": 694
+        },
+        "core_ingest": {
+          "max_us": 1364,
+          "p50_us": 14,
+          "p95_us": 160,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 498
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 365,
+          "p95_us": 584,
+          "samples": 498
+        },
+        "ingest_queue_delay": {
+          "max_us": 14000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 299,
+          "p50_us": 0,
+          "p95_us": 151,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 425
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993441693,
+      "api_ms": 27,
+      "state_lag_ms": 30,
+      "rss_kb": 87852,
+      "cpu_percent": 20.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34384
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 262,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 10,
+              "exchange_age_ms": 456,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 446,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 246,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 441,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 10,
+              "exchange_age_ms": 440,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13634,
+          "p95_us": 18679,
+          "samples": 705
+        },
+        "core_ingest": {
+          "max_us": 2733,
+          "p50_us": 14,
+          "p95_us": 164,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 508
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 365,
+          "p95_us": 584,
+          "samples": 508
+        },
+        "ingest_queue_delay": {
+          "max_us": 51000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 149,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 435
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993446703,
+      "api_ms": 28,
+      "state_lag_ms": 29,
+      "rss_kb": 89008,
+      "cpu_percent": 20.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34393
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 266,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 443,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 435,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 251,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 446,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 5,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13665,
+          "p95_us": 18716,
+          "samples": 717
+        },
+        "core_ingest": {
+          "max_us": 2733,
+          "p50_us": 13,
+          "p95_us": 161,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 517
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 365,
+          "p95_us": 592,
+          "samples": 517
+        },
+        "ingest_queue_delay": {
+          "max_us": 51000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 148,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 444
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993451714,
+      "api_ms": 31,
+      "state_lag_ms": 35,
+      "rss_kb": 93108,
+      "cpu_percent": 13.1,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34403
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 271,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 126,
+              "exchange_age_ms": 334,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 126,
+              "exchange_age_ms": 330,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 256,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 106,
+              "exchange_age_ms": 355,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 126,
+              "exchange_age_ms": 324,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13677,
+          "p95_us": 18679,
+          "samples": 731
+        },
+        "core_ingest": {
+          "max_us": 2733,
+          "p50_us": 12,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 527
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 366,
+          "p95_us": 592,
+          "samples": 527
+        },
+        "ingest_queue_delay": {
+          "max_us": 51000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 148,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 454
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993456727,
+      "api_ms": 43,
+      "state_lag_ms": 48,
+      "rss_kb": 87856,
+      "cpu_percent": 4.5,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34413
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 276,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 36,
+              "exchange_age_ms": 434,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 16,
+              "exchange_age_ms": 430,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 261,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 46,
+              "exchange_age_ms": 375,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 24,
+              "exchange_age_ms": 424,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13686,
+          "p95_us": 18604,
+          "samples": 741
+        },
+        "core_ingest": {
+          "max_us": 831,
+          "p50_us": 11,
+          "p95_us": 162,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 537
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 592,
+          "samples": 537
+        },
+        "ingest_queue_delay": {
+          "max_us": 18000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 147,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 464
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993461715,
+      "api_ms": 26,
+      "state_lag_ms": 39,
+      "rss_kb": 87856,
+      "cpu_percent": 11.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 913,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34422
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 281,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 237,
+              "exchange_age_ms": 231,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 227,
+              "exchange_age_ms": 233,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 265,
+          "episode_id": "prediction-1790993414273-1244",
+          "trigger_id": "trigger-ETHUSDT-1790993414273-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 275,
+              "exchange_age_ms": 188,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 227,
+              "exchange_age_ms": 227,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13686,
+          "p95_us": 18604,
+          "samples": 751
+        },
+        "core_ingest": {
+          "max_us": 723,
+          "p50_us": 9,
+          "p95_us": 153,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 546
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 588,
+          "samples": 546
+        },
+        "ingest_queue_delay": {
+          "max_us": 31000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 145,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 473
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993466721,
+      "api_ms": 26,
+      "state_lag_ms": 47,
+      "rss_kb": 87856,
+      "cpu_percent": 17.6,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 914,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34432
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 286,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 38,
+              "exchange_age_ms": 435,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 28,
+              "exchange_age_ms": 435,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 270,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 48,
+              "exchange_age_ms": 420,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 28,
+              "exchange_age_ms": 429,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13709,
+          "p95_us": 18568,
+          "samples": 763
+        },
+        "core_ingest": {
+          "max_us": 1312,
+          "p50_us": 9,
+          "p95_us": 154,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 556
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 588,
+          "samples": 556
+        },
+        "ingest_queue_delay": {
+          "max_us": 31000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 144,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 481
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993471722,
+      "api_ms": 28,
+      "state_lag_ms": 28,
+      "rss_kb": 87856,
+      "cpu_percent": 24.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 914,
+        "prediction_episodes_opened": 913,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34442
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 291,
+          "episode_id": "prediction-1790993412979-1243",
+          "trigger_id": "trigger-BTCUSDT-1790993406452-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 413,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 415,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 275,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 59,
+              "exchange_age_ms": 418,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 50,
+              "exchange_age_ms": 409,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13710,
+          "p95_us": 18568,
+          "samples": 777
+        },
+        "core_ingest": {
+          "max_us": 1312,
+          "p50_us": 11,
+          "p95_us": 155,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 566
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 584,
+          "samples": 566
+        },
+        "ingest_queue_delay": {
+          "max_us": 31000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 462,
+          "p50_us": 0,
+          "p95_us": 142,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 486
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993476732,
+      "api_ms": 30,
+      "state_lag_ms": 49,
+      "rss_kb": 93196,
+      "cpu_percent": 22.2,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 915,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34450
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 295,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993473163-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 51,
+              "exchange_age_ms": 422,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 39,
+              "exchange_age_ms": 426,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 279,
+          "episode_id": "prediction-1790993474470-1245",
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 31,
+              "exchange_age_ms": 441,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 40,
+              "exchange_age_ms": 420,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13728,
+          "p95_us": 18568,
+          "samples": 792
+        },
+        "core_ingest": {
+          "max_us": 945,
+          "p50_us": 12,
+          "p95_us": 157,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 574
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 588,
+          "samples": 574
+        },
+        "ingest_queue_delay": {
+          "max_us": 1000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 419,
+          "p50_us": 0,
+          "p95_us": 141,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 491
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993481727,
+      "api_ms": 26,
+      "state_lag_ms": 26,
+      "rss_kb": 87944,
+      "cpu_percent": 9.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 915,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34457
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 298,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993473163-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 402,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 408,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 283,
+          "episode_id": "prediction-1790993474470-1245",
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 443,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 60,
+              "exchange_age_ms": 402,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13726,
+          "p95_us": 18314,
+          "samples": 803
+        },
+        "core_ingest": {
+          "max_us": 945,
+          "p50_us": 11,
+          "p95_us": 159,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 581
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 367,
+          "p95_us": 584,
+          "samples": 581
+        },
+        "ingest_queue_delay": {
+          "max_us": 4000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 419,
+          "p50_us": 0,
+          "p95_us": 143,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 495
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993486803,
+      "api_ms": 96,
+      "state_lag_ms": 121,
+      "rss_kb": 88048,
+      "cpu_percent": 17.8,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 915,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34466
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 302,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993483197-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 52,
+              "exchange_age_ms": 419,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 42,
+              "exchange_age_ms": 427,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 288,
+          "episode_id": "prediction-1790993474470-1245",
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 472,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 42,
+              "exchange_age_ms": 421,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13731,
+          "p95_us": 18679,
+          "samples": 818
+        },
+        "core_ingest": {
+          "max_us": 1114,
+          "p50_us": 12,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 590
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 584,
+          "samples": 590
+        },
+        "ingest_queue_delay": {
+          "max_us": 44000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 419,
+          "p50_us": 0,
+          "p95_us": 146,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 500
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993491744,
+      "api_ms": 30,
+      "state_lag_ms": 35,
+      "rss_kb": 88048,
+      "cpu_percent": 13.3,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 915,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34474
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 305,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993483197-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 89,
+              "exchange_age_ms": 390,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 68,
+              "exchange_age_ms": 400,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 293,
+          "episode_id": "prediction-1790993474470-1245",
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 461,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 68,
+              "exchange_age_ms": 394,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13736,
+          "p95_us": 18604,
+          "samples": 829
+        },
+        "core_ingest": {
+          "max_us": 1114,
+          "p50_us": 11,
+          "p95_us": 163,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 598
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 584,
+          "samples": 598
+        },
+        "ingest_queue_delay": {
+          "max_us": 44000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 419,
+          "p50_us": 0,
+          "p95_us": 149,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 505
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993496748,
+      "api_ms": 27,
+      "state_lag_ms": 28,
+      "rss_kb": 88156,
+      "cpu_percent": 19.5,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 915,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34483
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 309,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993493433-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 479,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 389,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 298,
+          "episode_id": "prediction-1790993474470-1245",
+          "trigger_id": "trigger-ETHUSDT-1790993465686-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 20,
+              "exchange_age_ms": 458,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 383,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13750,
+          "p95_us": 18679,
+          "samples": 844
+        },
+        "core_ingest": {
+          "max_us": 1706,
+          "p50_us": 12,
+          "p95_us": 168,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 607
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 583,
+          "samples": 607
+        },
+        "ingest_queue_delay": {
+          "max_us": 15000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 338,
+          "p50_us": 0,
+          "p95_us": 148,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 510
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993501757,
+      "api_ms": 29,
+      "state_lag_ms": 38,
+      "rss_kb": 88156,
+      "cpu_percent": 13.8,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 916,
+        "prediction_episodes_opened": 914,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34491
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 313,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993493433-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 478,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 390,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 302,
+          "episode_id": null,
+          "trigger_id": "trigger-ETHUSDT-1790993498950-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 479,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 80,
+              "exchange_age_ms": 384,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13749,
+          "p95_us": 18679,
+          "samples": 856
+        },
+        "core_ingest": {
+          "max_us": 1706,
+          "p50_us": 13,
+          "p95_us": 161,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 57,
+          "samples": 615
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 584,
+          "samples": 615
+        },
+        "ingest_queue_delay": {
+          "max_us": 15000,
+          "p50_us": 0,
+          "p95_us": 1000,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 338,
+          "p50_us": 0,
+          "p95_us": 148,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 511
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993506762,
+      "api_ms": 26,
+      "state_lag_ms": 34,
+      "rss_kb": 94172,
+      "cpu_percent": 14.7,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 916,
+        "prediction_episodes_opened": 915,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34499
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 317,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993503455-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 10,
+              "exchange_age_ms": 467,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 88,
+              "exchange_age_ms": 381,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 306,
+          "episode_id": "prediction-1790993504666-1246",
+          "trigger_id": "trigger-ETHUSDT-1790993498950-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 88,
+              "exchange_age_ms": 396,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 88,
+              "exchange_age_ms": 375,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13769,
+          "p95_us": 18604,
+          "samples": 867
+        },
+        "core_ingest": {
+          "max_us": 1706,
+          "p50_us": 13,
+          "p95_us": 167,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 623
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 584,
+          "samples": 623
+        },
+        "ingest_queue_delay": {
+          "max_us": 10000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 338,
+          "p50_us": 0,
+          "p95_us": 151,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 514
+        }
+      }
+    },
+    {
+      "wall_ms": 1790993511776,
+      "api_ms": 31,
+      "state_lag_ms": 38,
+      "rss_kb": 89100,
+      "cpu_percent": 7.4,
+      "mode": "OBSERVE",
+      "storage_healthy": true,
+      "live_configured": false,
+      "positions": 0,
+      "live_orders": 0,
+      "integrity": {
+        "live_trades": 0,
+        "paper_trades": 0,
+        "prediction_episodes_closed": 916,
+        "prediction_episodes_opened": 915,
+        "qualified_episodes": 0,
+        "realtime_evaluations": 34507
+      },
+      "symbols": {
+        "BTCUSDT": {
+          "runtime_state": "CANDIDATE",
+          "full_evaluations": 320,
+          "episode_id": null,
+          "trigger_id": "trigger-BTCUSDT-1790993503455-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 30,
+              "exchange_age_ms": 455,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 0,
+              "exchange_age_ms": 471,
+              "gaps": 0
+            }
+          }
+        },
+        "ETHUSDT": {
+          "runtime_state": "ACTIVE",
+          "full_evaluations": 311,
+          "episode_id": "prediction-1790993504666-1246",
+          "trigger_id": "trigger-ETHUSDT-1790993498950-1",
+          "venues": {
+            "binance": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 70,
+              "exchange_age_ms": 410,
+              "gaps": 0
+            },
+            "okx": {
+              "ready": true,
+              "connected": true,
+              "age_ms": 10,
+              "exchange_age_ms": 465,
+              "gaps": 0
+            }
+          }
+        }
+      },
+      "telemetry": {
+        "checkpoint_serialize": {
+          "max_us": 74383,
+          "p50_us": 13777,
+          "p95_us": 18604,
+          "samples": 877
+        },
+        "core_ingest": {
+          "max_us": 972,
+          "p50_us": 13,
+          "p95_us": 164,
+          "samples": 1000
+        },
+        "features": {
+          "max_us": 356,
+          "p50_us": 35,
+          "p95_us": 55,
+          "samples": 631
+        },
+        "full_alpha_evaluation": {
+          "max_us": 2109,
+          "p50_us": 368,
+          "p95_us": 588,
+          "samples": 631
+        },
+        "ingest_queue_delay": {
+          "max_us": 10000,
+          "p50_us": 0,
+          "p95_us": 0,
+          "samples": 1000
+        },
+        "market_pulse": {
+          "max_us": 338,
+          "p50_us": 0,
+          "p95_us": 149,
+          "samples": 1000
+        },
+        "qualification": {
+          "max_us": 212,
+          "p50_us": 13,
+          "p95_us": 18,
+          "samples": 519
+        }
+      }
+    }
+  ],
+  "summary": {
+    "request_errors": 0,
+    "all_storage_healthy": true,
+    "all_observe_without_execution": true,
+    "all_four_venues_ready_samples": 61,
+    "max_state_lag_ms": 121,
+    "rss_kb_min": 71420,
+    "rss_kb_max": 94888,
+    "cpu_percent_min": 1.6,
+    "cpu_percent_max": 42.1,
+    "full_evaluations_delta": {
+      "BTCUSDT": 252,
+      "ETHUSDT": 244
+    },
+    "audit_counts": {
+      "market_pulse_trigger": 53,
+      "prediction": 16,
+      "trigger_evaluation": 496
+    },
+    "duplicate_prediction_ids": [],
+    "max_trigger_events_per_second": 2
+  },
+  "final_restart_check": {
+    "mode": "OBSERVE",
+    "source": "live",
+    "config_version": 35,
+    "trigger_config_version": 1,
+    "four_venues_ready": true,
+    "storage_healthy": true,
+    "live_configured": false,
+    "recent_trigger_links_sorted": true,
+    "retained_recent_links": 66,
+    "state_lag_ms": 26,
+    "checked_at_ms": 1790993684532
+  }
+}

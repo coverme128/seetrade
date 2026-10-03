@@ -14,3 +14,9 @@ pub mod shadow;
 pub mod storage;
 pub mod telemetry;
 pub mod types;
+
+pub mod market_pulse;
+pub mod trigger_analytics;
+pub mod trigger_policy;
+
+pub mod replay_compare;

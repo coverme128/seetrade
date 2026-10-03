@@ -1,0 +1,81 @@
+{
+  "package": "micro-alpha-trading-v1.0.4-runtime-trigger-upgrade-for-codex",
+  "base": "v1.0.3",
+  "files": [
+    {
+      "path": "01-product/RUNTIME-UX-DELTA.md",
+      "bytes": 1679,
+      "sha256": "ebe791ff30526b6691214332d3bf4280f79175f4dab9cfd575b907cebf816dca"
+    },
+    {
+      "path": "02-domain-rules/MARKET-PULSE-TRIGGER-CONTRACT.md",
+      "bytes": 3603,
+      "sha256": "4cb99ef2366d4abc59d9f3981614343ca60b70f5643943ead50be4424ee4c45c"
+    },
+    {
+      "path": "02-domain-rules/PROTECTION-TRIGGER-CONTRACT.md",
+      "bytes": 1959,
+      "sha256": "c1bf20d3bcda88386afc3db6a7302c098bbbfee66f06060e671816f3804e4f62"
+    },
+    {
+      "path": "02-domain-rules/TRIGGER-OUTCOME-ANALYTICS-CONTRACT.md",
+      "bytes": 1165,
+      "sha256": "72c6d7e570299db9509abc82e2155fe1d1fc461c9cc663313febde661c44b9f0"
+    },
+    {
+      "path": "03-implementation/ARCHITECTURE-DELTA.md",
+      "bytes": 1468,
+      "sha256": "5d652b2a449c80bc0ec862ca7e1535df3f49ab3f8b42025ca08dea93669c1b82"
+    },
+    {
+      "path": "03-implementation/CONTRACTS-DELTA.md",
+      "bytes": 1130,
+      "sha256": "ce845d392d6d2e6f64ebb979be26c2f7e41cc7f1dbcf8ab099f5408872bf4561"
+    },
+    {
+      "path": "03-implementation/IMPLEMENTATION-PLAN.md",
+      "bytes": 2050,
+      "sha256": "1f60107ed25a212fe7e88316683ec627f44897c629d50c5fc5ff029881e9883c"
+    },
+    {
+      "path": "03-implementation/TEST-PLAN.md",
+      "bytes": 1372,
+      "sha256": "b882f9e162e3a032f3b2fa22fbe07f1bd63948de41c255c3d3a5bb310df1520b"
+    },
+    {
+      "path": "04-production-handoff/ACCEPTANCE-GATES.md",
+      "bytes": 1357,
+      "sha256": "259418a790a6ceaa0012ed4229cbd51641159947dda8362a9d9c929df63489e1"
+    },
+    {
+      "path": "04-production-handoff/CODEX-HANDOFF.md",
+      "bytes": 1299,
+      "sha256": "397224d96bf8cae3025b455909f7b1cb15dae192dc6cd4fb0bb7671c157feada"
+    },
+    {
+      "path": "04-production-handoff/CONFIG-BASELINE.md",
+      "bytes": 1032,
+      "sha256": "3f9c3e9396d53dca3a3b9d246656b286f62c15c069cb05b2f4ebc12040b07ec0"
+    },
+    {
+      "path": "04-production-handoff/MIGRATION-ROLLBACK.md",
+      "bytes": 894,
+      "sha256": "a9a771c5cd0a6e3d2c3864e2afacfddae7e94381cb469b5ad634c7d882095c75"
+    },
+    {
+      "path": "04-production-handoff/SELF-REVIEW.md",
+      "bytes": 970,
+      "sha256": "a4ae54a92e27aff303a1f9eafe2b454edb5e59752b97749d1db9b6d6ed151ae2"
+    },
+    {
+      "path": "CHANGELOG-v1.0.4.md",
+      "bytes": 1125,
+      "sha256": "d847d8de27f1f214926c7f3bd3056f7010c87815f572bc22584cba53bcf5a6a6"
+    },
+    {
+      "path": "UPGRADE-CONTRACT.md",
+      "bytes": 5742,
+      "sha256": "d0190c29a910f3290dc7cf5e7afe3562f939ba7c31dc9145cd8adde3b05c8eb6"
+    }
+  ]
+}

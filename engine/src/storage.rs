@@ -18,6 +18,7 @@ use tokio::sync::mpsc;
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Journal {
     Start {
+        #[serde(deserialize_with = "deserialize_start_engine")]
         engine: Box<Engine>,
     },
     Event {
@@ -32,6 +33,17 @@ pub enum Journal {
         payload: Value,
         error: String,
     },
+}
+
+// Internally tagged enums buffer maps through serde::Content, which loses JSON's
+// integer-key decoding for restored (nonempty) order books. Re-enter the JSON
+// deserializer at the checkpoint boundary, retaining the existing journal format.
+fn deserialize_start_engine<'de, D>(deserializer: D) -> Result<Box<Engine>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Value::deserialize(deserializer)?;
+    serde_json::from_value(value).map_err(serde::de::Error::custom)
 }
 pub struct Batch {
     pub journal: Journal,

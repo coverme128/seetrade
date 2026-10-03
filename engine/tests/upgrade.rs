@@ -2,7 +2,7 @@ use micro_alpha_engine::{core::Engine, feeds::demo_events, live::AccountSnapshot
 use serde_json::json;
 
 fn warm() -> Engine {
-    let mut e = Engine::new(true);
+    let mut e = Engine::new_reference(true);
     for i in 0..8 {
         for event in demo_events(i, 1_000_000 + i * 1000) {
             e.ingest(event);
@@ -237,8 +237,8 @@ fn evaluation_ticks_do_not_inflate_episodes_and_opening_snapshot_is_immutable() 
 }
 #[test]
 fn episode_results_are_unique_under_restart_and_replay() {
-    let mut a = Engine::new(true);
-    let mut b = Engine::new(true);
+    let mut a = Engine::new_reference(true);
+    let mut b = Engine::new_reference(true);
     for i in 0..240 {
         for event in demo_events(i, 1_000_000 + i * 1000) {
             a.ingest(event.clone());

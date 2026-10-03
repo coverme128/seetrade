@@ -738,6 +738,15 @@ export default function Home() {
                       </div>
                       <details className="raw-metrics">
                         <summary>展开原始特征与行情信息</summary>
+                        {card?.episode?.origin_trigger_id && (
+                          <p>
+                            机会来源：
+                            {card.episode.origin_trigger_families?.join(
+                              " + ",
+                            )}{" "}
+                            · {card.episode.origin_trigger_id}
+                          </p>
+                        )}
                         <div className="detail-grid">
                           {[
                             ["订单流失衡", f?.flow_imbalance],
@@ -1735,7 +1744,7 @@ export default function Home() {
           <footer className="footer">
             <span>
               <span className="status-dot" />
-              MICRO ALPHA <b>PERSONAL v0.3</b>
+              MICRO ALPHA <b>PERSONAL v0.4</b>
             </span>
             <span>
               Deterministic core · AI OFF ·{" "}

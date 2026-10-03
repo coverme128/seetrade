@@ -1190,7 +1190,7 @@ mod tests {
     use super::*;
     use crate::feeds::demo_events;
     fn ready() -> (Engine, TradePlan, Qualification) {
-        let mut e = Engine::new(true);
+        let mut e = Engine::new_reference(true);
         for i in 0..8 {
             for v in demo_events(i, 1_000_000 + i * 1000) {
                 e.ingest(v);
@@ -1245,6 +1245,26 @@ mod tests {
         let mut denied = q;
         denied.status = "NOT_QUALIFIED".into();
         assert!(e.queue_live(plan, denied, "ENTRY", None, None).is_err());
+    }
+    #[test]
+    fn production_runtime_account_error_protects_confirmed_fill_without_waiting_for_clock() {
+        let (mut e, plan, q) = ready();
+        e.reference_runtime = false;
+        e.queue_live(plan, q, "ENTRY", None, None).unwrap();
+        let id = e.live.orders.keys().next().unwrap().clone();
+        let entry = e.live.orders.get_mut(&id).unwrap();
+        entry.status = "PARTIALLY_FILLED".into();
+        entry.filled_qty = entry.quantity * 0.4;
+        entry.average_price = entry.limit_price;
+        let quantity = entry.filled_qty;
+        let now = e.now;
+        e.command("broker_error", json!({"error":"account query unavailable"}))
+            .unwrap();
+        assert_eq!(e.now, now);
+        let exit = e.live.orders.values().find(|o| o.action == "EXIT").unwrap();
+        assert!(exit.reduce_only());
+        assert!((exit.quantity - quantity).abs() < 1e-10);
+        assert!(e.records.iter().any(|r| r["kind"] == "protection_trigger"));
     }
     #[test]
     fn live_round_trip_fees_funding_and_external_position_mismatch() {

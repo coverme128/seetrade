@@ -1,5 +1,46 @@
 import { test, expect } from "@playwright/test";
 
+test("trigger diagnostics preserve card semantics and submit versioned config only", async ({
+  page,
+  request,
+}) => {
+  const state = await (await request.get("/api/state")).json();
+  state.trigger_config = {
+    sample_interval_ms: 250,
+    abnormal_z: 3,
+    extreme_z: 6,
+  };
+  state.trigger_config_version = 1;
+  state.symbols.BTCUSDT.runtime_state = "IDLE";
+  state.symbols.BTCUSDT.full_evaluations = 0;
+  state.mode = "OBSERVE";
+  let submitted: unknown;
+  await page.route("**/api/state", (route) => route.fulfill({ json: state }));
+  await page.route("**/api/control/trigger_config", (route) => {
+    submitted = route.request().postDataJSON();
+    state.trigger_config = submitted;
+    state.trigger_config_version += 1;
+    return route.fulfill({ json: state });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "模型健康", exact: true }).click();
+  const panel = page.getByTestId("trigger-diagnostics");
+  await panel.getByText("运行触发诊断与配置", { exact: true }).click();
+  await expect(panel).toContainText("IDLE");
+  await expect(panel).toContainText("不代表买卖信号");
+  await panel.getByRole("button", { name: "载入当前触发配置" }).click();
+  await panel
+    .getByLabel("触发配置 JSON")
+    .fill(JSON.stringify({ ...state.trigger_config, extreme_z: 7 }));
+  await panel
+    .getByRole("button", { name: "保存触发配置（仅 OBSERVE 空仓）" })
+    .click();
+  await expect
+    .poll(() => submitted)
+    .toEqual({ sample_interval_ms: 250, abnormal_z: 3, extreme_z: 7 });
+  await expect(panel.getByText(/fixed.step|固定.*扫描/)).toHaveCount(0);
+});
+
 test("live dashboard renders core data and switches instruments", async ({
   page,
 }) => {

@@ -114,6 +114,8 @@ export type Plan = {
 };
 export type Prediction = {
   episode?: {
+    origin_trigger_id?: string | null;
+    origin_trigger_families?: string[];
     episode_id: string;
     opened_at: number;
     closed_at: number | null;
@@ -229,6 +231,15 @@ export type Health = {
   bins: { lower: number; count: number; predicted: number; actual: number }[];
 };
 export type SymbolState = {
+  runtime_state?: "IDLE" | "CANDIDATE" | "ACTIVE" | "IN_POSITION";
+  full_evaluations?: number;
+  pulse?: unknown;
+  trigger_origin?: {
+    trigger_id: string;
+    trigger_families: string[];
+    severity_by_family: Record<string, string>;
+    received_at_local_ts: number;
+  } | null;
   venues: Record<
     string,
     {
@@ -335,6 +346,10 @@ export type IntegrityCounters = {
   live_trades: number;
 };
 export type State = {
+  telemetry?: Record<string, unknown>;
+  trigger_config?: Record<string, unknown>;
+  trigger_config_version?: number;
+  trigger_analytics?: unknown;
   integrity: IntegrityCounters;
   daily_integrity: IntegrityCounters;
   admission: { latest: Record<string, AdmissionDecision> };

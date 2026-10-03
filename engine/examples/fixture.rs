@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     let mut writer = BufWriter::new(File::create(path)?);
-    let mut engine = Engine::new(true);
+    let mut engine = Engine::new_reference(true);
     serde_json::to_writer(
         &mut writer,
         &Journal::Start {

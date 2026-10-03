@@ -31,6 +31,8 @@ pub struct Venue {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SymbolState {
     #[serde(default)]
+    pub runtime: crate::market_pulse::Runtime,
+    #[serde(default)]
     pub evaluation: Option<AlphaEvaluation>,
     #[serde(default)]
     pub consumed_signal_epoch: Option<u64>,
@@ -73,6 +75,7 @@ pub fn signal_direction(score: f64, previous: &str, c: &Config) -> &'static str 
 impl SymbolState {
     fn new(c: &Config) -> Self {
         Self {
+            runtime: Default::default(),
             evaluation: None,
             consumed_signal_epoch: None,
             venues: BTreeMap::from([
@@ -97,6 +100,14 @@ impl SymbolState {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Engine {
+    #[serde(default)]
+    pub trigger_config: crate::market_pulse::TriggerConfig,
+    #[serde(default)]
+    pub trigger_config_version: u64,
+    #[serde(default)]
+    pub trigger_analytics: crate::trigger_analytics::TriggerAnalytics,
+    #[serde(default)]
+    pub reference_runtime: bool,
     #[serde(skip)]
     pub telemetry: std::sync::Arc<std::sync::Mutex<crate::telemetry::Telemetry>>,
     #[serde(default)]
@@ -140,6 +151,10 @@ impl Engine {
     pub fn new(demo: bool) -> Self {
         let config = Config::default();
         Self {
+            trigger_config: Default::default(),
+            trigger_config_version: 1,
+            trigger_analytics: Default::default(),
+            reference_runtime: false,
             telemetry: Default::default(),
             live: crate::live::LiveState::default(),
             research: crate::research::ResearchState::default(),
@@ -173,7 +188,14 @@ impl Engine {
             records: vec![],
         }
     }
+    /// Fixed-step policy for offline contract regression and replay comparisons only.
+    pub fn new_reference(demo: bool) -> Self {
+        let mut e = Self::new(demo);
+        e.reference_runtime = true;
+        e
+    }
     pub fn log(&mut self, kind: &str, payload: Value) {
+        self.trigger_analytics.observe(kind, &payload);
         let record = json!({"kind":kind,"ts":self.now,"source":self.source,"payload":payload});
         self.records.push(record.clone());
         if ![
@@ -193,7 +215,7 @@ impl Engine {
             }
         }
     }
-    fn id(&mut self, prefix: &str) -> String {
+    pub(crate) fn id(&mut self, prefix: &str) -> String {
         self.counter += 1;
         format!("{prefix}-{}-{}", self.now, self.counter)
     }
@@ -210,6 +232,11 @@ impl Engine {
         );
     }
     pub fn restart(&mut self) {
+        if self.trigger_config_version == 0 {
+            self.trigger_config_version = 1;
+            self.config_version += 1;
+            self.log("runtime_migration", json!({"version":"v1.0.4","reason":"new trigger sampling policy; retain history, collect comparable evidence under a new config version"}));
+        }
         if self.config.auto_min_net_edge < self.config.min_net_edge {
             self.config.auto_min_net_edge = self.config.min_net_edge;
             self.log("config_migration", json!({"reason":"AUTO threshold must not be lower than qualification","auto_min_net_edge":self.config.auto_min_net_edge}));
@@ -225,7 +252,19 @@ impl Engine {
                 o.status = "UNKNOWN".into();
             }
         }
+        let interrupted: Vec<_> = self
+            .symbols
+            .values()
+            .filter_map(|s| s.runtime.origin.as_ref().map(|o| o.trigger_id.clone()))
+            .collect();
+        for id in interrupted {
+            self.log(
+                "trigger_candidate_closed",
+                json!({"trigger_id":id,"reason":"restart"}),
+            );
+        }
         for s in self.symbols.values_mut() {
+            s.runtime = Default::default();
             for v in s.venues.values_mut() {
                 v.connected = false;
                 v.book.valid = false;
@@ -247,6 +286,7 @@ impl Engine {
     }
     pub fn command(&mut self, command: &str, payload: Value) -> Result<(), String> {
         match command {
+            "trigger_config" => self.set_trigger_config(payload.clone())?,
             "shadow_start" => {
                 if self.shadow.as_ref().is_some_and(|s| s.status == "RUNNING") {
                     return Err("请先停止当前影子验证，再载入新候选模型".into());
@@ -427,6 +467,18 @@ impl Engine {
             _ => return Err("未知操作".into()),
         }
         self.log(command, payload);
+        if !self.reference_runtime
+            && ["broker_error", "broker_snapshot", "broker_order"].contains(&command)
+        {
+            for symbol in ["BTCUSDT", "ETHUSDT"] {
+                let (_, force) = self.protection_check(symbol);
+                if force {
+                    self.evaluate_symbol(symbol, true);
+                    self.protection_result(symbol);
+                }
+            }
+            self.live_tick();
+        }
         Ok(())
     }
     pub fn ingest(&mut self, e: MarketEvent) {
@@ -565,8 +617,12 @@ impl Engine {
                 }
             }
         }
-        let f = self.features(&e.symbol);
-        self.symbols.get_mut(&e.symbol).unwrap().features = f;
+        if self.reference_runtime {
+            let f = self.features(&e.symbol);
+            self.symbols.get_mut(&e.symbol).unwrap().features = f;
+        } else {
+            self.runtime_market_event(&e);
+        }
         self.update_horizons();
     }
     fn features(&self, symbol: &str) -> Option<Features> {
@@ -926,329 +982,7 @@ impl Engine {
         }
         self.equity_peak = self.equity_peak.max(self.account_equity());
         for symbol in ["BTCUSDT", "ETHUSDT"] {
-            let ready = self.symbols[symbol]
-                .venues
-                .values()
-                .all(|v| v.connected && v.book.ready(self.now, self.config.max_stale_ms));
-            if !ready {
-                self.invalidate(symbol, "stale_feed");
-            }
-            let Some(f) = self.features(symbol) else {
-                if self.symbols[symbol].last_result.is_none() {
-                    self.transition(symbol, "NO_SIGNAL", None);
-                }
-                continue;
-            };
-            if ready {
-                self.track(symbol, f.mid);
-                self.check_position_barrier(symbol, f.mid);
-            }
-            let previous = self.symbols[symbol].evaluation.as_ref();
-            let alpha_due = previous.is_none_or(|ev| {
-                self.now.saturating_sub(ev.evaluated_at) >= self.config.alpha_eval_interval_ms
-            });
-            let qualification_due = previous.is_none_or(|ev| {
-                self.now.saturating_sub(ev.qualification_evaluated_at)
-                    >= self.config.qualification_eval_interval_ms
-            });
-            if !alpha_due && !qualification_due {
-                continue;
-            }
-            if alpha_due {
-                self.integrity.realtime_evaluations += 1;
-                self.daily_integrity.realtime_evaluations += 1;
-            }
-            let comparable: Vec<_> = self
-                .outcomes
-                .iter()
-                .filter(|o| {
-                    o.prediction.symbol == symbol
-                        && o.prediction.model_version == self.model.model_version
-                        && o.prediction.config_version == self.config_version
-                })
-                .cloned()
-                .collect();
-            let trades: Vec<_> = self
-                .trades
-                .iter()
-                .filter(|t| {
-                    t.position.plan.symbol == symbol
-                        && t.position.config == self.config
-                        && self.outcomes.iter().any(|o| {
-                            o.prediction.prediction_id == t.position.plan.prediction_id
-                                && o.prediction.model_version == self.model.model_version
-                                && o.prediction.config_version == self.config_version
-                        })
-                })
-                .cloned()
-                .collect();
-            let mut health = self.model.health(&comparable, &trades, &self.config, &f);
-            self.apply_live_feedback(symbol, &mut health);
-            let direction = if !alpha_due {
-                self.symbols[symbol].candidate_direction.as_str()
-            } else if ready {
-                signal_direction(
-                    Model::score(&f),
-                    &self.symbols[symbol].candidate_direction,
-                    &self.config,
-                )
-            } else {
-                "FLAT"
-            }
-            .to_owned();
-            {
-                let s = self.symbols.get_mut(symbol).unwrap();
-                if s.candidate_direction != direction {
-                    s.candidate_direction = direction.clone();
-                    s.candidate_since = self.now;
-                }
-                s.features = Some(f.clone());
-                s.health = health.clone();
-                if ready {
-                    s.chart.push_back((self.now, f.mid));
-                    if s.chart.len() > 180 {
-                        s.chart.pop_front();
-                    }
-                }
-            }
-            if self.symbols[symbol].active.as_ref().is_some_and(|p| {
-                direction != p.direction
-                    && self
-                        .now
-                        .saturating_sub(self.symbols[symbol].candidate_since)
-                        >= self.config.signal_confirm_ms
-            }) {
-                self.finish(symbol, "SIGNAL_INVALIDATED", "confirmed_signal_change");
-            }
-            let (raw, cal) = if alpha_due {
-                self.model.probabilities(&f, &self.config)
-            } else {
-                let ev = self.symbols[symbol].evaluation.as_ref().unwrap();
-                (ev.raw_probabilities, ev.calibrated_probabilities)
-            };
-            let previous_eval = self.symbols[symbol].evaluation.clone();
-            self.symbols.get_mut(symbol).unwrap().evaluation = Some(AlphaEvaluation {
-                symbol: symbol.into(),
-                evaluated_at: if alpha_due {
-                    self.now
-                } else {
-                    previous_eval.as_ref().unwrap().evaluated_at
-                },
-                qualification_evaluated_at: previous_eval
-                    .as_ref()
-                    .map_or(0, |v| v.qualification_evaluated_at),
-                raw_probabilities: raw,
-                calibrated_probabilities: cal,
-                features: f.clone(),
-                qualification: previous_eval.as_ref().and_then(|v| v.qualification.clone()),
-                target_position: previous_eval.and_then(|v| v.target_position),
-            });
-            let result_held = self.symbols[symbol].last_result.is_some()
-                && self.now.saturating_sub(self.symbols[symbol].completed_at)
-                    < self.config.result_hold_ms;
-            if self.symbols[symbol].active.is_none() && !result_held {
-                self.transition(
-                    symbol,
-                    if direction == "FLAT" {
-                        "NO_SIGNAL"
-                    } else {
-                        "WATCH"
-                    },
-                    None,
-                );
-            }
-            let can_predict = ready
-                && alpha_due
-                && self.symbols[symbol].consumed_signal_epoch
-                    != Some(self.symbols[symbol].candidate_since)
-                && direction != "FLAT"
-                && !result_held
-                && self.symbols[symbol].active.is_none()
-                && self
-                    .now
-                    .saturating_sub(self.symbols[symbol].last_prediction_ts)
-                    >= 5000
-                && self
-                    .now
-                    .saturating_sub(self.symbols[symbol].candidate_since)
-                    >= self.config.signal_confirm_ms;
-            if can_predict {
-                let id = self.id("prediction");
-                self.transition(symbol, "EMERGING", Some(&id));
-                let (raw, cal) = self.model.probabilities(&f, &self.config);
-                let mut p = Prediction {
-                    episode: EpisodeMetadata {
-                        episode_id: id.clone(),
-                        opened_at: self.now,
-                        last_price_ts: f.ts,
-                        latest_evaluated_at: self.now,
-                        latest_raw_probabilities: Some(raw),
-                        latest_calibrated_probabilities: cal,
-                        latest_feature_snapshot_id: f.feature_snapshot_id.clone(),
-                        upper_barrier: f.mid
-                            * (1.
-                                + if direction == "LONG" {
-                                    self.config.target
-                                } else {
-                                    self.config.stop
-                                }),
-                        lower_barrier: f.mid
-                            * (1.
-                                - if direction == "LONG" {
-                                    self.config.stop
-                                } else {
-                                    self.config.target
-                                }),
-                        signal_epoch: self.symbols[symbol].candidate_since,
-                        ..Default::default()
-                    },
-                    prediction_id: id.clone(),
-                    symbol: symbol.into(),
-                    ts: self.now,
-                    horizon: self.config.horizon,
-                    direction: direction.clone(),
-                    target: self.config.target,
-                    stop: self.config.stop,
-                    start_price: f.mid,
-                    current_price: f.mid,
-                    expected_move: cal.map(|v| {
-                        let i = if direction == "LONG" { 0 } else { 1 };
-                        v[i] * self.config.target - v[1 - i] * self.config.stop
-                    }),
-                    signal_strength: (Model::score(&f).abs() / 3.).min(1.),
-                    raw_probabilities: raw,
-                    calibrated_probabilities: cal,
-                    model_version: self.model.model_version.clone(),
-                    feature_snapshot_id: f.feature_snapshot_id.clone(),
-                    features: f.clone(),
-                    status: "TRACKING".into(),
-                    mfe: 0.,
-                    mae: 0.,
-                    qualification: Qualification {
-                        prediction_id: id,
-                        gate_version: "gate-v1".into(),
-                        status: "WATCH".into(),
-                        gates: vec![],
-                        reasons: vec![],
-                        net_edge: 0.,
-                        gross_edge: 0.,
-                        costs: Costs::default(),
-                    },
-                    plan: None,
-                    config_version: self.config_version,
-                    cost_assumptions_bps: Some(
-                        self.config.fee_bps * 2.
-                            + self.config.slippage_bps * 2.
-                            + self.config.impact_bps
-                            + self.config.adverse_selection_bps
-                            + self.config.funding_bps,
-                    ),
-                };
-                let (q, plan) = self.qualify(&p, &f, &health);
-                p.episode.highest_qualification = q.status.clone();
-                p.qualification = q;
-                p.plan = plan;
-                self.integrity.prediction_episodes_opened += 1;
-                self.daily_integrity.prediction_episodes_opened += 1;
-                if p.qualification.status == "QUALIFIED" {
-                    self.integrity.qualified_episodes += 1;
-                    self.daily_integrity.qualified_episodes += 1;
-                }
-                if p.qualification.status == "QUALIFIED" {
-                    self.transition(symbol, "QUALIFIED", Some(&p.prediction_id));
-                }
-                if p.plan.is_some() {
-                    self.transition(symbol, "TRADE_READY", Some(&p.prediction_id));
-                }
-                self.log("features", json!(&f));
-                self.log("prediction", json!(&p));
-                if let Some(pair) = self
-                    .shadow
-                    .as_mut()
-                    .and_then(|run| run.predict(&p, &self.model, &self.config))
-                {
-                    self.log(
-                        "shadow_prediction",
-                        json!({"run_id":self.shadow.as_ref().unwrap().run_id,"prediction":pair}),
-                    );
-                }
-                let s = self.symbols.get_mut(symbol).unwrap();
-                s.last_prediction_ts = self.now;
-                s.consumed_signal_epoch = Some(s.candidate_since);
-                s.active = Some(p);
-            }
-            if let Some(p) = self.symbols[symbol].active.clone() {
-                self.transition(symbol, "TRACKING", Some(&p.prediction_id));
-                // Requalification uses fresh features, probabilities and remaining holding time.
-                let mut fresh = p.clone();
-                fresh.raw_probabilities = raw;
-                fresh.calibrated_probabilities = cal;
-                if fresh.config_version != self.config_version {
-                    fresh.calibrated_probabilities = None;
-                }
-                let due = self.now == p.ts
-                    || self.symbols[symbol].evaluation.as_ref().is_none_or(|ev| {
-                        self.now.saturating_sub(ev.qualification_evaluated_at)
-                            >= self.config.qualification_eval_interval_ms
-                    });
-                let (q, plan) = if due {
-                    self.qualify(&fresh, &f, &health)
-                } else {
-                    (
-                        self.symbols[symbol]
-                            .qualification
-                            .clone()
-                            .unwrap_or_else(|| p.qualification.clone()),
-                        self.symbols[symbol].plan.clone(),
-                    )
-                };
-                if q.status == "QUALIFIED" && p.episode.highest_qualification != "QUALIFIED" {
-                    self.integrity.qualified_episodes += 1;
-                    self.daily_integrity.qualified_episodes += 1;
-                    self.log(
-                        "episode_qualification",
-                        json!({"episode_id":p.prediction_id,"highest_qualification":"QUALIFIED"}),
-                    );
-                }
-                {
-                    let s = self.symbols.get_mut(symbol).unwrap();
-                    s.qualification = Some(q.clone());
-                    s.plan = plan.clone();
-                    let ev = s.evaluation.as_mut().unwrap();
-                    if due {
-                        ev.qualification_evaluated_at = self.now;
-                    }
-                    ev.qualification = Some(q.clone());
-                    ev.target_position = plan.clone();
-                    let episode = &mut s.active.as_mut().unwrap().episode;
-                    episode.latest_evaluated_at = ev.evaluated_at;
-                    episode.latest_raw_probabilities = Some(raw);
-                    episode.latest_calibrated_probabilities = cal;
-                    episode.latest_feature_snapshot_id = f.feature_snapshot_id.clone();
-                    if q.status == "QUALIFIED" {
-                        episode.highest_qualification = q.status.clone();
-                    }
-                }
-                if self.positions.contains_key(symbol) {
-                    self.rebalance(symbol, &p, &q, plan.as_ref());
-                } else if self.mode == "PAPER" && !self.kill_switch && self.now == p.ts {
-                    if let Some(plan) = plan {
-                        self.open_position(plan, &q);
-                    }
-                }
-            } else {
-                let s = self.symbols.get_mut(symbol).unwrap();
-                s.qualification = None;
-                s.plan = None;
-                if let Some(ev) = s.evaluation.as_mut() {
-                    ev.qualification = None;
-                    ev.target_position = None;
-                    ev.qualification_evaluated_at = self.now;
-                }
-                if self.positions.contains_key(symbol) {
-                    self.close_position(symbol, "PREDICTION_COMPLETED");
-                }
-            }
+            self.evaluate_symbol(symbol, false);
         }
         // Pending exits never fill against stale quotes.
         let pending: Vec<_> = self
@@ -1266,7 +1000,385 @@ impl Engine {
         self.live_tick();
         self.research_tick();
     }
-    fn invalidate(&mut self, symbol: &str, reason: &str) {
+    pub(crate) fn evaluate_symbol(&mut self, symbol: &str, force: bool) {
+        let (blocked, protect) = self.protection_check(symbol);
+        if blocked {
+            return;
+        }
+        let force = force || protect;
+        if !self.reference_runtime {
+            let s = self.symbols.get_mut(symbol).unwrap();
+            if let Some(mid) = s.venues["binance"].book.mid().filter(|_| {
+                s.venues["binance"]
+                    .book
+                    .ready(self.now, self.config.max_stale_ms)
+            }) {
+                if s.chart
+                    .back()
+                    .is_none_or(|(ts, _)| self.now.saturating_sub(*ts) >= 1000)
+                {
+                    s.chart.push_back((self.now, mid));
+                    while s.chart.len() > 180 {
+                        s.chart.pop_front();
+                    }
+                }
+                self.track(symbol, mid);
+                self.check_position_barrier(symbol, mid);
+            }
+        }
+        let ready = self.symbols[symbol]
+            .venues
+            .values()
+            .all(|v| v.connected && v.book.ready(self.now, self.config.max_stale_ms));
+        if !ready {
+            self.invalidate(symbol, "stale_feed");
+        }
+        if !self.runtime_due(symbol, force) {
+            return;
+        }
+        let evaluation_started = std::time::Instant::now();
+        let Some(f) = self.features(symbol) else {
+            if self.symbols[symbol].last_result.is_none() {
+                self.transition(symbol, "NO_SIGNAL", None);
+            }
+            return;
+        };
+        if ready {
+            self.track(symbol, f.mid);
+            self.check_position_barrier(symbol, f.mid);
+        }
+        let previous = self.symbols[symbol].evaluation.as_ref();
+        let alpha_due = force
+            || (!self.reference_runtime)
+            || previous.is_none_or(|ev| {
+                self.now.saturating_sub(ev.evaluated_at) >= self.config.alpha_eval_interval_ms
+            });
+        let qualification_due = force
+            || previous.is_none_or(|ev| {
+                self.now.saturating_sub(ev.qualification_evaluated_at)
+                    >= self.config.qualification_eval_interval_ms
+            });
+        if !alpha_due && !qualification_due {
+            return;
+        }
+        if alpha_due {
+            self.record_runtime_evaluation(symbol);
+            self.integrity.realtime_evaluations += 1;
+            self.daily_integrity.realtime_evaluations += 1;
+        }
+        let comparable: Vec<_> = self
+            .outcomes
+            .iter()
+            .filter(|o| {
+                o.prediction.symbol == symbol
+                    && o.prediction.model_version == self.model.model_version
+                    && o.prediction.config_version == self.config_version
+            })
+            .cloned()
+            .collect();
+        let trades: Vec<_> = self
+            .trades
+            .iter()
+            .filter(|t| {
+                t.position.plan.symbol == symbol
+                    && t.position.config == self.config
+                    && self.outcomes.iter().any(|o| {
+                        o.prediction.prediction_id == t.position.plan.prediction_id
+                            && o.prediction.model_version == self.model.model_version
+                            && o.prediction.config_version == self.config_version
+                    })
+            })
+            .cloned()
+            .collect();
+        let mut health = self.model.health(&comparable, &trades, &self.config, &f);
+        self.apply_live_feedback(symbol, &mut health);
+        let direction = if !alpha_due {
+            self.symbols[symbol].candidate_direction.as_str()
+        } else if ready {
+            signal_direction(
+                Model::score(&f),
+                &self.symbols[symbol].candidate_direction,
+                &self.config,
+            )
+        } else {
+            "FLAT"
+        }
+        .to_owned();
+        {
+            let s = self.symbols.get_mut(symbol).unwrap();
+            if s.candidate_direction != direction {
+                s.candidate_direction = direction.clone();
+                s.candidate_since = self.now;
+            }
+            s.features = Some(f.clone());
+            s.health = health.clone();
+            if ready && self.reference_runtime {
+                s.chart.push_back((self.now, f.mid));
+                if s.chart.len() > 180 {
+                    s.chart.pop_front();
+                }
+            }
+        }
+        if self.symbols[symbol].active.as_ref().is_some_and(|p| {
+            direction != p.direction
+                && self
+                    .now
+                    .saturating_sub(self.symbols[symbol].candidate_since)
+                    >= self.config.signal_confirm_ms
+        }) {
+            self.finish(symbol, "SIGNAL_INVALIDATED", "confirmed_signal_change");
+        }
+        let (raw, cal) = if alpha_due {
+            self.model.probabilities(&f, &self.config)
+        } else {
+            let ev = self.symbols[symbol].evaluation.as_ref().unwrap();
+            (ev.raw_probabilities, ev.calibrated_probabilities)
+        };
+        let previous_eval = self.symbols[symbol].evaluation.clone();
+        self.symbols.get_mut(symbol).unwrap().evaluation = Some(AlphaEvaluation {
+            symbol: symbol.into(),
+            evaluated_at: if alpha_due {
+                self.now
+            } else {
+                previous_eval.as_ref().unwrap().evaluated_at
+            },
+            qualification_evaluated_at: previous_eval
+                .as_ref()
+                .map_or(0, |v| v.qualification_evaluated_at),
+            raw_probabilities: raw,
+            calibrated_probabilities: cal,
+            features: f.clone(),
+            qualification: previous_eval.as_ref().and_then(|v| v.qualification.clone()),
+            target_position: previous_eval.and_then(|v| v.target_position),
+        });
+        let result_held = self.symbols[symbol].last_result.is_some()
+            && self.now.saturating_sub(self.symbols[symbol].completed_at)
+                < self.config.result_hold_ms;
+        if self.symbols[symbol].active.is_none() && !result_held {
+            self.transition(
+                symbol,
+                if direction == "FLAT" {
+                    "NO_SIGNAL"
+                } else {
+                    "WATCH"
+                },
+                None,
+            );
+        }
+        let can_predict = ready
+            && alpha_due
+            && self.symbols[symbol].consumed_signal_epoch
+                != Some(self.symbols[symbol].candidate_since)
+            && direction != "FLAT"
+            && !result_held
+            && self.symbols[symbol].active.is_none()
+            && self
+                .now
+                .saturating_sub(self.symbols[symbol].last_prediction_ts)
+                >= 5000
+            && self
+                .now
+                .saturating_sub(self.symbols[symbol].candidate_since)
+                >= self.config.signal_confirm_ms;
+        if can_predict {
+            let id = self.id("prediction");
+            self.transition(symbol, "EMERGING", Some(&id));
+            let (raw, cal) = self.model.probabilities(&f, &self.config);
+            let mut p = Prediction {
+                episode: EpisodeMetadata {
+                    origin_trigger_id: self.symbols[symbol]
+                        .runtime
+                        .origin
+                        .as_ref()
+                        .map(|t| t.trigger_id.clone()),
+                    origin_trigger_families: self.symbols[symbol]
+                        .runtime
+                        .origin
+                        .as_ref()
+                        .map(|t| t.trigger_families.clone())
+                        .unwrap_or_default(),
+                    episode_id: id.clone(),
+                    opened_at: self.now,
+                    last_price_ts: f.ts,
+                    latest_evaluated_at: self.now,
+                    latest_raw_probabilities: Some(raw),
+                    latest_calibrated_probabilities: cal,
+                    latest_feature_snapshot_id: f.feature_snapshot_id.clone(),
+                    upper_barrier: f.mid
+                        * (1.
+                            + if direction == "LONG" {
+                                self.config.target
+                            } else {
+                                self.config.stop
+                            }),
+                    lower_barrier: f.mid
+                        * (1.
+                            - if direction == "LONG" {
+                                self.config.stop
+                            } else {
+                                self.config.target
+                            }),
+                    signal_epoch: self.symbols[symbol].candidate_since,
+                    ..Default::default()
+                },
+                prediction_id: id.clone(),
+                symbol: symbol.into(),
+                ts: self.now,
+                horizon: self.config.horizon,
+                direction: direction.clone(),
+                target: self.config.target,
+                stop: self.config.stop,
+                start_price: f.mid,
+                current_price: f.mid,
+                expected_move: cal.map(|v| {
+                    let i = if direction == "LONG" { 0 } else { 1 };
+                    v[i] * self.config.target - v[1 - i] * self.config.stop
+                }),
+                signal_strength: (Model::score(&f).abs() / 3.).min(1.),
+                raw_probabilities: raw,
+                calibrated_probabilities: cal,
+                model_version: self.model.model_version.clone(),
+                feature_snapshot_id: f.feature_snapshot_id.clone(),
+                features: f.clone(),
+                status: "TRACKING".into(),
+                mfe: 0.,
+                mae: 0.,
+                qualification: Qualification {
+                    prediction_id: id,
+                    gate_version: "gate-v1".into(),
+                    status: "WATCH".into(),
+                    gates: vec![],
+                    reasons: vec![],
+                    net_edge: 0.,
+                    gross_edge: 0.,
+                    costs: Costs::default(),
+                },
+                plan: None,
+                config_version: self.config_version,
+                cost_assumptions_bps: Some(
+                    self.config.fee_bps * 2.
+                        + self.config.slippage_bps * 2.
+                        + self.config.impact_bps
+                        + self.config.adverse_selection_bps
+                        + self.config.funding_bps,
+                ),
+            };
+            let (q, plan) = self.qualify(&p, &f, &health);
+            p.episode.highest_qualification = q.status.clone();
+            p.qualification = q;
+            p.plan = plan;
+            self.integrity.prediction_episodes_opened += 1;
+            self.daily_integrity.prediction_episodes_opened += 1;
+            if p.qualification.status == "QUALIFIED" {
+                self.integrity.qualified_episodes += 1;
+                self.daily_integrity.qualified_episodes += 1;
+            }
+            if p.qualification.status == "QUALIFIED" {
+                self.transition(symbol, "QUALIFIED", Some(&p.prediction_id));
+            }
+            if p.plan.is_some() {
+                self.transition(symbol, "TRADE_READY", Some(&p.prediction_id));
+            }
+            self.log("features", json!(&f));
+            self.log("prediction", json!(&p));
+            if let Some(pair) = self
+                .shadow
+                .as_mut()
+                .and_then(|run| run.predict(&p, &self.model, &self.config))
+            {
+                self.log(
+                    "shadow_prediction",
+                    json!({"run_id":self.shadow.as_ref().unwrap().run_id,"prediction":pair}),
+                );
+            }
+            let s = self.symbols.get_mut(symbol).unwrap();
+            s.last_prediction_ts = self.now;
+            s.consumed_signal_epoch = Some(s.candidate_since);
+            s.active = Some(p);
+        }
+        if let Some(p) = self.symbols[symbol].active.clone() {
+            self.transition(symbol, "TRACKING", Some(&p.prediction_id));
+            // Requalification uses fresh features, probabilities and remaining holding time.
+            let mut fresh = p.clone();
+            fresh.raw_probabilities = raw;
+            fresh.calibrated_probabilities = cal;
+            if fresh.config_version != self.config_version {
+                fresh.calibrated_probabilities = None;
+            }
+            let due = force
+                || self.now == p.ts
+                || self.symbols[symbol].evaluation.as_ref().is_none_or(|ev| {
+                    self.now.saturating_sub(ev.qualification_evaluated_at)
+                        >= self.config.qualification_eval_interval_ms
+                });
+            let (q, plan) = if due {
+                self.qualify(&fresh, &f, &health)
+            } else {
+                (
+                    self.symbols[symbol]
+                        .qualification
+                        .clone()
+                        .unwrap_or_else(|| p.qualification.clone()),
+                    self.symbols[symbol].plan.clone(),
+                )
+            };
+            if q.status == "QUALIFIED" && p.episode.highest_qualification != "QUALIFIED" {
+                self.integrity.qualified_episodes += 1;
+                self.daily_integrity.qualified_episodes += 1;
+                self.log(
+                    "episode_qualification",
+                    json!({"episode_id":p.prediction_id,"highest_qualification":"QUALIFIED"}),
+                );
+            }
+            {
+                let s = self.symbols.get_mut(symbol).unwrap();
+                s.qualification = Some(q.clone());
+                s.plan = plan.clone();
+                let ev = s.evaluation.as_mut().unwrap();
+                if due {
+                    ev.qualification_evaluated_at = self.now;
+                }
+                ev.qualification = Some(q.clone());
+                ev.target_position = plan.clone();
+                let episode = &mut s.active.as_mut().unwrap().episode;
+                episode.latest_evaluated_at = ev.evaluated_at;
+                episode.latest_raw_probabilities = Some(raw);
+                episode.latest_calibrated_probabilities = cal;
+                episode.latest_feature_snapshot_id = f.feature_snapshot_id.clone();
+                if q.status == "QUALIFIED" {
+                    episode.highest_qualification = q.status.clone();
+                }
+            }
+            if self.positions.contains_key(symbol) {
+                self.rebalance(symbol, &p, &q, plan.as_ref());
+            } else if self.mode == "PAPER" && !self.kill_switch && self.now == p.ts {
+                if let Some(plan) = plan {
+                    self.open_position(plan, &q);
+                }
+            }
+        } else {
+            let s = self.symbols.get_mut(symbol).unwrap();
+            s.qualification = None;
+            s.plan = None;
+            if let Some(ev) = s.evaluation.as_mut() {
+                ev.qualification = None;
+                ev.target_position = None;
+                ev.qualification_evaluated_at = self.now;
+            }
+            if self.positions.contains_key(symbol) {
+                self.close_position(symbol, "PREDICTION_COMPLETED");
+            }
+        }
+        self.telemetry.lock().unwrap().record(
+            "full_alpha_evaluation",
+            evaluation_started.elapsed().as_micros() as u64,
+        );
+        self.sync_runtime(symbol);
+        if protect {
+            self.protection_result(symbol);
+        }
+    }
+    pub(crate) fn invalidate(&mut self, symbol: &str, reason: &str) {
         if self.symbols[symbol].active.is_some() {
             let kind = if ["model_changed", "config_changed"].contains(&reason) {
                 "SIGNAL_INVALIDATED"
@@ -1525,6 +1637,10 @@ impl Engine {
         };
         self.log("qualification", json!(q));
         self.log("plan", json!(plan));
+        self.log(
+            "paper_entry",
+            json!({"prediction_id":plan.prediction_id,"symbol":plan.symbol}),
+        );
         self.log("execution", json!(fill));
         self.positions.insert(symbol, p);
     }
@@ -1774,7 +1890,7 @@ impl Engine {
         }
         Ok(())
     }
-    fn pause_shadow(&mut self, status: &str) {
+    pub(crate) fn pause_shadow(&mut self, status: &str) {
         let Some(run) = self.shadow.as_mut() else {
             return;
         };
@@ -1837,9 +1953,9 @@ impl Engine {
         let symbols:BTreeMap<_,_>=self.symbols.iter().map(|(name,s)|{
             let venues:BTreeMap<_,_>=s.venues.iter().map(|(name,v)|(name,json!({"connected":v.connected,"ready":v.book.ready(self.now,self.config.max_stale_ms),
                 "age_ms":self.now.saturating_sub(v.book.receive_ts),"exchange_age_ms":self.now.abs_diff(v.book.exchange_ts),"gaps":v.book.gaps,"reconnects":v.reconnects,"error":v.error,"mid":v.book.mid(),"sequence":v.book.sequence,"mark":v.mark.filter(|_|self.now.saturating_sub(v.mark_ts)<10_000),"index":v.index.filter(|_|self.now.saturating_sub(v.index_ts)<10_000),"funding_rate":v.funding_rate.filter(|_|self.now.saturating_sub(v.funding_ts)<60_000),"next_funding_ts":v.next_funding_ts}))).collect();
-            (name,json!({"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart,"lifecycle":s.lifecycle,"lifecycle_since":s.lifecycle_since,"signal_direction":s.candidate_direction,"last_result":s.last_result,"evaluation":s.evaluation}))
+            (name,json!({"runtime_state":s.runtime.state,"pulse":s.runtime.pulse.snapshot,"trigger_decision":s.runtime.decision,"trigger_origin":s.runtime.origin,"full_evaluations":s.runtime.full_evaluations,"venues":venues,"features":s.features,"active":s.active,"qualification":s.qualification,"plan":s.plan,"health":s.health,"chart":s.chart,"lifecycle":s.lifecycle,"lifecycle_since":s.lifecycle_since,"signal_direction":s.candidate_direction,"last_result":s.last_result,"evaluation":s.evaluation}))
         }).collect();
-        json!({"source":self.source,"mode":self.mode,"now":self.now,"config":self.config,"config_version":self.config_version,"model":self.model,
+        json!({"trigger_config":self.trigger_config,"trigger_config_version":self.trigger_config_version,"trigger_analytics":self.trigger_analytics.report(),"source":self.source,"mode":self.mode,"now":self.now,"config":self.config,"config_version":self.config_version,"model":self.model,
             "shadow":self.shadow_view(),"rollback_available":self.previous_model.is_some(),"shadow_policy_defaults":ShadowPolicy::default(),
             "kill_switch":self.kill_switch,"storage_healthy":self.storage_healthy,"symbols":symbols,"positions":self.positions,
             "outcomes":self.outcomes.iter().rev().take(100).collect::<Vec<_>>(),"trades":self.trades.iter().rev().take(100).collect::<Vec<_>>(),
@@ -1860,7 +1976,7 @@ mod position_tests {
     use super::*;
     use crate::feeds::demo_events;
     fn opened() -> (Engine, Prediction, Qualification, TradePlan) {
-        let mut e = Engine::new(true);
+        let mut e = Engine::new_reference(true);
         for i in 0..8 {
             for ev in demo_events(i, 1_000_000 + i * 1000) {
                 e.ingest(ev);

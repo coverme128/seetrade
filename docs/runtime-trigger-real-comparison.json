@@ -1,0 +1,200 @@
+{
+  "evaluation_reduction": 0.2633333333333333,
+  "event_driven": {
+    "episodes": 11,
+    "evaluations": 221,
+    "funnel": {
+      "evicted_links": 0,
+      "groups": {
+        "combination:AGGRESSIVE_TRADE_BURST+BOOK_IMBALANCE_DEPTH+ORDER_FLOW_CHANGE+PRICE_VELOCITY": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 3,
+          "episode_creation_rate": 1.0,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.0,
+          "full_evaluation_count": 46,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 0,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 3
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 3
+        },
+        "combination:BOOK_IMBALANCE_DEPTH+ORDER_FLOW_CHANGE+PRICE_VELOCITY": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 8,
+          "episode_creation_rate": 0.6666666666666666,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.3333333333333333,
+          "full_evaluation_count": 171,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 4,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 8
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 12
+        },
+        "combination:BOOK_IMBALANCE_DEPTH+PRICE_VELOCITY": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 0,
+          "episode_creation_rate": 0.0,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.0,
+          "full_evaluation_count": 4,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 0,
+          "observed_net_ev": null,
+          "outcome_distribution": {},
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 1
+        },
+        "family:AGGRESSIVE_TRADE_BURST": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 3,
+          "episode_creation_rate": 1.0,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.0,
+          "full_evaluation_count": 46,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 0,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 3
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 3
+        },
+        "family:BOOK_IMBALANCE_DEPTH": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 11,
+          "episode_creation_rate": 0.6875,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.25,
+          "full_evaluation_count": 221,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 4,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 11
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 16
+        },
+        "family:ORDER_FLOW_CHANGE": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 11,
+          "episode_creation_rate": 0.7333333333333333,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.26666666666666666,
+          "full_evaluation_count": 217,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 4,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 11
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 15
+        },
+        "family:PRICE_VELOCITY": {
+          "auto_admitted_count": 0,
+          "auto_admitted_rate": 0.0,
+          "episode_count": 11,
+          "episode_creation_rate": 0.6875,
+          "executed_count": 0,
+          "executed_rate": 0.0,
+          "false_no_edge_trigger_rate": 0.25,
+          "full_evaluation_count": 221,
+          "live_realized_net_pnl": -0.0,
+          "no_edge_count": 4,
+          "observed_net_ev": null,
+          "outcome_distribution": {
+            "SIGNAL_INVALIDATED": 11
+          },
+          "paper_realized_net_pnl": -0.0,
+          "qualified_count": 0,
+          "qualified_rate": 0.0,
+          "trigger_count": 16
+        }
+      },
+      "rates": "episode/trigger; qualified/episode; admitted/qualified (LIVE context only); executed/episode (confirmed PAPER or LIVE fill); no-edge/trigger excludes pending candidates",
+      "schema": "trigger-funnel-v1",
+      "scope": "most recent retained trigger links (up to 2000 completed plus unresolved)"
+    },
+    "outcomes": 11
+  },
+  "events": 30049,
+  "fixed_step_reference": {
+    "episodes": 13,
+    "evaluations": 300,
+    "outcomes": 12
+  },
+  "ignored_control_records": 4,
+  "limitations": [
+    "OBSERVE resimulation from initial frozen model/config, fresh warmup; not canonical order replay.",
+    "Only risk/trigger config commands are applied; model promotions, annotations, trading and private reports are excluded and counted.",
+    "Mid-price labels minus configured costs are not executable profit. Unclosed terminal episodes are right-censored.",
+    "No automatic threshold change, production reference mode, or model promotion."
+  ],
+  "matched_useful_episodes": 0,
+  "matching": "one-to-one same symbol/direction/config; opening time within candidate TTL; eligible qualified or positive observed/expected net edge reference outcomes",
+  "potentially_missed_episodes": [],
+  "schema": "trigger-reference-comparison-v1",
+  "source": "live",
+  "trigger_config": {
+    "abnormal_z": 3.0,
+    "active_full_eval_interval_ms": 1000,
+    "candidate_full_eval_interval_ms": 1500,
+    "candidate_ttl_ms": 10000,
+    "combination_window_ms": 1000,
+    "debounce_ms": 2000,
+    "depth_drop_fraction": 0.5,
+    "enabled_families": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "extreme_z": 6.0,
+    "normalization_method": "robust_z_v1",
+    "normalization_window_ms": 120000,
+    "position_full_eval_interval_ms": 1000,
+    "protection_book_gap": true,
+    "protection_data_stale": true,
+    "protection_depth": true,
+    "protection_slippage": true,
+    "protection_spread": true,
+    "protection_volatility": true,
+    "sample_interval_ms": 250,
+    "warmup_samples": 32
+  },
+  "useful_reference_episodes": 0
+}
