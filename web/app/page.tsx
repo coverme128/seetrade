@@ -1,4 +1,10 @@
 "use client";
+import {
+  ScannerPanel,
+  RadarPanel,
+  UniverseSummary,
+  PortfolioPanel,
+} from "./universe-panel";
 import { AdmissionCard, IntegrityPanel } from "./admission-panel";
 import OperationsPanel from "./operations-panel";
 import OpportunityPanel, { OpportunityBadge } from "./opportunity-panel";
@@ -388,6 +394,8 @@ export default function Home() {
     if (next === "settings" && state) setDraft({ ...state.config });
   };
   const titles: Record<string, [string, string]> = {
+    scanner: ["币种扫描器", "发现、评估与逐步验证新的 USDT 永续合约。"],
+    radar: ["机会雷达", "只关注触发后形成的正式交易机会。"],
     overview: ["市场工作台", "从市场结构到可验证的交易判断。"],
     history: ["预测与交易记录", "让每一次判断，都有可追溯的结果。"],
     health: ["模型健康", "先验证可靠性，再分配风险。"],
@@ -416,6 +424,8 @@ export default function Home() {
         <nav>
           {[
             ["overview", "grid", "市场工作台"],
+            ["scanner", "grid", "币种扫描器"],
+            ["radar", "pulse", "机会雷达"],
             ["history", "history", "预测与交易"],
             ["health", "pulse", "模型健康"],
             ["settings", "settings", "风险设置"],
@@ -524,23 +534,29 @@ export default function Home() {
           )}
           <div className="workspace-bar">
             <div className="symbol-tabs">
-              {["BTCUSDT", "ETHUSDT"].map((v, i) => (
-                <button
-                  aria-label={`${v} 永续合约`}
-                  onClick={() => setSymbol(v)}
-                  className={symbol === v ? "selected" : ""}
-                  key={v}
-                >
-                  <span className={`coin coin-${i}`}>
-                    {i === 0 ? "₿" : "Ξ"}
-                  </span>
-                  <span>
-                    {v.replace("USDT", "")}
-                    <small>/ USDT</small>
-                  </span>
-                  <span className="perp">PERP</span>
-                </button>
-              ))}
+              {Object.keys(state?.symbols || { BTCUSDT: {}, ETHUSDT: {} }).map(
+                (v, i) => (
+                  <button
+                    aria-label={`${v} 永续合约`}
+                    onClick={() => setSymbol(v)}
+                    className={symbol === v ? "selected" : ""}
+                    key={v}
+                  >
+                    <span className={`coin coin-${i}`}>
+                      {v === "BTCUSDT"
+                        ? "₿"
+                        : v === "ETHUSDT"
+                          ? "Ξ"
+                          : v.slice(0, 1)}
+                    </span>
+                    <span>
+                      {v.replace("USDT", "")}
+                      <small>/ USDT</small>
+                    </span>
+                    <span className="perp">PERP</span>
+                  </button>
+                ),
+              )}
             </div>
             <div className="mode-select">
               {Object.entries(modes).map(([mode, label]) => (
@@ -589,6 +605,26 @@ export default function Home() {
             </div>
           ) : (
             <>
+              {tab === "scanner" && (
+                <ScannerPanel state={state} busy={busy} command={command} />
+              )}
+              {tab === "radar" && (
+                <RadarPanel
+                  state={state}
+                  connected={connected}
+                  now={wallNow}
+                  onSelect={(s) => {
+                    setSymbol(s);
+                    go("overview");
+                  }}
+                />
+              )}
+              {tab === "overview" && (
+                <>
+                  <UniverseSummary state={state} />
+                  <PortfolioPanel state={state} />
+                </>
+              )}
               {(tab === "overview" || tab === "history") && (
                 <OpportunityPanel
                   state={state}
@@ -1793,7 +1829,7 @@ export default function Home() {
           <footer className="footer">
             <span>
               <span className="status-dot" />
-              MICRO ALPHA <b>PERSONAL v0.4</b>
+              MICRO ALPHA <b>PERSONAL v0.5.1 · v1.1</b>
             </span>
             <span>
               Deterministic core · AI OFF ·{" "}

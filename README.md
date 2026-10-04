@@ -1,30 +1,35 @@
 # Micro Alpha · 个人量化工作台
 
-基于 v1.0.3 产品合同及 `micro-alpha-trading-v1.0.4-runtime-trigger-upgrade-for-codex` 升级合同实现的本地个人版。面向 Binance / OKX 的 **BTC、ETH USDT 永续合约**，默认 **OBSERVE**。
+基于 v1.0.3–v1.1 升级合同实现的本地个人版。面向 Binance / OKX **USDT 永续合约**，默认 **OBSERVE**，保留 BTC/ETH 并支持逐步验证新增币种。
 
-当前交付为 **v0.4 个人版（对齐文档 v1.0.4）**：已接入 P0–P3 的观察、自动结果、资格、PAPER、独立信号加仓、Binance / OKX 私有 REST 执行、CONFIRM / AUTO、受控重训与影子晋升流程。默认 OBSERVE，未配置账户时不能启用交易所执行。完整阶段对应见 [P0–P3 验收](docs/ACCEPTANCE-P0-P3.md)。功能测试通过不等于已证明盈利或已完成交易所模拟账户 / 实盘验收。
+当前程序版本 **0.5.1（合同 v1.1）**：新增公共币种扫描、手动添加、动态采集池、资产资格与生命周期、独立模型/触发档案、机会雷达和组合敞口门禁。扫描默认关闭，新增币种默认只观察；不能从研究排名直接下单。使用步骤见 [动态币种池指南](docs/UNIVERSE-GUIDE.md)，交付范围及验证证据见 [v1.1 验收](docs/ACCEPTANCE-v1.1.md)。
+
+已有 P0–P3 的 PAPER、独立信号加仓、Binance / OKX 私有 REST、CONFIRM / AUTO、受控重训与影子晋升保留。软件功能验证不等于多币种模型已经通过真实市场验证，也不等于已完成资金账户验收。
 
 v1.0.3 升级已加入：事件驱动特征与约 1 秒评估分离、连续机会 Episode 去重、开场 / 最新概率快照、信号 / 数据失效关闭、独立到期价格观察，以及 AUTO 专用准入、确定性候选排序、预算预留、重新入场冷却和次数上限。QUALIFIED 仍可被 AUTO 跳过，每次发送前重新检查并持久化准入依据。
 
-v1.0.4 在此基础上加入逐标的 Market Pulse、四类归一化触发、候选 / Episode / 持仓分层调度、即时风险与数据保护、触发漏斗和离线固定步进对照。IDLE 不再无条件每秒运行完整模型；触发只唤醒评估，原资格、AUTO 准入和风险门槛继续生效。配置和诊断入口在“模型健康 → 执行与研究 → 运行触发诊断与配置”折叠面板。本轮通过 96 项 Rust、14 项 Python、15 项浏览器测试；优化核心的 5 分钟公共行情观察通过，长期与私有账户验收仍需另行完成。
+v1.0.4 在此基础上加入逐标的 Market Pulse、四类归一化触发、候选 / Episode / 持仓分层调度、即时风险与数据保护、触发漏斗和离线固定步进对照。IDLE 不再无条件每秒运行完整模型；触发只唤醒评估，原资格、AUTO 准入和风险门槛继续生效。配置和诊断入口在“模型健康 → 执行与研究 → 运行触发诊断与配置”折叠面板。v1.0.4 历史验收通过 96 项 Rust、14 项 Python、15 项浏览器测试及 5 分钟公共行情观察。当前 0.5.1 已通过 118 项 Rust、16 项 Python，验证了 23 项浏览器测试（完整运行 22 项通过，修复后单项复跑通过）；长期多币与私有账户验收仍需另行完成。
 
-升级原文保存在 [v1.0.4 合同](docs/spec-v1.0.4/UPGRADE-CONTRACT.md) 和 [v1.0.3 合同](docs/spec-v1.0.3/MASTER-CONTRACT.md)，逐项对应、默认参数和验收证据见 [当前验收记录](docs/ACCEPTANCE.md)。
+升级原文保存在 [v1.1 合同](docs/spec-v1.1/UPGRADE-CONTRACT.md)、[v1.0.4 合同](docs/spec-v1.0.4/UPGRADE-CONTRACT.md) 和 [v1.0.3 合同](docs/spec-v1.0.3/MASTER-CONTRACT.md)，逐项对应、默认参数和验收证据见 [当前验收记录](docs/ACCEPTANCE-v1.1.md)。
+
+0.5.1 修复了币种参数与成交成本不一致、不同币种配置版本互相影响等问题。已配置过 `venue_costs` 的用户应重新保存对应币种配置，再用新版本样本重新研究；详见 [升级检查](docs/UNIVERSE-GUIDE.md#升级到-051-后的检查)。此次无需新增环境变量或依赖。
 
 ## 文档导航
 
 | 需要了解的内容 | 文档 |
 |---|---|
+| v1.1 扫描、采集、研究、雷达与组合风控 | [动态币种池指南](docs/UNIVERSE-GUIDE.md) |
 | 硬件、环境变量、账户凭证与触发配置范围 | [个人运行与配置](docs/EXECUTION.md) |
 | 运行状态、四类触发、诊断面板和漏斗解释 | [运行时使用指南](docs/RUNTIME-GUIDE.md) |
 | 启停、检查、备份恢复、回放与排障 | [运维手册](docs/OPERATIONS.md) |
 | 架构、接口、模型与执行边界 | [实现架构](docs/ARCHITECTURE.md) |
-| 升级需求对应、测试证据与尚未验收事项 | [当前验收记录](docs/ACCEPTANCE.md) |
+| 升级需求对应、测试证据与尚未验收事项 | [当前验收记录](docs/ACCEPTANCE-v1.1.md) |
 
 ![工作台](docs/screenshots/workspace-desktop.png)
 
 ## 运行配置与账户
 
-从零准备时先看 [个人运行与执行账户配置](docs/EXECUTION.md)：包含各使用阶段必需项、全部 12 个环境变量、配置文件加载、两家模拟账户示例、账户模式、界面风险参数和研究 / AI 设置。
+从零准备时先看 [个人运行与执行账户配置](docs/EXECUTION.md)：包含各使用阶段必需项、日常运行环境变量、配置文件加载、两家模拟账户示例、账户模式、界面风险参数和研究 / AI 设置。
 
 | 项目 | 当前个人版要求 / 建议 |
 |---|---|
@@ -140,8 +145,8 @@ calibrated_probabilities: null
 python3 -m venv .venv
 .venv/bin/pip install -r research/requirements.txt
 
-# 将一份完整行情日志导出为 Zstd Parquet 分块
-.venv/bin/python research/parquet.py data/live-<session>.jsonl
+# 将一份完整行情日志导出为 Zstd Parquet 分块；将示例路径替换为实际录制文件
+.venv/bin/python research/parquet.py 'data/live-<session>.jsonl'
 # 追加 --watch 可在引擎运行时持续导出；磁盘写入不进入行情计算路径
 
 # 基线先做温度校准，再比较逻辑回归；使用真实来源的自动 Outcome
@@ -192,7 +197,7 @@ python3 -m venv .venv
 source scripts/env.sh
 cargo run --locked --example trigger_compare -- data/trigger-fixture.jsonl
 
-# 独立 --demo 核心与前端运行、BTC 已有闭合结果后执行；测试会切换模拟模式和修改配置
+# 在独立数据目录的 --demo 核心与前端运行后执行；测试会切换模拟模式和修改配置
 cd web
 npm run test:e2e
 ```
@@ -203,7 +208,7 @@ npm run test:e2e
 
 ```bash
 source scripts/env.sh
-cargo run --locked -- --replay data/live-<session>.jsonl
+cargo run --locked -- --replay 'data/live-<session>.jsonl'
 ```
 
 记录包含启动状态、规范化行情事件、每 100 ms 的逻辑时钟事件和用户控制操作；周期完整 checkpoint 每秒一次，关键结果 / 控制 / 执行状态仍持久化。回放不访问网络、不使用当前时间。JSON 浮点启用精确 round-trip，订单簿价格使用 1e-6 整数刻度。生产与回放调用同一核心。
@@ -221,7 +226,7 @@ Ground Truth 使用 **Binance 本地订单簿中间价**和规范化接收时间
 
 执行通过 REST 轮询对账，包含最小下单量、精度、账户模式、订单查询 / 撤销、部分成交、风险保护和重启恢复。当前没有私有 WS、交易所原生条件止损、可靠 OI / 清算流或影子成交模拟。前两项是部署能力边界，后两项在原合同中为可选 / 非必需；详见 [执行说明](docs/EXECUTION.md)。真实行情校准、长期稳定性与私有账户联调不能用合成测试替代。
 
-完整阶段状态和验证记录见 [验收说明](docs/ACCEPTANCE.md)，原始文档保存在 [docs/spec](docs/spec/MASTER-CONTRACT.md)。
+当前实现与验证记录见 [v1.1 验收](docs/ACCEPTANCE-v1.1.md)，原阶段状态见 [历史验收](docs/ACCEPTANCE.md)，原始文档保存在 [docs/spec](docs/spec/MASTER-CONTRACT.md)。
 
 
 ## 新增研究与运行工具
@@ -241,7 +246,7 @@ GBT 使用多分类梯度提升浅树，导出的固定树结构由 Rust 推理�
 
 `/api/state` 的 `telemetry` 提供特征、资格检查、核心事件处理、输入队列积压和 checkpoint 序列化的 P50 / P95 / 最大耗时；特征中保留市场时间滞后，私有订单保留提交 / 确认 / 成交时间。运行时计时不参与确定性回放摘要。
 
-v1.0.3 历史验收曾连续采样真实公共行情约两分钟，60 次四路行情全部就绪，核心状态延迟中位数 68 ms、P95 188 ms、最大 215 ms。79 项 Rust、14 项 Python 和固定回放通过。完整结果见 [后续验收记录](docs/ACCEPTANCE-P0-P3.md#后续真实行情验收--2026-10-02) 与 [采样证据](docs/continuation-runtime-smoke.json)。这是旧版本的本机短时结果；v1.0.4 的新测试和运行证据见 [当前验收记录](docs/ACCEPTANCE.md)。校准、私有模拟账户、小额实盘与 AUTO 的资金执行门禁仍需独立验收。
+v1.0.3 历史验收曾连续采样真实公共行情约两分钟，60 次四路行情全部就绪，核心状态延迟中位数 68 ms、P95 188 ms、最大 215 ms。79 项 Rust、14 项 Python 和固定回放通过。完整结果见 [后续验收记录](docs/ACCEPTANCE-P0-P3.md#后续真实行情验收--2026-10-02) 与 [采样证据](docs/continuation-runtime-smoke.json)。这是旧版本的本机短时结果；v1.0.4 的测试和运行证据见 [v1.0.4 历史验收](docs/ACCEPTANCE.md)，当前版本见 [v1.1 验收](docs/ACCEPTANCE-v1.1.md)。校准、私有模拟账户、小额实盘与 AUTO 的资金执行门禁仍需独立验收。
 
 
 P1 / P2 风险上下文已明确区分模拟与真实账户：两者使用同一资格 / 仓位公式，真实预算读取交易所日损益、权益、持仓和挂单预留。模型 DEGRADED 对受限后的目标名义金额应用减仓乘数；CONFIRM / AUTO 的发送前复核仍有效。模型健康页分别展示预测 EV、PAPER 实际 EV 和执行成本偏差；交易所结果在执行面板单列。

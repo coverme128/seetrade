@@ -213,15 +213,18 @@ def load_dataset(args):
             saved = db.execute('SELECT state FROM checkpoint WHERE id=1').fetchone()
             if saved: checkpoint = json.loads(saved[0])
     records = [(kind, r['payload']) for kind, r in records if r['source'] == args.source]
+    asset = getattr(args, 'symbol', None)
+    if asset: records = [(k,p) for k,p in records if (p if k=='prediction' else p['prediction'])['symbol']==asset]
     predictions = [p if kind == 'prediction' else p['prediction'] for kind, p in records]
     outcomes = {p['prediction']['prediction_id']: p for kind, p in records if kind == 'outcome'}
     latest = max(predictions, key=lambda p: p['ts']) if predictions else None
     selection = 'latest_prediction'
     if checkpoint and checkpoint.get('source') == args.source:
         current = checkpoint['config']
+        if asset: current = ((checkpoint.get('universe') or {}).get('profiles',{}).get(asset) or {}).get('config') or current
         # Do not fall back to an older version while a new configuration is collecting.
         latest = {**(latest or {}), **{k: current[k] for k in ('horizon', 'target', 'stop')},
-                  'config_version': checkpoint['config_version']}
+                  'config_version': max(checkpoint['config_version'], (((checkpoint.get('universe') or {}).get('profiles',{}).get(asset) or {}).get('config_version') or 0) if asset else 0)}
         selection = 'checkpoint'
     definition = lambda p: (p['config_version'], p['horizon'], p['target'], p['stop'])
     current = [o for o in outcomes.values() if latest and definition(o['prediction']) == definition(latest)]
@@ -241,6 +244,12 @@ def run(args):
     evidence = None
     try:
         rows, evidence = load_dataset(args)
+        if getattr(args, "symbol", None):
+            try:
+                from asset_profile import write_profile
+            except ModuleNotFoundError:
+                from research.asset_profile import write_profile
+            write_profile(args, rows, evidence)
         if not rows: raise ValueError('没有匹配来源及当前配置的有效自动 Outcome')
         return train_dataset(args, rows, evidence)
     except (ValueError, KeyError, sqlite3.Error) as error:
@@ -278,7 +287,7 @@ def train_dataset(args, rows, evidence):
                             score=fitted['score']['metrics'], logistic=fitted['logistic']['metrics'], **chosen['metrics']))
     reports = {name: metrics(all_test, np.array(predictions[name]), np.array(eligibility[name])) for name in predictions}
     chosen = reports[args.model]; eligible = np.array(eligibility[args.model])
-    symbols = {s: sum(o['prediction']['symbol'] == s for o in all_test) for s in ('BTCUSDT', 'ETHUSDT')}
+    symbols = {s: sum(o['prediction']['symbol'] == s for o in all_test) for s in ([args.symbol] if getattr(args,'symbol',None) else ('BTCUSDT','ETHUSDT'))}
     # The final deployment artifact is exactly the last fold model, with its own untouched test evidence.
     final = fitted[args.model]
     regime_reports = {}
@@ -321,6 +330,7 @@ def train_dataset(args, rows, evidence):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--symbol', help='One normalized asset, e.g. SOLUSDT; isolates calibration and report scope')
     parser.add_argument('--db',required=True);parser.add_argument('--source',choices=['live','demo'],required=True)
     parser.add_argument('--model',choices=['score','logistic','gbt'],default='score');parser.add_argument('--output',default='data/research')
     try: run(parser.parse_args())

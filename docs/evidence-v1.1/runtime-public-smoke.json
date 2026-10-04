@@ -1,0 +1,133 @@
+{
+  "source": "live",
+  "mode": "OBSERVE",
+  "scan_status": "COMPLETED",
+  "scan_errors": {},
+  "asset": "SOLUSDT",
+  "lifecycle": "COLLECTING",
+  "mode_permissions": [
+    "OBSERVE"
+  ],
+  "collecting_assets": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "sqlite_integrity": "ok",
+  "foreign_key_errors": [],
+  "scanner_run_rows": 1,
+  "scanner_observation_rows": 1,
+  "asset_profile_rows": 5,
+  "asset_qualification_rows": 1,
+  "universe_membership_rows": 3,
+  "initial_network_failure": {
+    "binance": {
+      "age_ms": 1791087100360,
+      "connected": false,
+      "error": "IO error: failed to lookup address information: nodename nor servname provided, or not known",
+      "exchange_age_ms": 1791087100360,
+      "funding_rate": null,
+      "gaps": 0,
+      "index": null,
+      "mark": null,
+      "mid": null,
+      "next_funding_ts": null,
+      "ready": false,
+      "reconnects": 6,
+      "sequence": 0
+    },
+    "okx": {
+      "age_ms": 0,
+      "connected": true,
+      "error": "",
+      "exchange_age_ms": 140,
+      "funding_rate": 7.21595848539e-05,
+      "gaps": 0,
+      "index": 120.57,
+      "mark": 120.52,
+      "mid": 120.525,
+      "next_funding_ts": 1791100800000,
+      "ready": true,
+      "reconnects": 0,
+      "sequence": 92843697075
+    }
+  },
+  "venues_after_automatic_reconnect": {
+    "binance": {
+      "age_ms": 57,
+      "connected": true,
+      "error": "",
+      "exchange_age_ms": 109,
+      "funding_rate": 6.962e-05,
+      "gaps": 0,
+      "index": 120.58097195,
+      "mark": 120.53,
+      "mid": 120.525,
+      "next_funding_ts": 1791100800000,
+      "ready": true,
+      "reconnects": 7,
+      "sequence": 11730134700256
+    },
+    "okx": {
+      "age_ms": 80,
+      "connected": true,
+      "error": "",
+      "exchange_age_ms": 64,
+      "funding_rate": 7.25404958973e-05,
+      "gaps": 0,
+      "index": 120.58,
+      "mark": 120.52,
+      "mid": 120.525,
+      "next_funding_ts": 1791100800000,
+      "ready": true,
+      "reconnects": 0,
+      "sequence": 92843776733
+    }
+  },
+  "all_three_assets_both_venues_ready": true,
+  "captured_at": 1791087207641,
+  "telemetry": {
+    "checkpoint_serialize": {
+      "max_us": 664099,
+      "p50_us": 38068,
+      "p95_us": 102657,
+      "samples": 464
+    },
+    "core_ingest": {
+      "max_us": 13251,
+      "p50_us": 90,
+      "p95_us": 2515,
+      "samples": 1000
+    },
+    "features": {
+      "max_us": 3120,
+      "p50_us": 168,
+      "p95_us": 500,
+      "samples": 319
+    },
+    "full_alpha_evaluation": {
+      "max_us": 23216,
+      "p50_us": 508,
+      "p95_us": 1851,
+      "samples": 317
+    },
+    "ingest_queue_delay": {
+      "max_us": 176000,
+      "p50_us": 0,
+      "p95_us": 115000,
+      "samples": 1000
+    },
+    "market_pulse": {
+      "max_us": 37180,
+      "p50_us": 0,
+      "p95_us": 3141,
+      "samples": 1000
+    },
+    "qualification": {
+      "max_us": 315,
+      "p50_us": 40,
+      "p95_us": 110,
+      "samples": 240
+    }
+  }
+}

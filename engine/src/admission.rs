@@ -188,6 +188,7 @@ impl Engine {
             .count();
         let mut candidates = vec![];
         for (symbol, s) in &self.symbols {
+            let asset = self.asset_config(symbol);
             let Some(p) = &s.active else {
                 continue;
             };
@@ -201,10 +202,12 @@ impl Engine {
             if q.status != "QUALIFIED" {
                 reasons.push("NOT_QUALIFIED".into());
             }
-            if p.config_version != self.config_version || self.now >= p.ts + p.horizon * 1000 {
+            if p.config_version != self.asset_config_version(symbol)
+                || self.now >= p.ts + p.horizon * 1000
+            {
                 reasons.push("EPISODE_EXPIRED".into());
             }
-            let max_age = c.max_stale_ms.min(
+            let max_age = asset.max_stale_ms.min(c.max_stale_ms).min(
                 c.alpha_eval_interval_ms
                     .max(c.qualification_eval_interval_ms)
                     * 2,
@@ -215,28 +218,34 @@ impl Engine {
             }) {
                 reasons.push("STALE_EVALUATION".into());
             }
-            if !q.net_edge.is_finite() || q.net_edge < c.auto_min_net_edge {
+            if !q.net_edge.is_finite()
+                || q.net_edge < c.auto_min_net_edge.max(asset.auto_min_net_edge)
+            {
                 reasons.push("AUTO_EDGE_THRESHOLD_NOT_MET".into());
             }
-            if trust_rank(&s.health.trust) < trust_rank(&c.auto_required_model_trust)
+            if trust_rank(&s.health.trust)
+                < trust_rank(&c.auto_required_model_trust)
+                    .max(trust_rank(&asset.auto_required_model_trust))
                 || ev.is_none_or(|v| v.calibrated_probabilities.is_none())
             {
                 reasons.push("MODEL_TRUST_INSUFFICIENT".into());
             }
             if s.features.as_ref().is_none_or(|f| {
                 !f.data_quality.is_empty()
-                    || self.now.saturating_sub(f.ts) > c.max_stale_ms
-                    || f.spread_bps > c.max_spread_bps
-                    || f.depth < c.min_depth
+                    || self.now.saturating_sub(f.ts) > c.max_stale_ms.min(asset.max_stale_ms)
+                    || f.spread_bps > c.max_spread_bps.min(asset.max_spread_bps)
+                    || f.depth < c.min_depth.max(asset.min_depth)
+            }) || s.venues.values().any(|v| {
+                !v.connected
+                    || !v
+                        .book
+                        .ready(self.now, c.max_stale_ms.min(asset.max_stale_ms))
+            }) || q.gates.iter().any(|g| {
+                ["slippage", "liquidity", "exchange", "cost"].contains(&g.code.as_str()) && !g.pass
             }) || s
-                .venues
-                .values()
-                .any(|v| !v.connected || !v.book.ready(self.now, c.max_stale_ms))
-                || q.gates.iter().any(|g| {
-                    ["slippage", "liquidity", "exchange", "cost"].contains(&g.code.as_str())
-                        && !g.pass
-                })
-                || s.health.execution_drift.is_some_and(|v| v > c.max_slippage)
+                .health
+                .execution_drift
+                .is_some_and(|v| v > c.max_slippage.min(asset.max_slippage))
                 || (live && (!self.live.healthy || self.live_ready().is_err()))
             {
                 reasons.push("EXECUTION_QUALITY_FAIL".into());
@@ -314,7 +323,7 @@ impl Engine {
                     competing_episode_ids: vec![],
                     risk_budget_before: Default::default(),
                     risk_budget_after_if_admitted: Default::default(),
-                    config_version: self.config_version,
+                    config_version: self.asset_config_version(symbol),
                     context: if live { "LIVE" } else { "SHADOW" }.into(),
                     qualification: q,
                     approved_notional: 0.,

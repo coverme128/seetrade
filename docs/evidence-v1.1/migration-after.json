@@ -1,0 +1,46 @@
+{
+  "source": "live",
+  "mode": "OBSERVE",
+  "config_version": 35,
+  "model_version": "score-v1-unvalidated",
+  "scanner_enabled": false,
+  "portfolio_live_enabled": false,
+  "profiles": {
+    "BTCUSDT": {
+      "id": "asset-BTCUSDT-2",
+      "lifecycle_state": "OBSERVE",
+      "mode_permissions": [
+        "OBSERVE",
+        "PAPER"
+      ]
+    },
+    "ETHUSDT": {
+      "id": "asset-ETHUSDT-2",
+      "lifecycle_state": "OBSERVE",
+      "mode_permissions": [
+        "OBSERVE",
+        "PAPER"
+      ]
+    }
+  },
+  "quick_check": "ok",
+  "foreign_key_errors": [],
+  "table_names": [
+    "records",
+    "checkpoint",
+    "asset_profile",
+    "scanner_run",
+    "scanner_observation",
+    "asset_qualification",
+    "universe_membership",
+    "asset_state_transition",
+    "portfolio_gate_decision",
+    "asset_trigger_profile",
+    "instrument_registry",
+    "schema_migration"
+  ],
+  "backup": "data/backups/v1.0.4-final-before-v1.1.sqlite",
+  "before_records": 45370,
+  "after_records": 45496,
+  "missing_or_changed_original_records": 0
+}

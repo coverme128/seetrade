@@ -11,11 +11,12 @@ pub(crate) struct RiskContext {
 }
 impl Engine {
     pub(crate) fn qualification_risk(&self, prediction: &Prediction) -> RiskContext {
-        let c = &self.config;
+        let c = self.asset_config(&prediction.symbol);
         let live = ["CONFIRM", "AUTO"].contains(&self.mode.as_str())
             || self.live.orders.values().any(|o| o.pending())
-            || ["BTCUSDT", "ETHUSDT"]
-                .iter()
+            || self
+                .symbols
+                .keys()
                 .any(|s| self.tracked_live_quantity(s).abs() > 1e-10)
             || self
                 .live
@@ -54,11 +55,12 @@ impl Engine {
                     })
                     .max_by_key(|o| o.created_ts)
                     .map(|o| o.plan.sl);
-                let cost = (2. * c.fee_bps
-                    + 2. * c.slippage_bps
-                    + c.impact_bps
-                    + c.adverse_selection_bps
-                    + c.funding_bps)
+                let other_costs = self.asset_config(symbol).costs_for_venue(&self.live.venue);
+                let cost = (2. * other_costs.fee_bps
+                    + 2. * other_costs.slippage_bps
+                    + other_costs.impact_bps
+                    + other_costs.adverse_selection_bps
+                    + other_costs.funding_bps)
                     / 10000.;
                 other_risk += stop.map_or(notional, |stop| {
                     position.quantity.abs()

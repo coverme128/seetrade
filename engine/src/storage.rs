@@ -66,6 +66,7 @@ impl Store {
             CREATE TABLE IF NOT EXISTS records(id INTEGER PRIMARY KEY, kind TEXT NOT NULL, ts INTEGER NOT NULL, payload TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS records_kind ON records(kind, id);
             CREATE TABLE IF NOT EXISTS checkpoint(id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL);")?;
+        crate::universe_storage::migrate(&conn)?;
         let restored = conn
             .query_row("SELECT state FROM checkpoint WHERE id=1", [], |r| {
                 r.get::<_, String>(0)
@@ -168,6 +169,7 @@ fn write_batch(conn: &mut Connection, writer: &mut BufWriter<File>, batch: Batch
     writer.write_all(b"\n")?;
     let transaction = conn.transaction()?;
     for record in batch.records {
+        crate::universe_storage::project(&transaction, &record)?;
         transaction.execute(
             "INSERT INTO records(kind,ts,payload) VALUES(?1,?2,?3)",
             params![

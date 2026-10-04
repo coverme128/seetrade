@@ -56,81 +56,58 @@ async fn send(
     .await
     .map_err(|_| anyhow!("engine stopped"))
 }
-pub fn spawn_live(tx: mpsc::Sender<MarketEvent>) {
-    for s in ["BTCUSDT", "ETHUSDT"] {
-        let tx = tx.clone();
-        tokio::spawn(async move {
-            let mut backoff = 1;
-            loop {
-                let started = Instant::now();
-                let result = binance(&tx, s).await;
-                let reason = result
-                    .err()
-                    .map(|e| e.to_string())
-                    .unwrap_or_else(|| "disconnected".into());
-                tracing::warn!(exchange="binance",symbol=s,%reason);
-                if send(
-                    &tx,
-                    "binance",
-                    s,
-                    now_ms(),
-                    0,
-                    EventData::Health {
-                        connected: false,
-                        reason,
-                    },
-                )
-                .await
-                .is_err()
-                {
-                    break;
+pub fn spawn_asset(
+    tx: mpsc::Sender<MarketEvent>,
+    symbol: String,
+    exchanges: Vec<String>,
+) -> Vec<tokio::task::JoinHandle<()>> {
+    exchanges
+        .into_iter()
+        .map(|exchange| {
+            let tx = tx.clone();
+            let symbol = symbol.clone();
+            tokio::spawn(async move {
+                let mut backoff = 1;
+                loop {
+                    let started = Instant::now();
+                    let result = if exchange == "binance" {
+                        binance(&tx, &symbol).await
+                    } else {
+                        okx(&tx, &symbol).await
+                    };
+                    let reason = result
+                        .err()
+                        .map(|e| e.to_string())
+                        .unwrap_or_else(|| "disconnected".into());
+                    if send(
+                        &tx,
+                        &exchange,
+                        &symbol,
+                        now_ms(),
+                        0,
+                        EventData::Health {
+                            connected: false,
+                            reason,
+                        },
+                    )
+                    .await
+                    .is_err()
+                    {
+                        return;
+                    }
+                    if started.elapsed() > Duration::from_secs(60) {
+                        backoff = 1;
+                    }
+                    tokio::time::sleep(Duration::from_secs(backoff)).await;
+                    backoff = (backoff * 2).min(30);
                 }
-                if started.elapsed() > Duration::from_secs(60) {
-                    backoff = 1;
-                }
-                tokio::time::sleep(Duration::from_secs(backoff)).await;
-                backoff = (backoff * 2).min(30);
-            }
-        });
-    }
-    tokio::spawn(async move {
-        let mut backoff = 1;
-        loop {
-            let started = Instant::now();
-            let reason = okx(&tx)
-                .await
-                .err()
-                .map(|e| e.to_string())
-                .unwrap_or_else(|| "disconnected".into());
-            tracing::warn!(exchange="okx",%reason);
-            for s in ["BTCUSDT", "ETHUSDT"] {
-                if send(
-                    &tx,
-                    "okx",
-                    s,
-                    now_ms(),
-                    0,
-                    EventData::Health {
-                        connected: false,
-                        reason: reason.clone(),
-                    },
-                )
-                .await
-                .is_err()
-                {
-                    return;
-                }
-            }
-            if started.elapsed() > Duration::from_secs(60) {
-                backoff = 1;
-            }
-            tokio::time::sleep(Duration::from_secs(backoff)).await;
-            backoff = (backoff * 2).min(30);
-        }
-    });
+            })
+        })
+        .collect()
 }
 async fn binance(tx: &mpsc::Sender<MarketEvent>, symbol: &str) -> Result<()> {
-    let lower = symbol.to_lowercase();
+    let lower: String =
+        url::form_urlencoded::byte_serialize(symbol.to_lowercase().as_bytes()).collect();
     let (mut depth, _) = tokio::time::timeout(
         Duration::from_secs(15),
         connect_async(format!(
@@ -207,12 +184,14 @@ async fn binance(tx: &mpsc::Sender<MarketEvent>, symbol: &str) -> Result<()> {
         }
     }
 }
-async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
+async fn okx(tx: &mpsc::Sender<MarketEvent>, asset: &str) -> Result<()> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .build()?;
     let mut multipliers = BTreeMap::new();
-    for (inst, base) in [("BTC-USDT-SWAP", "BTC"), ("ETH-USDT-SWAP", "ETH")] {
+    let instrument = format!("{}-USDT-SWAP", asset.trim_end_matches("USDT"));
+    let index_instrument = format!("{}-USDT", asset.trim_end_matches("USDT"));
+    for (inst, base) in [(instrument.as_str(), asset.trim_end_matches("USDT"))] {
         let v: Value = client
             .get(format!(
                 "https://www.okx.com/api/v5/public/instruments?instType=SWAP&instId={inst}"
@@ -237,13 +216,11 @@ async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
         connect_async("wss://ws.okx.com:8443/ws/v5/public"),
     )
     .await??;
-    ws.send(Message::Text(json!({"op":"subscribe","args":[
-        {"channel":"books","instId":"BTC-USDT-SWAP"},{"channel":"books","instId":"ETH-USDT-SWAP"},
-        {"channel":"trades","instId":"BTC-USDT-SWAP"},{"channel":"trades","instId":"ETH-USDT-SWAP"},
-        {"channel":"mark-price","instId":"BTC-USDT-SWAP"},{"channel":"mark-price","instId":"ETH-USDT-SWAP"},
-        {"channel":"index-tickers","instId":"BTC-USDT"},{"channel":"index-tickers","instId":"ETH-USDT"},
-        {"channel":"funding-rate","instId":"BTC-USDT-SWAP"},{"channel":"funding-rate","instId":"ETH-USDT-SWAP"}
-    ]}).to_string().into())).await?;
+    let args:Vec<_>=["books","trades","mark-price","index-tickers","funding-rate"].iter().map(|channel|json!({"channel":channel,"instId":if *channel=="index-tickers"{&index_instrument}else{&instrument}})).collect();
+    ws.send(Message::Text(
+        json!({"op":"subscribe","args":args}).to_string().into(),
+    ))
+    .await?;
     let mut books: BTreeMap<String, Book> = BTreeMap::new();
     let mut ping = tokio::time::interval(Duration::from_secs(10));
     let mut last = Instant::now();
@@ -256,7 +233,7 @@ async fn okx(tx: &mpsc::Sender<MarketEvent>) -> Result<()> {
                     last=Instant::now();if t=="pong"{continue;}
                     let v:Value=serde_json::from_str(&t)?;if v["event"]=="error"{return Err(anyhow!("OKX subscription: {}",v["msg"]));}
                     let inst=v["arg"]["instId"].as_str().unwrap_or("");
-                    let symbol=match inst{"BTC-USDT-SWAP"|"BTC-USDT"=>"BTCUSDT","ETH-USDT-SWAP"|"ETH-USDT"=>"ETHUSDT",_=>continue};
+                    if inst!=instrument && inst!=index_instrument {continue;} let symbol=asset;
                     let Some(rows)=v["data"].as_array()else{continue;};
                     for row in rows {
                         let ts=integer(&row["ts"])? as u64;
@@ -364,4 +341,36 @@ pub fn demo_events(step: u64, ts: u64) -> Vec<MarketEvent> {
         data: EventData::Clock,
     });
     events
+}
+
+/// Additional synthetic asset series for isolated multi-asset PAPER acceptance only.
+pub fn demo_asset_events(symbol: &str, step: u64, ts: u64) -> Vec<MarketEvent> {
+    demo_events(step, ts)
+        .into_iter()
+        .filter(|e| e.symbol == "ETHUSDT")
+        .map(|mut e| {
+            e.symbol = symbol.into();
+            let scale = 100. / 3520.;
+            match &mut e.data {
+                EventData::Snapshot { bids, asks } | EventData::Delta { bids, asks, .. } => {
+                    for level in bids.iter_mut().chain(asks.iter_mut()) {
+                        level[0] *= scale;
+                        level[1] /= scale;
+                    }
+                }
+                EventData::Trade {
+                    price, quantity, ..
+                } => {
+                    *price *= scale;
+                    *quantity /= scale;
+                }
+                EventData::Mark { mark, index, .. } => {
+                    *mark *= scale;
+                    *index *= scale;
+                }
+                _ => {}
+            }
+            e
+        })
+        .collect()
 }

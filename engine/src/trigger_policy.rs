@@ -70,6 +70,14 @@ impl Engine {
     }
     pub(crate) fn runtime_market_event(&mut self, event: &crate::types::MarketEvent) {
         let symbol = &event.symbol;
+        let stale_ms = self.asset_config(symbol).max_stale_ms;
+        let (trigger_config, trigger_version) = self.asset_trigger(symbol);
+        let trigger_config = trigger_config.clone();
+        let profile_id = self
+            .universe
+            .as_ref()
+            .and_then(|u| u.profiles.get(symbol))
+            .map(|p| p.trigger.id.clone());
         self.sync_runtime(symbol);
         if matches!(
             event.data,
@@ -82,7 +90,7 @@ impl Engine {
                 .event_freshness
                 .insert(
                     event.exchange.clone(),
-                    event.receive_ts.abs_diff(event.exchange_ts) <= self.config.max_stale_ms,
+                    event.receive_ts.abs_diff(event.exchange_ts) <= stale_ms,
                 );
         }
         let (blocked, protection) = self.protection_check(symbol);
@@ -105,7 +113,7 @@ impl Engine {
             buy,
         } = event.data
         {
-            if event.receive_ts.abs_diff(event.exchange_ts) <= self.config.max_stale_ms
+            if event.receive_ts.abs_diff(event.exchange_ts) <= stale_ms
                 && price.is_finite()
                 && quantity.is_finite()
                 && (price * quantity).is_finite()
@@ -124,7 +132,7 @@ impl Engine {
             symbol,
             ts: self.now,
             exchange_ts: event.exchange_ts,
-            config_version: self.trigger_config_version,
+            config_version: trigger_version,
             mid,
             ofi: book.ofi,
             bid_depth: bd,
@@ -132,7 +140,7 @@ impl Engine {
             spread_bps: (ask - bid) / mid * 10000.,
         };
         let start = std::time::Instant::now();
-        let snapshot = s.runtime.pulse.sample(input, &self.trigger_config);
+        let snapshot = s.runtime.pulse.sample(input, &trigger_config);
         self.telemetry
             .lock()
             .unwrap()
@@ -164,7 +172,7 @@ impl Engine {
             return;
         }
         if r.origin.is_none()
-            && self.now.saturating_sub(r.last_trigger_ts) < self.trigger_config.debounce_ms
+            && self.now.saturating_sub(r.last_trigger_ts) < trigger_config.debounce_ms
         {
             return;
         }
@@ -173,12 +181,7 @@ impl Engine {
             .origin
             .as_ref()
             .map(|o| o.trigger_id.clone())
-            .unwrap_or_else(|| {
-                format!(
-                    "trigger-{symbol}-{}-{}",
-                    self.now, self.trigger_config_version
-                )
-            });
+            .unwrap_or_else(|| format!("trigger-{symbol}-{}-{}", self.now, trigger_version));
         let mut severity = r
             .origin
             .as_ref()
@@ -189,6 +192,7 @@ impl Engine {
             *old = (*old).max(*v);
         }
         let trigger = MarketPulseTriggerEvent {
+            asset_trigger_profile_id: profile_id,
             trigger_id: id,
             symbol: symbol.clone(),
             exchange_scope: "BINANCE_PRIMARY".into(),
@@ -201,14 +205,14 @@ impl Engine {
                 .collect(),
             severity_by_family: severity,
             normalized_metric_snapshot: snapshot,
-            normalization_config_version: self.trigger_config_version,
+            normalization_config_version: trigger_version,
             runtime_state_before: before,
             action: "FULL_ALPHA_EVALUATION".into(),
         };
         let r = &mut self.symbols.get_mut(symbol).unwrap().runtime;
         if r.state == RuntimeState::Idle {
             r.state = RuntimeState::Candidate;
-            r.candidate_until = self.now + self.trigger_config.candidate_ttl_ms;
+            r.candidate_until = self.now + trigger_config.candidate_ttl_ms;
         }
         r.trigger_latched = true;
         r.last_trigger_ts = self.now;
@@ -220,6 +224,8 @@ impl Engine {
     }
     /// Returns (data blocked, force risk re-evaluation). No independent exit rule is invented here.
     pub(crate) fn protection_check(&mut self, symbol: &str) -> (bool, bool) {
+        let trigger_config = self.asset_trigger(symbol).0.clone();
+        let config = self.asset_config(symbol).clone();
         if self.reference_runtime {
             return (false, false);
         }
@@ -237,8 +243,8 @@ impl Engine {
             if !v.book.valid {
                 data.push(format!("{name}:BOOK_INVALID_OR_GAP"));
             }
-            if self.now.saturating_sub(v.book.receive_ts) > self.config.max_stale_ms
-                || self.now.abs_diff(v.book.exchange_ts) > self.config.max_stale_ms
+            if self.now.saturating_sub(v.book.receive_ts) > config.max_stale_ms
+                || self.now.abs_diff(v.book.exchange_ts) > config.max_stale_ms
             {
                 data.push(format!("{name}:STALE_OR_TIMESTAMP_SKEW"));
             }
@@ -274,7 +280,7 @@ impl Engine {
         } else {
             (returns.iter().map(|v| v * v).sum::<f64>() / returns.len() as f64).sqrt()
         };
-        let slippage = (spread / 2. + self.config.slippage_bps + self.config.impact_bps) / 10000.;
+        let slippage = (spread / 2. + config.slippage_bps + config.impact_bps) / 10000.;
         if position {
             if self.live.orders.values().any(|o| {
                 o.action == "ENTRY"
@@ -290,26 +296,26 @@ impl Engine {
             }) {
                 risk.push("POSITION_BARRIER".into());
             }
-            if self.trigger_config.protection_spread && spread > self.config.max_spread_bps {
+            if trigger_config.protection_spread && spread > config.max_spread_bps {
                 risk.push("SPREAD_SPIKE".to_string());
             }
-            if self.trigger_config.protection_depth
-                && (depth < self.config.min_depth
+            if trigger_config.protection_depth
+                && (depth < config.min_depth
                     || (s.runtime.pulse.previous_depth > 0.
                         && depth
                             < s.runtime.pulse.previous_depth
-                                * (1. - self.trigger_config.depth_drop_fraction)))
+                                * (1. - trigger_config.depth_drop_fraction)))
             {
                 risk.push("DEPTH_COLLAPSE".into());
             }
-            if self.trigger_config.protection_slippage && slippage > self.config.max_slippage {
+            if trigger_config.protection_slippage && slippage > config.max_slippage {
                 risk.push("SLIPPAGE_SPIKE".into());
             }
-            if self.trigger_config.protection_volatility
-                && (volatility > self.config.max_volatility
+            if trigger_config.protection_volatility
+                && (volatility > config.max_volatility
                     || s.runtime.pulse.previous_mid > 0.
                         && book.mid().is_some_and(|m| {
-                            (m / s.runtime.pulse.previous_mid - 1.).abs() > self.config.stop
+                            (m / s.runtime.pulse.previous_mid - 1.).abs() > config.stop
                         }))
             {
                 risk.push("VOLATILITY_OR_FAST_MOVE".into());
@@ -375,7 +381,7 @@ impl Engine {
             self.log("protection_trigger",json!({"id":id,"symbol":symbol,
                 "occurred_at":self.now,"type":if blocked{"DATA"}else{"RISK"},"reason_codes":reasons,
                 "metric_snapshot":{"spread_bps":spread,"depth":depth,"slippage_proxy":slippage,"realized_volatility":volatility},
-                "position_open":position,"resulting_action":if blocked{"BLOCK_NEW"}else{"REEVALUATE_RISK"},"config_version":self.config_version}));
+                "position_open":position,"resulting_action":if blocked{"BLOCK_NEW"}else{"REEVALUATE_RISK"},"config_version":self.asset_config_version(symbol)}));
         }
         if blocked && position && changed {
             self.protection_result(symbol);
@@ -411,10 +417,24 @@ impl Engine {
         if self.shadow.as_ref().is_some_and(|r| r.status == "RUNNING") {
             self.pause_shadow("PAUSED_CONFIG");
         }
+        if let Some(u) = &mut self.universe {
+            for (symbol, p) in &mut u.profiles {
+                p.trigger.config = c.clone();
+                p.trigger.calibrated = false;
+                p.trigger.profile_version += 1;
+                p.trigger.id = format!("trigger-profile-{symbol}-{}", p.trigger.profile_version);
+            }
+        }
+        if self.universe.is_some() {
+            for symbol in self.symbols.keys().cloned().collect::<Vec<_>>() {
+                self.save_profile(&symbol);
+            }
+        }
         self.trigger_config = c;
         self.trigger_config_version += 1;
-        self.config_version += 1;
-        for symbol in ["BTCUSDT", "ETHUSDT"] {
+        self.config_version = self.next_config_version();
+        for symbol in self.symbols.keys().cloned().collect::<Vec<_>>() {
+            let symbol = symbol.as_str();
             self.invalidate(symbol, "config_changed");
             if let Some(origin) = self.symbols.get_mut(symbol).unwrap().runtime.origin.take() {
                 self.log(

@@ -403,6 +403,7 @@ fn paper_position(e: &mut Engine) {
     e.positions.insert(
         "BTCUSDT".into(),
         Position {
+            execution_venue: None,
             plan,
             qty: 0.01,
             entry_price: price,

@@ -269,9 +269,9 @@ impl Model {
             || !(0.1..=10.).contains(&self.temperature)
             || !self.validated
             || self.model_version.is_empty()
-            || (!demo && (self.distributions.len() != 2 || self.regime_calibrations.is_empty()))
+            || (!demo && (self.distributions.is_empty() || self.regime_calibrations.is_empty()))
             || self.distributions.iter().any(|(s, d)| {
-                !["BTCUSDT", "ETHUSDT"].contains(&s.as_str())
+                crate::universe::normalize(s).is_err()
                     || d.samples < 20
                     || d.mean.len() != 10
                     || d.scale.len() != 10

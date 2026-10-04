@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ResearchState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
     pub interval_secs: u64,
     pub model: String,
     pub next_run: u64,
@@ -18,6 +20,7 @@ pub struct ResearchState {
 impl Default for ResearchState {
     fn default() -> Self {
         Self {
+            symbol: None,
             interval_secs: 0,
             model: "score".into(),
             next_run: 0,
@@ -45,6 +48,10 @@ impl Engine {
                 if ["QUEUED", "RUNNING"].contains(&self.research.status.as_str()) {
                     return Err("研究任务运行中，请完成后修改计划".into());
                 }
+                self.research.symbol = p["symbol"]
+                    .as_str()
+                    .map(crate::universe::normalize)
+                    .transpose()?;
                 self.research.model = model.into();
                 self.research.interval_secs = interval;
                 self.research.next_run = self.now + interval * 1000;
@@ -59,6 +66,13 @@ impl Engine {
                     .to_owned();
                 if !["score", "logistic", "gbt"].contains(&model.as_str()) {
                     return Err("未知模型".into());
+                }
+                if let Some(symbol) = p["symbol"].as_str() {
+                    let symbol = crate::universe::normalize(symbol)?;
+                    if !self.symbols.contains_key(&symbol) {
+                        return Err("币种尚未采集".into());
+                    }
+                    self.research.symbol = Some(symbol);
                 }
                 self.research.model = model;
                 self.research.status = "QUEUED".into();

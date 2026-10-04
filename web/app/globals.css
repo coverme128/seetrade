@@ -2107,3 +2107,82 @@ tbody tr:hover {
     padding: 10px 15px;
   }
 }
+
+/* Additive dynamic-universe workspace */
+.universe-panel {
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.universe-panel p {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.universe-panel .panel-header {
+  padding: 0 0 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.universe-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin: 16px 0;
+}
+.universe-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.universe-controls input[type="checkbox"] {
+  width: auto;
+}
+.universe-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 16px;
+}
+.universe-stats small,
+.universe-stats strong {
+  display: block;
+}
+.universe-stats strong {
+  margin-top: 10px;
+  font-size: 19px;
+}
+.universe-panel details {
+  margin: 20px 0;
+}
+.universe-panel summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+.universe-editor {
+  width: 100%;
+  min-height: 320px;
+  font-family: monospace;
+}
+.radar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 16px;
+}
+.radar-card {
+  padding: 20px;
+  border-left-width: 4px;
+}
+.radar-card li {
+  margin: 7px 0;
+}
+.symbol-tabs {
+  overflow-x: auto;
+  max-width: 100%;
+}
+@media (max-width: 700px) {
+  .universe-panel {
+    padding: 14px;
+  }
+  .universe-controls {
+    align-items: stretch;
+  }
+}

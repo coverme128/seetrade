@@ -90,25 +90,26 @@ export function currentOpportunity(
 ): Opportunity {
   const s = state.symbols[symbol];
   const p = s?.active;
+  const config = s?.config || state.config;
   if (!p) return grade("inactive", "暂无机会", 0, "当前没有跟踪中的预测");
   const fresh = (ts: number | undefined) =>
     ts !== undefined &&
     Number.isFinite(ts) &&
-    Math.abs(wallNow - ts) <= state.config.max_stale_ms;
+    Math.abs(wallNow - ts) <= config.max_stale_ms;
   if (
     !connected ||
     !fresh(state.now) ||
     !fresh(s.evaluation?.evaluated_at) ||
     !fresh(s.evaluation?.qualification_evaluated_at) ||
-    p.config_version !== state.config_version ||
+    p.config_version !== (s.config_version ?? state.config_version) ||
     wallNow >= p.ts + p.horizon * 1000 ||
     !["binance", "okx"].every((venue) => {
       const v = s.venues[venue];
       return (
         v?.ready &&
         v.connected &&
-        v.age_ms <= state.config.max_stale_ms &&
-        v.exchange_age_ms <= state.config.max_stale_ms
+        v.age_ms <= config.max_stale_ms &&
+        v.exchange_age_ms <= config.max_stale_ms
       );
     })
   )
@@ -125,7 +126,8 @@ export function currentOpportunity(
       0,
       "紧急停止或存储异常，当前不突出新增机会",
     );
-  if (!state.model.validated || p.model_version !== state.model.model_version)
+  const model = s.model || state.model;
+  if (!model.validated || p.model_version !== model.model_version)
     return grade(
       "unverified",
       "待验证",

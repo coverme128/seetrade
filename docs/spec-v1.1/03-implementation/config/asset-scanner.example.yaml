@@ -1,0 +1,54 @@
+# Example only. Values are mutable research defaults, not profitability claims.
+scanner:
+  enabled: true
+  full_scan_interval: 5m
+  exchanges: [binance, okx]
+  quote_assets: [USDT]
+  contract_types: [perpetual]
+  discovery_data_tier: lightweight
+  candidate_l2_slots: 12
+
+asset_lifecycle:
+  auto_live_promotion: false
+  require_manual_or_gate_promotion_to_eligible: true
+  soft_demotion_persistence: 3
+  hard_safety_suspend_immediately: true
+
+warmup:
+  # Tune from real data; these are conservative starting examples.
+  minimum_clean_hours_before_observe: 24
+  minimum_prediction_outcomes_before_eligible_review: 2000
+
+portfolio:
+  # Keep conservative until multi-coin paper/small-live evidence exists.
+  live_enabled: false
+  max_concurrent_positions: 3
+  max_total_effective_leverage: 1.0
+  max_same_direction_effective_leverage: 0.75
+  max_total_risk_budget_fraction: 0.005
+
+ui:
+  show_rejected_assets: true
+  default_scanner_sort: research_priority
+
+
+runtime_trigger_inheritance:
+  production_mode: event_driven
+  idle_full_alpha_interval: disabled
+  candidate_full_alpha_interval: 1-2s
+  active_full_alpha_interval: 1s
+  trigger_rule: any_extreme_or_two_distinct_abnormal
+  require_asset_trigger_profile_for_eligible: true
+  fixed_step_full_evaluation_replay_only: true
+
+trigger_profile:
+  severity_levels: [normal, abnormal, extreme]
+  # Actual thresholds are calibrated per asset from warmup/replay data.
+  shared_families:
+    - order_flow_change
+    - aggressive_trade_burst
+    - order_book_imbalance_depth_depletion
+    - price_velocity_short_term_momentum
+  advanced_cross_venue_trigger: false
+  oi_trigger: false
+  liquidation_trigger: false

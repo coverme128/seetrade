@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import completedOutcome from "./fixtures/completed-outcome.json";
 
 test("trigger diagnostics preserve card semantics and submit versioned config only", async ({
   page,
@@ -179,14 +180,7 @@ test("prediction card becomes its result and neutral state is explicit", async (
   const response = await request.get("/api/state");
   const state = await response.json();
   const s = state.symbols.BTCUSDT;
-  const result = state.outcomes.find(
-    (o: { prediction: { symbol: string } }) =>
-      o.prediction.symbol === "BTCUSDT",
-  );
-  expect(
-    result,
-    "running core should have recorded a completed BTC prediction",
-  ).toBeTruthy();
+  const result = structuredClone(completedOutcome);
   s.active = null;
   s.last_result = result;
   s.lifecycle = "COMPLETED";

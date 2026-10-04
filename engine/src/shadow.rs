@@ -292,8 +292,9 @@ impl ShadowRun {
             .iter()
             .any(|key| report["walk_forward"][key] != true)
             || report["counts"]["test"].as_u64().unwrap_or(0) < 100
-            || ["BTCUSDT", "ETHUSDT"]
-                .iter()
+            || candidate
+                .distributions
+                .keys()
                 .any(|s| report["counts"]["symbols"][s].as_u64().unwrap_or(0) < 30)
         {
             return Err("离线报告未通过、来源不符或 SHA-256 与模型不匹配".into());
@@ -460,11 +461,16 @@ impl ShadowRun {
             .iter()
             .map(|(key, rows)| (key.clone(), Metrics::compute(rows, true)))
             .collect();
-        let symbols: BTreeMap<_, _> = ["BTCUSDT", "ETHUSDT"]
+        let scope: Vec<String> = if self.candidate.distributions.is_empty() {
+            vec!["BTCUSDT".into(), "ETHUSDT".into()]
+        } else {
+            self.candidate.distributions.keys().cloned().collect()
+        };
+        let symbols: BTreeMap<_, _> = scope
             .iter()
             .map(|s| {
                 (
-                    *s,
+                    s.clone(),
                     valid.iter().filter(|r| r.prediction.symbol == *s).count(),
                 )
             })
@@ -481,7 +487,7 @@ impl ShadowRun {
         };
         let invalid_rate =
             (self.outcomes.len() - valid.len()) as f64 / self.outcomes.len().max(1) as f64;
-        let fresh = ["BTCUSDT", "ETHUSDT"].iter().all(|symbol| {
+        let fresh = scope.iter().all(|symbol| {
             valid
                 .iter()
                 .filter(|r| r.prediction.symbol == *symbol)

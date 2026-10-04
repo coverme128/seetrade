@@ -14,6 +14,16 @@ export type Config = {
   adverse_selection_bps: number;
   impact_bps: number;
   funding_bps: number;
+  venue_costs?: Record<
+    string,
+    {
+      fee_bps: number;
+      slippage_bps: number;
+      impact_bps: number;
+      adverse_selection_bps: number;
+      funding_bps: number;
+    }
+  >;
   horizon: number;
   target: number;
   stop: number;
@@ -232,6 +242,9 @@ export type Health = {
   bins: { lower: number; count: number; predicted: number; actual: number }[];
 };
 export type SymbolState = {
+  config?: Config;
+  config_version?: number;
+  model?: State["model"];
   evaluation?: {
     evaluated_at: number;
     qualification_evaluated_at: number;
@@ -351,6 +364,8 @@ export type IntegrityCounters = {
   live_trades: number;
 };
 export type State = {
+  universe?: import("./universe-types").Universe;
+  portfolio_exposure?: Record<string, number | string>;
   telemetry?: Record<string, unknown>;
   trigger_config?: Record<string, unknown>;
   trigger_config_version?: number;

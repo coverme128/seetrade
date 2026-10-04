@@ -56,7 +56,7 @@ export default function OpportunityPanel({
     >
       <div className="opportunity-heading">
         <h2>
-          当前机会 <small>等级优先 · BTC / ETH</small>
+          当前机会 <small>等级优先 · 已采集币种</small>
         </h2>
         <span
           data-testid="opportunity-notice"

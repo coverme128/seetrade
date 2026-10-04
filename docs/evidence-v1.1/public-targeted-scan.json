@@ -1,0 +1,53 @@
+{
+  "id": "public-probe-1791082409797",
+  "started_at": 1791082409798,
+  "completed_at": 1791082418233,
+  "status": "COMPLETED",
+  "config_version": 1,
+  "target": "SOLUSDT",
+  "considered": 879,
+  "errors": {},
+  "observations": [
+    {
+      "asset_key": "SOLUSDT",
+      "instruments": [
+        {
+          "venue": "binance",
+          "symbol": "SOLUSDT",
+          "instrument_id": "SOLUSDT",
+          "contract_type": "PERPETUAL",
+          "active": true,
+          "listed_at": 1600066800000,
+          "contract_value": 1.0,
+          "observed_at": 1791082409798
+        },
+        {
+          "venue": "okx",
+          "symbol": "SOLUSDT",
+          "instrument_id": "SOL-USDT-SWAP",
+          "contract_type": "PERPETUAL",
+          "active": true,
+          "listed_at": 1611298800000,
+          "contract_value": 1.0,
+          "observed_at": 1791082409798
+        }
+      ],
+      "metrics": {
+        "quote_volume": 1040882174.8985,
+        "trade_count": 791571,
+        "median_spread_bps": null,
+        "tail_spread_bps": null,
+        "depth": 4479051.3402,
+        "slippage_bps": 0.41605991262794184,
+        "volatility": null,
+        "tail_gap": null,
+        "clean_since": null,
+        "resets": 0,
+        "samples": 0,
+        "funding_rate": null,
+        "oi": null,
+        "liquidation_flow": null
+      }
+    }
+  ]
+}

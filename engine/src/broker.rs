@@ -33,6 +33,7 @@ pub struct Broker {
     client: Client,
     rules: BTreeMap<String, Rule>,
     rules_ts: u64,
+    pub managed_symbols: Vec<String>,
 }
 #[derive(Clone, Debug)]
 pub struct Rule {
@@ -69,19 +70,12 @@ pub fn signature(secret: &str, message: &str) -> Vec<u8> {
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
-fn inst(symbol: &str) -> Result<&'static str> {
-    match symbol {
-        "BTCUSDT" => Ok("BTC-USDT-SWAP"),
-        "ETHUSDT" => Ok("ETH-USDT-SWAP"),
-        _ => bail!("unsupported symbol"),
-    }
+fn inst(symbol: &str) -> Result<String> {
+    let symbol = crate::universe::normalize(symbol).map_err(anyhow::Error::msg)?;
+    Ok(format!("{}-USDT-SWAP", symbol.trim_end_matches("USDT")))
 }
-fn symbol(inst: &str) -> Result<&'static str> {
-    match inst {
-        "BTC-USDT-SWAP" => Ok("BTCUSDT"),
-        "ETH-USDT-SWAP" => Ok("ETHUSDT"),
-        _ => bail!("external position in unsupported instrument"),
-    }
+fn symbol(inst: &str) -> Result<String> {
+    crate::universe::normalize(inst).map_err(anyhow::Error::msg)
 }
 impl Rule {
     pub fn order_values(&self, o: &Intent) -> Result<(String, String)> {
@@ -167,6 +161,7 @@ impl Broker {
                 .build()?,
             rules: BTreeMap::new(),
             rules_ts: 0,
+            managed_symbols: vec!["BTCUSDT".into(), "ETHUSDT".into()],
         }))
     }
     pub fn config(&self) -> Value {
@@ -272,6 +267,10 @@ impl Broker {
         }
         Ok(value)
     }
+    pub fn set_symbols(&mut self, symbols: Vec<String>) {
+        self.managed_symbols = symbols;
+        self.rules_ts = 0;
+    }
     pub async fn refresh_rules(&mut self) -> Result<()> {
         if !self.rules.is_empty() && now_ms().saturating_sub(self.rules_ts) < 60_000 {
             return Ok(());
@@ -281,7 +280,8 @@ impl Broker {
             let v = self
                 .request(Method::GET, "/fapi/v1/exchangeInfo", json!({}), false)
                 .await?;
-            for s in ["BTCUSDT", "ETHUSDT"] {
+            for s in self.managed_symbols.clone() {
+                let s = s.as_str();
                 let row = v["symbols"]
                     .as_array()
                     .context("missing instruments")?
@@ -310,7 +310,8 @@ impl Broker {
                 );
             }
         } else {
-            for s in ["BTCUSDT", "ETHUSDT"] {
+            for s in self.managed_symbols.clone() {
+                let s = s.as_str();
                 let v = self
                     .request(
                         Method::GET,
@@ -368,7 +369,8 @@ impl Broker {
             let configs = self
                 .request(Method::GET, "/fapi/v1/symbolConfig", json!({}), true)
                 .await?;
-            for symbol in ["BTCUSDT", "ETHUSDT"] {
+            for symbol in self.managed_symbols.clone() {
+                let symbol = symbol.as_str();
                 let config = configs
                     .as_array()
                     .context("symbol configuration missing")?
@@ -376,7 +378,7 @@ impl Broker {
                     .find(|r| r["symbol"] == symbol)
                     .context("symbol configuration missing")?;
                 if config["marginType"] != "CROSSED" || number(&config["leverage"])? > 3. {
-                    bail!("execution requires cross margin and exchange leverage <= 3 for BTC/ETH");
+                    bail!("execution requires cross margin and exchange leverage <= 3 for managed assets");
                 }
             }
 
@@ -451,7 +453,8 @@ impl Broker {
             // Futures mode + net positions only; portfolio margin requires a different risk model.
             a.one_way =
                 mode["data"][0]["posMode"] == "net_mode" && mode["data"][0]["acctLv"] == "2";
-            for symbol in ["BTCUSDT", "ETHUSDT"] {
+            for symbol in self.managed_symbols.clone() {
+                let symbol = symbol.as_str();
                 let leverage = self
                     .request(
                         Method::GET,
@@ -461,7 +464,7 @@ impl Broker {
                     )
                     .await?;
                 if number(&leverage["data"][0]["lever"])? > 3. {
-                    bail!("execution requires exchange leverage <= 3 for BTC/ETH");
+                    bail!("execution requires exchange leverage <= 3 for managed assets");
                 }
             }
             let balance = self
@@ -493,9 +496,10 @@ impl Broker {
                     bail!("hedge positions unsupported");
                 }
                 a.positions.insert(
-                    s.into(),
+                    s.clone(),
                     AccountPosition {
-                        quantity: qty * self.rules[s].contract,
+                        quantity: qty
+                            * self.rules.get(&s).context("unmanaged instrument")?.contract,
                         entry_price: number(&r["avgPx"])?,
                         mark_price: number(&r["markPx"])?,
                         liquidation_price: optional(&r["liqPx"]),
@@ -530,7 +534,7 @@ impl Broker {
                     a.daily_pnl += income;
                     if r["type"] == "8" {
                         a.funding.push(FundingSettlement {
-                            symbol: symbol(r["instId"].as_str().unwrap_or(""))?.into(),
+                            symbol: symbol(r["instId"].as_str().unwrap_or(""))?,
                             ts: r["ts"].as_str().and_then(|s| s.parse().ok()).unwrap_or(0),
                             income,
                         });
@@ -857,6 +861,7 @@ mod tests {
             axum::serve(listener, router).await.unwrap();
         });
         let mut b = Broker {
+            managed_symbols: vec!["BTCUSDT".into(), "ETHUSDT".into()],
             venue: "binance".into(),
             environment: "testnet".into(),
             cap: 100.,
@@ -1004,6 +1009,7 @@ mod okx_tests {
         let plan = json!({"plan_id":"plan","prediction_id":p.prediction_id,"symbol":"BTCUSDT","direction":"LONG","position_notional":100.,"effective_leverage":0.1,"expected_net_pnl":1.,"expected_loss":0.1,"planned_max_loss":1.,"break_even_probability":0.5,"expected_mae":0.,"liquidity_capacity":1000.,"liquidation_buffer":1.,"tp":101.,"sl":99.,"horizon":60,"entry_type":"LIMIT_IOC","exit_rules":[]});
         let o:Intent=serde_json::from_value(json!({"client_id":"ma1","parent_id":null,"action":"ENTRY","plan":plan,"qualification":p.qualification,"created_ts":1,"deadline_ts":60001,"quantity":0.1,"limit_price":100.,"status":"UNKNOWN","exchange_order_id":null,"filled_qty":0.,"average_price":0.,"fee":0.,"send_ts":1,"ack_ts":0,"fill_ts":0,"reason":"","alpha_id":null})).unwrap();
         let mut b = Broker {
+            managed_symbols: vec!["BTCUSDT".into(), "ETHUSDT".into()],
             venue: "okx".into(),
             environment: "testnet".into(),
             cap: 100.,

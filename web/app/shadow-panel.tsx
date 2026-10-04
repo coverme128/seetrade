@@ -6,7 +6,7 @@ const checkNames: Record<string, string> = {
   running: "验证正在运行",
   same_context: "模型与配置保持一致",
   samples: "有效配对样本",
-  both_symbols: "BTC / ETH 均有足够样本",
+  both_symbols: "研究范围内各币种均有足够样本",
   fresh_evidence: "最近证据未过期",
   data_quality: "数据失效率",
   candidate_metrics: "整体校准、收益与风险",

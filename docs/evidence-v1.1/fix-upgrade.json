@@ -1,0 +1,83 @@
+{
+  "backup": "data/backups/v0.5.0-before-v0.5.1.sqlite",
+  "records_before": 51280,
+  "mode_before": "OBSERVE",
+  "config_version_before": 35,
+  "model_version_before": "score-v1-unvalidated",
+  "missing_or_changed_old_records": 0,
+  "program_version": "0.5.1",
+  "records_after": 51318,
+  "quick_check": "ok",
+  "foreign_key_errors": [],
+  "mode_after": "OBSERVE",
+  "all_venues_ready": true,
+  "scanner_enabled": false,
+  "portfolio_live_enabled": false,
+  "core_sha256": "d6f8ae6a34208be230099c884f3996556ad93015245e8c100274802a4dceb44f",
+  "last_venue_check": {
+    "BTCUSDT": {
+      "binance": {
+        "age_ms": 40,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 184,
+        "funding_rate": 2.585e-05,
+        "gaps": 0,
+        "index": 84815.161,
+        "mark": 84772.51380833,
+        "mid": 84772.55,
+        "next_funding_ts": 1791100800000,
+        "ready": true,
+        "reconnects": 365,
+        "sequence": 11730280379666
+      },
+      "okx": {
+        "age_ms": 110,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 129,
+        "funding_rate": 3.7991415537e-05,
+        "gaps": 0,
+        "index": 84817.6,
+        "mark": 84778.7,
+        "mid": 84778.75,
+        "next_funding_ts": 1791100800000,
+        "ready": true,
+        "reconnects": 324,
+        "sequence": 343798326009
+      }
+    },
+    "ETHUSDT": {
+      "binance": {
+        "age_ms": 40,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 200,
+        "funding_rate": 3.494e-05,
+        "gaps": 0,
+        "index": 2692.40864865,
+        "mark": 2691.24506306,
+        "mid": 2691.225,
+        "next_funding_ts": 1791100800000,
+        "ready": true,
+        "reconnects": 358,
+        "sequence": 11730280380571
+      },
+      "okx": {
+        "age_ms": 0,
+        "connected": true,
+        "error": "",
+        "exchange_age_ms": 233,
+        "funding_rate": -4.76217882e-06,
+        "gaps": 0,
+        "index": 2692.51,
+        "mark": 2691.18,
+        "mid": 2691.175,
+        "next_funding_ts": 1791100800000,
+        "ready": true,
+        "reconnects": 324,
+        "sequence": 341646337714
+      }
+    }
+  }
+}

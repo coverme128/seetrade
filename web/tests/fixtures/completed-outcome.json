@@ -1,0 +1,192 @@
+{
+  "annotation": null,
+  "brier": 0.9348406372309458,
+  "final_move": -0.0007196566154356043,
+  "first_hit_ts": 1791081843860,
+  "horizon_observation": null,
+  "learning_eligible": false,
+  "mae": 0.0007263894988527309,
+  "mfe": 0.0,
+  "observed_net_edge": -0.0018726142265586073,
+  "outcome_type": "SIGNAL_INVALIDATED",
+  "prediction": {
+    "calibrated_probabilities": [
+      0.5969083804541914, 0.1489780477968745, 0.2541135717489342
+    ],
+    "config_version": 1,
+    "cost_assumptions_bps": 11.5,
+    "current_price": 67573.47750000001,
+    "direction": "LONG",
+    "episode": {
+      "close_reason": "SIGNAL_INVALIDATED:confirmed_signal_change",
+      "closed_at": 1791081843860,
+      "episode_id": "prediction-1791081836842-4",
+      "first_hit": null,
+      "first_hit_at": null,
+      "highest_qualification": "NOT_QUALIFIED",
+      "last_price_ts": 1791081843860,
+      "latest_calibrated_probabilities": [
+        0.07757970012970446, 0.7208977025527911, 0.2015225973175045
+      ],
+      "latest_evaluated_at": 1791081842841,
+      "latest_feature_snapshot_id": "f-BTCUSDT-1791081842841",
+      "latest_raw_probabilities": [
+        0.0487288438562447, 0.7905749304287771, 0.16069622571497807
+      ],
+      "lower_barrier": 67554.520079778,
+      "opened_at": 1791081836842,
+      "origin_trigger_families": ["BOOK_IMBALANCE_DEPTH", "ORDER_FLOW_CHANGE"],
+      "origin_trigger_id": "trigger-BTCUSDT-1791081834841-1",
+      "signal_epoch": 1791081834841,
+      "upper_barrier": 67825.00864866599
+    },
+    "expected_move": 0.0016417470935656997,
+    "feature_snapshot_id": "f-BTCUSDT-1791081836842",
+    "features": {
+      "aggressive_imbalance": 0.6000000000000002,
+      "book_imbalance": -0.0498023719889119,
+      "cross_venue_bps": -0.09877267682534274,
+      "cross_venue_lag": {
+        "clock": "receive_time_500ms_60s_v1",
+        "correlation": 0.9999774425017026,
+        "lag_ms": 0,
+        "leader": "synchronous",
+        "samples": 81,
+        "zero_lag_correlation": 0.9999774425017026
+      },
+      "cross_venue_lead_bps": -0.0023407489424531747,
+      "data_quality": [],
+      "depth": 1799124.5667673578,
+      "feature_lag_ms": 0,
+      "feature_schema_version": "micro-v1",
+      "feature_snapshot_id": "f-BTCUSDT-1791081836842",
+      "flow_imbalance": -0.16230105815791976,
+      "funding_rate": 0.0001,
+      "index": 67621.46600050175,
+      "mark": 67622.14222192396,
+      "microprice_bps": -0.0007362511955655293,
+      "mid": 67622.142222,
+      "momentum": 0.0007042655220912408,
+      "next_funding_ts": null,
+      "spread_bps": 0.029576111230031718,
+      "symbol": "BTCUSDT",
+      "ts": 1791081836842,
+      "volatility": 0.00018414822671077914
+    },
+    "horizon": 60,
+    "mae": 0.0007263894988527309,
+    "mfe": 0.0,
+    "model_version": "score-demo-v1",
+    "plan": null,
+    "prediction_id": "prediction-1791081836842-4",
+    "qualification": {
+      "costs": {
+        "adverse_selection": 5e-5,
+        "entry_fee": 0.0004,
+        "exit_fee": 0.0004,
+        "funding": 5e-5,
+        "impact": 5e-5,
+        "slippage": 0.0002,
+        "spread": 2.957611123003172e-6,
+        "total": 0.001152957611123003
+      },
+      "gate_version": "gate-v2",
+      "gates": [
+        {
+          "code": "probability",
+          "detail": "59.7% / 最低 55.0%",
+          "name": "概率优势",
+          "pass": true
+        },
+        {
+          "code": "calibration",
+          "detail": "ECE 0.0% · 0 个可比样本",
+          "name": "概率校准",
+          "pass": false
+        },
+        {
+          "code": "model_trust",
+          "detail": "LOW",
+          "name": "模型可信度",
+          "pass": false
+        },
+        {
+          "code": "net_ev",
+          "detail": "+0.0489%",
+          "name": "成本后 Net EV",
+          "pass": true
+        },
+        {
+          "code": "net_pnl",
+          "detail": "$2.44",
+          "name": "预期净收益",
+          "pass": true
+        },
+        {
+          "code": "cost",
+          "detail": "总成本 11.53 bps · 配置假设",
+          "name": "成本可信度",
+          "pass": true
+        },
+        {
+          "code": "liquidity",
+          "detail": "近端深度 $1799125",
+          "name": "流动性",
+          "pass": true
+        },
+        {
+          "code": "slippage",
+          "detail": "价差 0.03 bps",
+          "name": "滑点 / 价差",
+          "pass": true
+        },
+        {
+          "code": "volatility",
+          "detail": "1s RV 0.0184%",
+          "name": "波动状态",
+          "pass": true
+        },
+        {
+          "code": "risk",
+          "detail": "预算 $25.00 · 杠杆 0.50x",
+          "name": "账户风险预算",
+          "pass": true
+        },
+        {
+          "code": "regime",
+          "detail": "UNKNOWN · SYNTHETIC_ONLY · 最大偏差 无训练分布",
+          "name": "市场状态 / OOD",
+          "pass": true
+        },
+        {
+          "code": "freshness",
+          "detail": "两交易所数据连续",
+          "name": "行情新鲜度",
+          "pass": true
+        },
+        {
+          "code": "exchange",
+          "detail": "Binance + OKX",
+          "name": "交易所健康",
+          "pass": true
+        }
+      ],
+      "gross_edge": 0.0016417470935656997,
+      "net_edge": 0.0004887894824426968,
+      "prediction_id": "prediction-1791081836842-4",
+      "reasons": ["calibration", "model_trust"],
+      "status": "NOT_QUALIFIED"
+    },
+    "raw_probabilities": [
+      0.6577724018792512, 0.11603630774988148, 0.22619129037086727
+    ],
+    "signal_strength": 0.2891593062855274,
+    "start_price": 67622.142222,
+    "status": "COMPLETED",
+    "stop": 0.001,
+    "symbol": "BTCUSDT",
+    "target": 0.003,
+    "ts": 1791081836842
+  },
+  "prediction_error": "confirmed_signal_change"
+}

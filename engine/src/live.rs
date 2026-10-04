@@ -142,8 +142,8 @@ impl Engine {
             .filter(|t| {
                 t.entry_notional > 0.
                     && t.feedback.as_ref().is_some_and(|f| {
-                        f.model_version == self.model.model_version
-                            && f.config_version == self.config_version
+                        f.model_version == self.asset_model(symbol).model_version
+                            && f.config_version == self.asset_config_version(symbol)
                     })
             })
             .collect();
@@ -168,12 +168,12 @@ impl Engine {
                 .sum::<f64>()
                 / basis
         });
-        let status = if execution.is_some_and(|x| x > self.config.max_slippage)
-            || (recent.len() >= self.config.min_samples
-                && ev.is_some_and(|x| x < -self.config.ev_drift_limit))
+        let status = if execution.is_some_and(|x| x > self.asset_config(symbol).max_slippage)
+            || (recent.len() >= self.asset_config(symbol).min_samples
+                && ev.is_some_and(|x| x < -self.asset_config(symbol).ev_drift_limit))
         {
             "DEGRADED"
-        } else if recent.len() < self.config.min_samples {
+        } else if recent.len() < self.asset_config(symbol).min_samples {
             "INSUFFICIENT"
         } else {
             "NORMAL"
@@ -195,12 +195,14 @@ impl Engine {
             health
                 .reasons
                 .push("实盘成交成本或净收益偏移，降低仓位".into());
-            health.retrain_recommended |= health.live.samples >= self.config.min_samples;
+            health.retrain_recommended |=
+                health.live.samples >= self.asset_config(symbol).min_samples;
         }
     }
     pub fn live_positions_view(&self) -> Value {
         let mut positions = serde_json::Map::new();
-        for symbol in ["BTCUSDT", "ETHUSDT"] {
+        for symbol in self.symbols.keys().cloned().collect::<Vec<_>>() {
+            let symbol = symbol.as_str();
             let account = self.live.account.as_ref();
             let position = account.and_then(|a| a.positions.get(symbol));
             let tracked = self.tracked_live_quantity(symbol);
@@ -457,12 +459,13 @@ impl Engine {
             if p.quantity.abs() > 1e-10
                 && p.liquidation_price > 0.
                 && (p.mark_price - p.liquidation_price).abs() / p.mark_price
-                    < self.config.min_liquidation_buffer
+                    < self.asset_config(s).min_liquidation_buffer
             {
                 return Err("真实强平距离低于阈值".into());
             }
         }
-        for symbol in ["BTCUSDT", "ETHUSDT"] {
+        for symbol in self.symbols.keys().cloned().collect::<Vec<_>>() {
+            let symbol = symbol.as_str();
             let actual = a.positions.get(symbol).map(|p| p.quantity).unwrap_or(0.);
             if (actual - self.tracked_live_quantity(symbol)).abs() > 1e-8 {
                 return Err("账户持仓与成交账本不一致，暂停新增风险".into());
@@ -482,7 +485,8 @@ impl Engine {
             .any(|o| {
                 (o.average_price - o.limit_price) * if o.buy() { 1. } else { -1. } > 1e-6
                     || o.fee / (o.filled_qty * o.average_price).max(1.)
-                        > self.config.fee_bps / 10_000. + self.config.max_slippage
+                        > self.asset_execution_config(&o.plan.symbol).fee_bps / 10_000.
+                            + self.asset_config(&o.plan.symbol).max_slippage
             })
         {
             return Err("实际执行成本超出预算，需复核费率或滑点".into());
@@ -494,10 +498,11 @@ impl Engine {
             .trades
             .iter()
             .filter(|t| {
-                t.position.config == self.config
+                t.position.config == self.asset_execution_config(&t.position.plan.symbol)
                     && self.outcomes.iter().any(|o| {
                         o.prediction.prediction_id == t.position.plan.prediction_id
-                            && o.prediction.model_version == self.model.model_version
+                            && o.prediction.model_version
+                                == self.asset_model(&o.prediction.symbol).model_version
                     })
             })
             .collect();
@@ -521,13 +526,17 @@ impl Engine {
                 .sum::<f64>()
                 > 0.
         }) && rows.iter().all(|t| {
-            t.realized_net_edge >= -self.config.stop * self.config.max_mae_stop_multiple
+            t.realized_net_edge >= -t.position.config.stop * t.position.config.max_mae_stop_multiple
                 && (t.realized_cost - t.expected_cost) / t.position.cost_basis.max(1.)
-                    <= self.config.max_slippage
-        }) && self.symbols.values().all(|s| {
-            ["NORMAL", "HIGH"].contains(&s.health.trust.as_str())
-                && s.health.calibration_error <= self.config.calibration_warning
-        })
+                    <= t.position.config.max_slippage
+        }) && self
+            .symbols
+            .iter()
+            .filter(|(symbol, _)| self.asset_mode_allowed(symbol, "AUTO"))
+            .all(|(symbol, s)| {
+                ["NORMAL", "HIGH"].contains(&s.health.trust.as_str())
+                    && s.health.calibration_error <= self.asset_config(symbol).calibration_warning
+            })
     }
     pub fn live_execute(&mut self, symbol: &str, prediction_id: &str) -> Result<(), String> {
         if !["CONFIRM", "AUTO"].contains(&self.mode.as_str()) {
@@ -544,7 +553,7 @@ impl Engine {
         let s = self.symbols.get(symbol).ok_or("未知标的")?;
         let p = s.active.as_ref().ok_or("没有当前预测")?;
         if p.prediction_id != prediction_id
-            || p.config_version != self.config_version
+            || p.config_version != self.asset_config_version(symbol)
             || self.now >= p.ts + p.horizon * 1000
             || self.live.skipped.iter().any(|id| id == prediction_id)
             || self
@@ -584,14 +593,16 @@ impl Engine {
         let s = self.symbols.get(symbol).ok_or("未知标的")?;
         let mut p = s.active.clone().ok_or("EPISODE_EXPIRED")?;
         let f = s.features.clone().ok_or("缺少特征")?;
-        if self.now.saturating_sub(f.ts) > self.config.max_stale_ms
+        if self.now.saturating_sub(f.ts) > self.asset_config(symbol).max_stale_ms
             || !f.data_quality.is_empty()
-            || p.config_version != self.config_version
+            || p.config_version != self.asset_config_version(symbol)
             || self.now >= p.ts + p.horizon * 1000
         {
             return Err("STALE_EVALUATION".into());
         }
-        let (raw, cal) = self.model.probabilities(&f, &self.config);
+        let (raw, cal) = self
+            .asset_model(symbol)
+            .probabilities(&f, self.asset_config(symbol));
         p.raw_probabilities = raw;
         p.calibrated_probabilities = cal;
         let (q, plan) = self.qualify(&p, &f, &s.health);
@@ -637,6 +648,7 @@ impl Engine {
         parent: Option<String>,
         alpha: Option<String>,
     ) -> Result<(), String> {
+        let config = self.asset_execution_config(&plan.symbol);
         let admission = if action == "ENTRY" && self.mode == "AUTO" {
             let d = self
                 .admission
@@ -647,11 +659,11 @@ impl Engine {
                         && d.context == "LIVE"
                         && d.episode_id == plan.prediction_id
                         && d.evaluated_at == self.now
-                        && d.config_version == self.config_version
+                        && d.config_version == self.asset_config_version(&plan.symbol)
                 })
                 .cloned()
                 .ok_or("AUTO_ADMISSION_REQUIRED")?;
-            if q.status != "QUALIFIED" || q.net_edge < self.config.auto_min_net_edge {
+            if q.status != "QUALIFIED" || q.net_edge < config.auto_min_net_edge {
                 return Err("AUTO_EDGE_THRESHOLD_NOT_MET".into());
             }
             plan.position_notional = plan.position_notional.min(d.approved_notional);
@@ -659,6 +671,9 @@ impl Engine {
         } else {
             None
         };
+        if !["EXIT", "REDUCE"].contains(&action) {
+            self.apply_portfolio(&mut plan, true, None)?;
+        }
         let approved_notional = plan.position_notional;
         let account = self.live.account.clone().unwrap_or_default();
         let a = &account;
@@ -684,13 +699,13 @@ impl Engine {
         let price = mid
             * (1.
                 + if buy {
-                    self.config.max_slippage
+                    config.max_slippage
                 } else {
-                    -self.config.max_slippage
+                    -config.max_slippage
                 });
         let sign = if plan.direction == "LONG" { 1. } else { -1. };
         let stop_distance = ((price - plan.sl) * sign / price).max(0.);
-        let risk_cost = q.costs.total + (2. * self.config.max_slippage - q.costs.slippage).max(0.);
+        let risk_cost = q.costs.total + (2. * config.max_slippage - q.costs.slippage).max(0.);
         let quantity = if reduce {
             if current <= 0. {
                 return Err("没有可减仓的真实持仓".into());
@@ -743,8 +758,8 @@ impl Engine {
                     .map(|o| o.plan.planned_max_loss)
                     .sum::<f64>();
             let cap = (self.live.cap - other)
-                .min(self.config.max_position_notional - other)
-                .min(a.equity * self.config.max_effective_leverage - other)
+                .min(config.max_position_notional - other)
+                .min(a.equity * config.max_effective_leverage - other)
                 .min(
                     (a.available * 0.95
                         - self
@@ -757,13 +772,13 @@ impl Engine {
                     .max(0.),
                 )
                 .min(
-                    (a.equity * self.config.risk_per_trade)
-                        .min((self.config.max_daily_loss + a.daily_pnl - existing_risk).max(0.))
+                    (a.equity * config.risk_per_trade)
+                        .min((config.max_daily_loss + a.daily_pnl - existing_risk).max(0.))
                         / (stop_distance + risk_cost),
                 );
             plan.position_notional = plan.position_notional.min(cap);
             if plan.position_notional < 10.
-                || plan.position_notional * q.net_edge < self.config.min_net_pnl
+                || plan.position_notional * q.net_edge < config.min_net_pnl
             {
                 return Err("小额实盘上限下净收益或名义金额不足".into());
             }
@@ -813,8 +828,8 @@ impl Engine {
                     + plan.horizon * 1000
             });
         let feedback = Some(ExecutionReference {
-            model_version: self.model.model_version.clone(),
-            config_version: self.config_version,
+            model_version: self.asset_model(&plan.symbol).model_version.clone(),
+            config_version: self.asset_config_version(&plan.symbol),
             mid,
             expected_round_trip_cost: q.costs.total,
             expected_net_edge: q.net_edge,
@@ -934,7 +949,7 @@ impl Engine {
                 Some("账户通道异常或快照过期")
             } else if f.is_none_or(|f| {
                 !f.data_quality.is_empty()
-                    || self.now.saturating_sub(f.ts) > self.config.max_stale_ms
+                    || self.now.saturating_sub(f.ts) > self.asset_config(symbol).max_stale_ms
             }) {
                 Some("行情不可用或过期")
             } else if s.health.trust == "LOW"
@@ -980,24 +995,30 @@ impl Engine {
                 .map(|x| x.created_ts)
                 .max()
                 .unwrap_or(o.created_ts);
-            if self.now.saturating_sub(last) < self.config.rebalance_interval_secs * 1000 {
+            if self.now.saturating_sub(last)
+                < self.asset_config(symbol).rebalance_interval_secs * 1000
+            {
                 continue;
             }
             let current = qty * f.mid;
-            if plan.position_notional < current * (1. - self.config.position_deadband) {
+            if plan.position_notional < current * (1. - self.asset_config(symbol).position_deadband)
+            {
                 let mut reduce_plan = o.plan.clone();
                 reduce_plan.position_notional = current - plan.position_notional;
                 let _ = self.queue_live(reduce_plan, q, "REDUCE", Some(o.client_id.clone()), None);
-            } else if self.mode == "AUTO" && children.len() < (self.config.max_rebalances as usize)
+            } else if self.mode == "AUTO"
+                && children.len() < (self.asset_config(symbol).max_rebalances as usize)
             {
                 let alpha = format!("alpha-{symbol}-{}", s.candidate_since);
                 let sign = if long { 1. } else { -1. };
                 if s.candidate_since > o.created_ts
-                    && self.now.saturating_sub(s.candidate_since) >= self.config.signal_confirm_ms
+                    && self.now.saturating_sub(s.candidate_since)
+                        >= self.asset_config(symbol).signal_confirm_ms
                     && s.candidate_direction == o.plan.direction
                     && (f.mid - o.average_price) * sign >= 0.
-                    && q.net_edge >= self.config.incremental_ev
-                    && plan.position_notional > current * (1. + self.config.position_deadband)
+                    && q.net_edge >= self.asset_config(symbol).incremental_ev
+                    && plan.position_notional
+                        > current * (1. + self.asset_config(symbol).position_deadband)
                     && !self
                         .live
                         .orders
@@ -1140,7 +1161,7 @@ impl Engine {
                             let mid = self.symbols[&o.plan.symbol].features.as_ref().unwrap().mid;
                             let sign = if o.plan.direction == "LONG" { 1. } else { -1. };
                             if (mid - parent.average_price) * sign < 0.
-                                || q.net_edge < self.config.incremental_ev
+                                || q.net_edge < self.asset_config(&o.plan.symbol).incremental_ev
                             {
                                 return Err("加仓盈利或增量优势条件已失效".into());
                             }
@@ -1170,6 +1191,19 @@ impl Engine {
                         o.admission = Some(d);
                         self.log("live_risk_recheck", json!({"status":"PASS","intent":o}));
                     }
+                }
+                if o.status == "SUBMITTING" && !o.reduce_only() {
+                    let mut target = o.plan.clone();
+                    self.apply_portfolio(&mut target, true, Some(&o.client_id))?;
+                    let current = if o.action == "ADD" {
+                        self.tracked_live_quantity(&o.plan.symbol).abs() * o.limit_price
+                    } else {
+                        0.
+                    };
+                    if current + o.quantity * o.limit_price > target.position_notional + 1e-8 {
+                        return Err("PORTFOLIO_CHANGED_BEFORE_SEND".into());
+                    }
+                    o.plan.portfolio_decision_id = target.portfolio_decision_id;
                 }
                 // Network workers may only advance confirmed fills, never erase them.
                 let previous = &self.live.orders[&o.client_id];
@@ -1218,6 +1252,79 @@ mod tests {
             ..Default::default()
         });
         (e, plan.unwrap(), q)
+    }
+    #[test]
+    fn universe_portfolio_veto_is_rechecked_before_confirm_submission() {
+        let (mut e, _, _) = auto_ready();
+        e.mode = "CONFIRM".into();
+        e.initialize_universe();
+        let (q, plan) = e.refresh_execution_evaluation("BTCUSDT").unwrap();
+        let plan = plan.unwrap();
+        assert!(e
+            .queue_live(plan.clone(), q.clone(), "ENTRY", None, None)
+            .unwrap_err()
+            .contains("PORTFOLIO_BLOCK"));
+        let u = e.universe.as_mut().unwrap();
+        u.portfolio.live_enabled = true;
+        let p = u.profiles.get_mut("BTCUSDT").unwrap();
+        p.lifecycle_state = "ELIGIBLE".into();
+        p.trigger.calibrated = true;
+        p.mode_permissions.push("CONFIRM".into());
+        p.qualification=Some(serde_json::from_value(json!({"id":"fixture","asset_key":"BTCUSDT","rule_version":1,"evaluated_at":e.now,"overall_state":"PASS","components":{},"blocking_reasons":[],"warnings":[],"research_priority":"HIGH","next_action":"reviewed"})).unwrap());
+        e.queue_live(plan, q, "ENTRY", None, None).unwrap();
+        let mut order = e.live.orders.values().next().unwrap().clone();
+        assert!(order.plan.portfolio_decision_id.is_some());
+        order.status = "SUBMITTING".into();
+        let mut accepted = e.clone();
+        accepted.live_command("broker_order", json!(order)).unwrap();
+        e.universe.as_mut().unwrap().portfolio.live_enabled = false;
+        let error = e.live_command("broker_order", json!(order)).unwrap_err();
+        assert!(error.contains("PORTFOLIO_BLOCK"), "{error}");
+        assert_eq!(e.live.orders[&order.client_id].status, "QUEUED");
+        // Protective reductions do not depend on new-risk permissions.
+        let o = e.live.orders.get_mut(&order.client_id).unwrap();
+        o.status = "FILLED".into();
+        o.filled_qty = o.quantity;
+        o.average_price = o.limit_price;
+        let mut exit = o.plan.clone();
+        exit.position_notional = o.quantity * o.limit_price;
+        e.queue_live(
+            exit,
+            order.qualification,
+            "EXIT",
+            Some(order.client_id),
+            None,
+        )
+        .unwrap();
+        assert!(e.live.orders.values().any(|o| o.reduce_only()));
+    }
+    #[test]
+    fn independent_asset_slippage_is_used_at_live_intent_boundary() {
+        let (mut e, _, _) = auto_ready();
+        e.mode = "CONFIRM".into();
+        e.initialize_universe();
+        let mut c = e.config.clone();
+        c.max_slippage = 0.0001;
+        c.auto_min_net_edge = 0.01;
+        let u = e.universe.as_mut().unwrap();
+        u.portfolio.live_enabled = true;
+        let profile = u.profiles.get_mut("BTCUSDT").unwrap();
+        profile.config = Some(c);
+        profile.lifecycle_state = "ELIGIBLE".into();
+        profile.trigger.calibrated = true;
+        profile.mode_permissions.push("CONFIRM".into());
+        profile.qualification = Some(serde_json::from_value(json!({"id":"test","asset_key":"BTCUSDT","rule_version":1,"evaluated_at":e.now,"overall_state":"PASS","components":{},"blocking_reasons":[],"warnings":[],"research_priority":"HIGH","next_action":"reviewed"})).unwrap());
+        let (q, plan) = e.refresh_execution_evaluation("BTCUSDT").unwrap();
+        assert!(e
+            .admission_decisions(true, None)
+            .iter()
+            .any(|d| d.symbol == "BTCUSDT"
+                && d.reason_codes
+                    .contains(&"AUTO_EDGE_THRESHOLD_NOT_MET".into())));
+        let mid = e.symbols["BTCUSDT"].features.as_ref().unwrap().mid;
+        e.queue_live(plan.unwrap(), q, "ENTRY", None, None).unwrap();
+        let order = e.live.orders.values().next().unwrap();
+        assert!(((order.limit_price / mid - 1.).abs() - 0.0001).abs() < 1e-10);
     }
     #[test]
     fn live_cap_pending_reservation_unknown_restart_and_risk_rejection() {
@@ -1586,6 +1693,7 @@ mod tests {
                 annotation: None,
             });
             let position = Position {
+                execution_venue: None,
                 plan: history_plan,
                 qty: 0.,
                 entry_price: 100.,

@@ -1,0 +1,8 @@
+{
+  "mode": "OBSERVE",
+  "config_version": 35,
+  "model_version": "score-v1-unvalidated",
+  "backup": "data/backups/v1.0.4-before-v1.1.sqlite",
+  "positions": 0,
+  "orders": 0
+}

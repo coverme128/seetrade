@@ -33,6 +33,38 @@ def synthetic_rows(count=800):
     return rows
 
 class ResearchTests(unittest.TestCase):
+    def test_asset_dataset_isolation_and_profile_parameter_selection(self):
+        with tempfile.TemporaryDirectory() as d:
+            db=Path(d)/'live.sqlite'
+            with contextlib.closing(sqlite3.connect(db)) as conn, conn:
+                conn.execute('CREATE TABLE records(id INTEGER PRIMARY KEY,kind TEXT,ts INTEGER,payload TEXT)')
+                conn.execute('CREATE TABLE checkpoint(id INTEGER PRIMARY KEY,state TEXT)')
+                conn.execute('INSERT INTO checkpoint VALUES(1,?)',(json.dumps(dict(source='live',config_version=7,config=dict(horizon=60,target=.003,stop=.001),universe=dict(profiles={'SOLUSDT':dict(config=dict(horizon=30,target=.005,stop=.002))}))),))
+                for i,symbol in enumerate(['BTCUSDT','SOLUSDT']):
+                    p=dict(prediction_id=str(i),ts=1000+i,symbol=symbol,config_version=7,horizon=30,target=.005,stop=.002)
+                    conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',('outcome',1000+i,json.dumps(dict(source='live',payload=dict(prediction=p,learning_eligible=True)))))
+            rows,evidence=train.load_dataset(Namespace(db=str(db),source='live',symbol='SOLUSDT'))
+            self.assertEqual([r['prediction']['symbol'] for r in rows],['SOLUSDT'])
+            self.assertEqual(evidence['definition']['horizon'],30)
+            self.assertEqual(evidence['definition']['target'],.005)
+
+    def test_other_asset_revision_does_not_discard_current_labels(self):
+        with tempfile.TemporaryDirectory() as d:
+            db=Path(d)/'live.sqlite'
+            config=dict(horizon=60,target=.003,stop=.001)
+            checkpoint=dict(source='live', config_version=7, config=config,
+                universe=dict(profiles={'ETHUSDT':dict(config=config,config_version=8)}))
+            with sqlite3.connect(db) as conn:
+                conn.execute('CREATE TABLE records(id INTEGER PRIMARY KEY,kind TEXT,ts INTEGER,payload TEXT)')
+                conn.execute('CREATE TABLE checkpoint(id INTEGER PRIMARY KEY,state TEXT)')
+                conn.execute('INSERT INTO checkpoint VALUES(1,?)',(json.dumps(checkpoint),))
+                for i,(symbol,version) in enumerate([('BTCUSDT',7),('ETHUSDT',7),('ETHUSDT',8)]):
+                    p=dict(config, prediction_id=str(i),ts=1000+i,symbol=symbol,config_version=version)
+                    conn.execute('INSERT INTO records(kind,ts,payload) VALUES(?,?,?)',('outcome',p['ts'],json.dumps(dict(source='live',payload=dict(prediction=p,learning_eligible=True)))))
+            for symbol, expected in [('BTCUSDT','0'),('ETHUSDT','2')]:
+                rows,_=train.load_dataset(Namespace(db=str(db),source='live',symbol=symbol))
+                self.assertEqual([r['prediction']['prediction_id'] for r in rows],[expected])
+
     def test_current_configuration_never_falls_back_to_old_eligible_labels(self):
         for newest in ('invalid_outcome', 'open_prediction', 'checkpoint'):
             with self.subTest(newest=newest), tempfile.TemporaryDirectory() as d:

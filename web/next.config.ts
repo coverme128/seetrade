@@ -5,7 +5,7 @@ const config: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8787/api/:path*",
+        destination: `${process.env.MICRO_ALPHA_CORE_URL || "http://127.0.0.1:8787"}/api/:path*`,
       },
     ];
   },

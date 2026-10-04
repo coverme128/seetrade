@@ -32,11 +32,25 @@ type Shared = Arc<App>;
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args: Vec<_> = std::env::args().collect();
+    if let Some(i) = args.iter().position(|a| a == "--research-grid") {
+        let path = args
+            .get(i + 1)
+            .context("--research-grid requires journal, symbol, output")?;
+        let symbol = args.get(i + 2).context("missing symbol")?;
+        let out = args.get(i + 3).context("missing output")?;
+        let report = micro_alpha_engine::asset_grid::replay(std::path::Path::new(path), symbol)?;
+        std::fs::write(out, serde_json::to_vec_pretty(&report)?)?;
+        return Ok(());
+    }
     if let Some(i) = args.iter().position(|a| a == "--replay") {
         return replay(args.get(i + 1).context("--replay needs file")?);
     }
     micro_alpha_engine::assist::from_env().map_err(anyhow::Error::msg)?;
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:8787")
+    let port = std::env::var("MICRO_ALPHA_PORT")
+        .unwrap_or_else(|_| "8787".into())
+        .parse::<u16>()
+        .context("invalid MICRO_ALPHA_PORT")?;
+    let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port))
         .await
         .context("engine port 8787 unavailable")?;
     let demo = args.iter().any(|a| a == "--demo");
@@ -46,8 +60,18 @@ async fn main() -> Result<()> {
     let mut engine = restored.unwrap_or_else(|| Engine::new(demo));
     // Research reference policy can never be restored as a production runtime switch.
     engine.reference_runtime = false;
+    engine.initialize_universe();
+    if let Some(u) = &mut engine.universe {
+        u.running = None;
+        u.requested = false;
+    }
     if engine.now > 0 {
         engine.restart();
+        if let Some(u) = &mut engine.universe {
+            for p in u.profiles.values_mut() {
+                p.clean_since = None;
+            }
+        }
     }
     if args.iter().any(|a| a == "--model") {
         anyhow::bail!("直接 --model 替换已停用；请用 --challenger <模型> --report <报告> 开始影子验证，在界面通过检查后晋升。已有 checkpoint 模型仍可恢复。");
@@ -100,17 +124,28 @@ async fn main() -> Result<()> {
         engine: Mutex::new(engine),
         store,
     });
+    let scanner_worker = tokio::spawn(scanner_worker(app.clone()));
     let research_worker = tokio::spawn(research_worker(app.clone(), PathBuf::from(&dir)));
     let execution_worker = broker.map(|b| tokio::spawn(broker_worker(app.clone(), b)));
     let (tx, mut rx) = mpsc::channel(8192);
     if demo {
         let demo_tx = tx.clone();
+        let demo_app = app.clone();
         tokio::spawn(async move {
             let mut step = 0;
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
             loop {
                 interval.tick().await;
-                for e in feeds::demo_events(step, feeds::now_ms()) {
+                let ts = feeds::now_ms();
+                let mut events = feeds::demo_events(step, ts);
+                let symbols = demo_app.engine.lock().await.collection_symbols();
+                for symbol in symbols
+                    .iter()
+                    .filter(|s| !["BTCUSDT", "ETHUSDT"].contains(&s.as_str()))
+                {
+                    events.extend(feeds::demo_asset_events(symbol, step, ts));
+                }
+                for e in events {
                     if demo_tx.send(e).await.is_err() {
                         return;
                     }
@@ -119,7 +154,7 @@ async fn main() -> Result<()> {
             }
         });
     } else {
-        feeds::spawn_live(tx.clone());
+        tokio::spawn(feed_supervisor(app.clone(), tx.clone()));
         let clock_tx = tx.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
@@ -197,6 +232,8 @@ async fn main() -> Result<()> {
             let _ = tokio::signal::ctrl_c().await;
         })
         .await?;
+    scanner_worker.abort();
+    let _ = scanner_worker.await;
     research_worker.abort();
     let _ = research_worker.await;
     if let Some(w) = execution_worker {
@@ -305,11 +342,13 @@ async fn control(
             "http://127.0.0.1:8787",
         ]
         .contains(&origin)
+            && std::env::var("MICRO_ALPHA_WEB_ORIGIN").ok().as_deref() != Some(origin)
         {
             return Err(err(StatusCode::FORBIDDEN, "仅允许本机界面控制".into()));
         }
     }
-    if command.starts_with("broker_")
+    if ["scanner_started", "scanner_result"].contains(&command.as_str())
+        || command.starts_with("broker_")
         || ["research_started", "research_finished"].contains(&command.as_str())
     {
         return Err(err(
@@ -537,9 +576,17 @@ async fn account_worker<G: ExecutionGateway>(app: Shared, rules: tokio::sync::wa
 async fn broker_worker(app: Shared, broker: Broker) {
     let (rules_tx, rules_rx) = tokio::sync::watch::channel(broker.clone());
     let mut tasks = tokio::task::JoinSet::new();
+    let rule_app = app.clone();
     tasks.spawn(async move {
         let mut broker = broker;
         loop {
+            let symbols = {
+                let e = rule_app.engine.lock().await;
+                e.execution_symbols()
+            };
+            if symbols != broker.managed_symbols {
+                broker.set_symbols(symbols);
+            }
             if broker.refresh_rules().await.is_ok() {
                 rules_tx.send_replace(broker.clone());
             }
@@ -547,25 +594,27 @@ async fn broker_worker(app: Shared, broker: Broker) {
         }
     });
     tasks.spawn(account_worker(app.clone(), rules_rx.clone()));
-    for symbol in ["BTCUSDT", "ETHUSDT"] {
-        for protective in [true, false] {
-            tasks.spawn(order_worker(
-                app.clone(),
-                rules_rx.clone(),
-                symbol,
-                protective,
-            ));
+    let mut managed = std::collections::BTreeSet::new();
+    loop {
+        let symbols = { app.engine.lock().await.execution_symbols() };
+        for symbol in symbols {
+            if managed.insert(symbol.clone()) {
+                for protective in [true, false] {
+                    let app = app.clone();
+                    let rules = rules_rx.clone();
+                    let symbol = symbol.clone();
+                    tasks.spawn(async move { order_worker(app, rules, &symbol, protective).await });
+                }
+                let app = app.clone();
+                let rules = rules_rx.clone();
+                tasks.spawn(async move { cancel_worker(app, rules, &symbol).await });
+            }
         }
-        tasks.spawn(cancel_worker(app.clone(), rules_rx.clone(), symbol));
+        tokio::select! {
+            _=tokio::time::sleep(std::time::Duration::from_secs(1))=>{},
+            _=tasks.join_next()=>{let _=broker_commit(&app,"broker_error",json!({"error":"执行任务停止，请重启并对账"})).await;return;}
+        }
     }
-    // An unexpectedly stopped execution task is a fail-closed event for new risk.
-    tasks.join_next().await;
-    let _ = broker_commit(
-        &app,
-        "broker_error",
-        json!({"error":"执行任务停止，请重启并对账"}),
-    )
-    .await;
 }
 async fn cancel_worker<G: ExecutionGateway>(
     app: Shared,
@@ -795,8 +844,14 @@ async fn research_worker(app: Shared, dir: PathBuf) {
         }
         let python =
             std::env::var("MICRO_ALPHA_PYTHON").unwrap_or_else(|_| ".venv/bin/python".into());
-        let result = tokio::process::Command::new(python)
-            .args(["research/train.py", "--db"])
+        let mut process = tokio::process::Command::new(python);
+        if let Some(symbol) = &job.symbol {
+            process.args(["research/train.py", "--symbol", symbol]);
+        } else {
+            process.arg("research/train.py");
+        }
+        let result = process
+            .args(["--db"])
             .arg(&app.store.path)
             .args(["--source", &source, "--model", &job.model, "--output"])
             .arg(&output)
@@ -804,7 +859,7 @@ async fn research_worker(app: Shared, dir: PathBuf) {
             .stderr(std::process::Stdio::piped())
             .kill_on_drop(true)
             .output();
-        let (ok, value) =
+        let (ok, mut value) =
             match tokio::time::timeout(std::time::Duration::from_secs(600), result).await {
                 Ok(Ok(r)) => research_result(
                     r.status.success(),
@@ -822,6 +877,36 @@ async fn research_worker(app: Shared, dir: PathBuf) {
                     json!({"error":"研究任务超过 10 分钟，已终止；Champion 未改变"}),
                 ),
             };
+        if let Some(symbol) = &job.symbol {
+            let grid_path = output.join("asset-grid.json");
+            let grid = async {
+                let exe = std::env::current_exe()?;
+                tokio::process::Command::new(exe)
+                    .arg("--research-grid")
+                    .arg(&app.store.journal_path)
+                    .arg(symbol)
+                    .arg(&grid_path)
+                    .kill_on_drop(true)
+                    .output()
+                    .await
+            };
+            value["parameter_grid"] = match tokio::time::timeout(
+                std::time::Duration::from_secs(600),
+                grid,
+            )
+            .await
+            {
+                Ok(Ok(r)) if r.status.success() => {
+                    json!({"status":"RESEARCH_ONLY","path":grid_path})
+                }
+                Ok(Ok(r)) => {
+                    json!({"status":"UNAVAILABLE","reason":String::from_utf8_lossy(&r.stderr).chars().take(1000).collect::<String>()})
+                }
+                _ => {
+                    json!({"status":"UNAVAILABLE","reason":"grid worker failed or timed out; no parameters applied"})
+                }
+            };
+        }
         let _ = broker_commit(
             &app,
             "research_finished",
@@ -1199,5 +1284,87 @@ mod execution_tests {
         while tasks.join_next().await.is_some() {}
         drop(app);
         let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+async fn scanner_worker(app: Shared) {
+    loop {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        let job = {
+            let e = app.engine.lock().await;
+            let u = e.universe.as_ref().unwrap();
+            if u.frozen
+                || u.running.is_some()
+                || !(u.requested || (u.config.enabled && feeds::now_ms() >= u.next_run))
+            {
+                None
+            } else {
+                Some((e.clone(), u.target.clone()))
+            }
+        };
+        let Some((snapshot, target)) = job else {
+            continue;
+        };
+        let id = format!("scan-{}", feeds::now_ms());
+        if broker_commit(&app, "scanner_started", json!({"id":id}))
+            .await
+            .is_err()
+        {
+            continue;
+        }
+        let run = micro_alpha_engine::scanner::scan(&snapshot, id, target).await;
+        let _ = broker_commit(&app, "scanner_result", json!(run)).await;
+    }
+}
+async fn feed_supervisor(app: Shared, tx: mpsc::Sender<MarketEvent>) {
+    let mut tasks =
+        std::collections::BTreeMap::<String, (Vec<String>, Vec<tokio::task::JoinHandle<()>>)>::new(
+        );
+    loop {
+        let desired = {
+            let e = app.engine.lock().await;
+            e.collection_symbols()
+                .into_iter()
+                .map(|symbol| {
+                    let venues = e
+                        .universe
+                        .as_ref()
+                        .and_then(|u| u.profiles.get(&symbol))
+                        .map(|p| p.supported_exchanges.clone())
+                        .unwrap_or_else(|| vec!["binance".into(), "okx".into()]);
+                    (symbol, venues)
+                })
+                .collect::<std::collections::BTreeMap<_, _>>()
+        };
+        for symbol in tasks.keys().cloned().collect::<Vec<_>>() {
+            if desired.get(&symbol) != Some(&tasks[&symbol].0) {
+                for task in tasks.remove(&symbol).unwrap().1 {
+                    task.abort();
+                }
+                for exchange in ["binance", "okx"] {
+                    let ts = feeds::now_ms();
+                    let _ = tx
+                        .send(MarketEvent {
+                            exchange: exchange.into(),
+                            symbol: symbol.clone(),
+                            exchange_ts: ts,
+                            receive_ts: ts,
+                            sequence_id: 0,
+                            data: EventData::Health {
+                                connected: false,
+                                reason: "collection stopped".into(),
+                            },
+                        })
+                        .await;
+                }
+            }
+        }
+        for (symbol, venues) in desired {
+            tasks.entry(symbol.clone()).or_insert_with(|| {
+                let handles = feeds::spawn_asset(tx.clone(), symbol, venues.clone());
+                (venues, handles)
+            });
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 }

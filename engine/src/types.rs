@@ -1,6 +1,16 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct VenueCosts {
+    pub fee_bps: f64,
+    pub slippage_bps: f64,
+    pub impact_bps: f64,
+    pub adverse_selection_bps: f64,
+    pub funding_bps: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub equity: f64,
@@ -18,6 +28,8 @@ pub struct Config {
     pub adverse_selection_bps: f64,
     pub impact_bps: f64,
     pub funding_bps: f64,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub venue_costs: std::collections::BTreeMap<String, VenueCosts>,
     pub horizon: u64,
     pub target: f64,
     pub stop: f64,
@@ -73,6 +85,7 @@ impl Default for Config {
             adverse_selection_bps: 0.5,
             impact_bps: 0.5,
             funding_bps: 0.5,
+            venue_costs: Default::default(),
             horizon: 60,
             target: 0.003,
             stop: 0.001,
@@ -113,7 +126,49 @@ impl Default for Config {
     }
 }
 impl Config {
+    pub fn resolved_costs(&self, venue: &str) -> Self {
+        let mut c = self.clone();
+        let v = self.costs_for_venue(venue);
+        c.fee_bps = v.fee_bps;
+        c.slippage_bps = v.slippage_bps;
+        c.impact_bps = v.impact_bps;
+        c.adverse_selection_bps = v.adverse_selection_bps;
+        c.funding_bps = v.funding_bps;
+        c
+    }
+    pub fn round_trip_cost_bps(&self) -> f64 {
+        2. * self.fee_bps
+            + 2. * self.slippage_bps
+            + self.impact_bps
+            + self.adverse_selection_bps
+            + self.funding_bps
+    }
+    pub fn costs_for_venue(&self, venue: &str) -> VenueCosts {
+        self.venue_costs.get(venue).cloned().unwrap_or(VenueCosts {
+            fee_bps: self.fee_bps,
+            slippage_bps: self.slippage_bps,
+            impact_bps: self.impact_bps,
+            adverse_selection_bps: self.adverse_selection_bps,
+            funding_bps: self.funding_bps,
+        })
+    }
     pub fn validate(&self) -> Result<(), String> {
+        for (venue, costs) in &self.venue_costs {
+            if !["binance", "okx"].contains(&venue.as_str())
+                || [
+                    costs.fee_bps,
+                    costs.slippage_bps,
+                    costs.impact_bps,
+                    costs.adverse_selection_bps,
+                    costs.funding_bps,
+                ]
+                .iter()
+                .any(|n| !n.is_finite() || !(0.0..=100.0).contains(n))
+                || costs.slippage_bps > 50.
+            {
+                return Err("交易所成本必须是 Binance/OKX 的有效非负 bps 配置".into());
+            }
+        }
         let v = serde_json::to_value(self).map_err(|e| e.to_string())?;
         if v.as_object()
             .unwrap()
@@ -297,6 +352,10 @@ pub struct Qualification {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TradePlan {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset_profile_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub portfolio_decision_id: Option<String>,
     pub plan_id: String,
     pub prediction_id: String,
     pub symbol: String,
@@ -440,6 +499,8 @@ pub struct Execution {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Position {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_venue: Option<String>,
     pub plan: TradePlan,
     pub qty: f64,
     pub entry_price: f64,

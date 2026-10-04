@@ -1,0 +1,46 @@
+{
+  "cross_asset_version": {
+    "btc_config_unchanged": true,
+    "global_version_after": 1,
+    "global_version_before": 1
+  },
+  "transition_sample": {
+    "asset_key": "ETHUSDT",
+    "config_version": 2,
+    "created_at": 0,
+    "evidence": {
+      "config_version": 2,
+      "detail": {},
+      "fixed_policy": "asset-quality-v1.1.1-reset3h-slip100-500-1000",
+      "rule_version": 1,
+      "scanner_rules": {
+        "candidate_l2_slots": 12,
+        "dry_run": true,
+        "enabled": false,
+        "interval_secs": 300,
+        "max_slippage_bps": 10.0,
+        "max_spread_bps": 10.0,
+        "max_tail_gap": 0.03,
+        "max_volatility": 0.01,
+        "min_depth": 20000.0,
+        "min_quote_volume": 10000000.0,
+        "minimum_clean_hours": 24,
+        "minimum_outcomes": 2000,
+        "persistence": 3
+      }
+    },
+    "from_state": "OBSERVE",
+    "id": "asset-transition-0-1",
+    "initiated_by": "USER",
+    "reason_code": "ASSET_CONFIG_CHANGED",
+    "rule_version": 1,
+    "to_state": "CALIBRATING"
+  },
+  "venue_costs": {
+    "configured_venue_round_trip_bps": 25.7,
+    "frozen_research_cost_bps": 25.7,
+    "prediction_entry_fee_bps": 8.0
+  },
+  "scope": "Isolated synthetic engine; no private account or production mutations",
+  "command": "cargo run --locked --example v11_audit_probe"
+}

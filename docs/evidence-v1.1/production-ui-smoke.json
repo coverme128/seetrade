@@ -1,0 +1,12 @@
+{
+  "http": 200,
+  "mode": "OBSERVE",
+  "assets": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "errors": [],
+  "all_venues_ready": true,
+  "scanner_enabled": false,
+  "portfolio_live_enabled": false
+}

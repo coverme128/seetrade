@@ -75,6 +75,10 @@ function outcome(p: Prediction, result = "STOP_HIT"): Outcome {
 }
 function install(state: State, symbol: string, p: Prediction, trust = "HIGH") {
   const s = state.symbols[symbol];
+  // Legacy responses use the global model; per-asset precedence is tested separately.
+  delete s.model;
+  delete s.config;
+  delete s.config_version;
   p.symbol = symbol;
   s.active = p;
   s.lifecycle = "TRACKING";
@@ -167,6 +171,13 @@ test("current quality expires and suppresses kill, model, data and config failur
   const quality = (s = state, now = state.now, connected = true) =>
     currentOpportunity(s, "BTCUSDT", connected, now).level;
   expect(quality()).toBe("priority");
+  const isolated = structuredClone(state);
+  isolated.symbols.BTCUSDT.config_version = 7;
+  isolated.symbols.BTCUSDT.active!.config_version = 7;
+  isolated.config_version = 2;
+  expect(quality(isolated)).toBe("priority");
+  isolated.symbols.BTCUSDT.config_version = 8;
+  expect(quality(isolated)).toBe("inactive");
   expect(quality(state, state.now + 3001)).toBe("inactive");
   expect(quality(state, state.now, false)).toBe("inactive");
   for (const modify of [
@@ -194,6 +205,10 @@ test("current quality expires and suppresses kill, model, data and config failur
     expect(quality(s)).toBe("inactive");
   }
   state.model.validated = false;
+  expect(quality()).toBe("unverified");
+  state.symbols.BTCUSDT.model = { ...state.model, validated: true };
+  expect(quality()).toBe("priority");
+  state.symbols.BTCUSDT.model.model_version = "different-asset-model";
   expect(quality()).toBe("unverified");
 });
 
@@ -307,6 +322,7 @@ test("a frozen response loses its priority highlight even while HTTP remains suc
 }) => {
   const state: State = await (await request.get("/api/state")).json();
   state.now = Date.now();
+  await page.clock.setFixedTime(new Date(state.now));
   state.config_version = 1;
   state.config.max_stale_ms = 3000;
   state.kill_switch = false;
@@ -321,6 +337,7 @@ test("a frozen response loses its priority highlight even while HTTP remains suc
     "data-level",
     "priority",
   );
+  await page.clock.setFixedTime(new Date(state.now + 4000));
   await expect(page.getByTestId("opportunity-BTCUSDT")).toHaveAttribute(
     "data-level",
     "inactive",

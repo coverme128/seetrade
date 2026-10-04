@@ -12,6 +12,8 @@ pub const FAMILIES: [&str; 4] = [
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(default, deny_unknown_fields)]
 pub struct TriggerConfig {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub family_thresholds: BTreeMap<String, [f64; 2]>,
     pub normalization_method: String,
     pub sample_interval_ms: u64,
     pub normalization_window_ms: u64,
@@ -36,6 +38,7 @@ pub struct TriggerConfig {
 impl Default for TriggerConfig {
     fn default() -> Self {
         Self {
+            family_thresholds: BTreeMap::new(),
             normalization_method: "robust_z_v1".into(),
             sample_interval_ms: 250,
             normalization_window_ms: 120_000,
@@ -61,7 +64,14 @@ impl Default for TriggerConfig {
 }
 impl TriggerConfig {
     pub fn validate(&self) -> Result<(), String> {
-        if self.normalization_method != "robust_z_v1"
+        if self.family_thresholds.iter().any(|(k, v)| {
+            !FAMILIES.contains(&k.as_str())
+                || !v[0].is_finite()
+                || !v[1].is_finite()
+                || !(1.0..=20.).contains(&v[0])
+                || v[1] <= v[0]
+                || v[1] > 50.
+        }) || self.normalization_method != "robust_z_v1"
             || !(100..=1000).contains(&self.sample_interval_ms)
             || !(10_000..=600_000).contains(&self.normalization_window_ms)
             || !(8..=512).contains(&self.warmup_samples)
@@ -243,11 +253,16 @@ impl Pulse {
         let mut severity = BTreeMap::new();
         for (i, family) in FAMILIES.iter().enumerate() {
             let score = normalized[i * 2].max(normalized[i * 2 + 1]);
+            let thresholds = c
+                .family_thresholds
+                .get(*family)
+                .copied()
+                .unwrap_or([c.abnormal_z, c.extreme_z]);
             let current = if !c.enabled_families[i] {
                 Severity::Normal
-            } else if score >= c.extreme_z {
+            } else if score >= thresholds[1] {
                 Severity::Extreme
-            } else if score >= c.abnormal_z {
+            } else if score >= thresholds[0] {
                 Severity::Abnormal
             } else {
                 Severity::Normal
@@ -300,6 +315,8 @@ impl Pulse {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MarketPulseTriggerEvent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset_trigger_profile_id: Option<String>,
     pub trigger_id: String,
     pub symbol: String,
     pub exchange_scope: String,

@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 const SCALE: f64 = 1_000_000.;
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct Book {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_scale: Option<u64>,
     pub bids: BTreeMap<i64, f64>,
     pub asks: BTreeMap<i64, f64>,
     pub sequence: i64,
@@ -17,10 +19,47 @@ pub struct Book {
     pub ofi: f64,
 }
 impl Book {
+    pub fn scale(&self) -> f64 {
+        self.price_scale.map_or(SCALE, |x| x as f64)
+    }
+    pub fn slippage_bps(&self, notional: f64) -> Option<f64> {
+        let mid = self.mid()?;
+        let wanted = notional / mid;
+        let mut worst: f64 = 0.;
+        for buy in [true, false] {
+            let levels: Vec<_> = if buy {
+                self.asks
+                    .iter()
+                    .map(|(p, q)| (*p as f64 / self.scale(), *q))
+                    .collect()
+            } else {
+                self.bids
+                    .iter()
+                    .rev()
+                    .map(|(p, q)| (*p as f64 / self.scale(), *q))
+                    .collect()
+            };
+            let mut remain = wanted;
+            let mut cost = 0.;
+            for (p, q) in levels {
+                let take = remain.min(q);
+                cost += p * take;
+                remain -= take;
+                if remain <= 1e-10 {
+                    break;
+                }
+            }
+            if remain > 1e-8 {
+                return None;
+            }
+            worst = worst.max((cost / wanted / mid - 1.).abs() * 10000.);
+        }
+        Some(worst)
+    }
     pub fn top(&self) -> Option<(f64, f64, f64, f64)> {
         let (b, bq) = self.bids.last_key_value()?;
         let (a, aq) = self.asks.first_key_value()?;
-        Some((*b as f64 / SCALE, *a as f64 / SCALE, *bq, *aq))
+        Some((*b as f64 / self.scale(), *a as f64 / self.scale(), *bq, *aq))
     }
     pub fn mid(&self) -> Option<f64> {
         self.top().map(|(b, a, _, _)| (b + a) / 2.)
@@ -31,21 +70,28 @@ impl Book {
                 .iter()
                 .rev()
                 .take(20)
-                .map(|(p, q)| *p as f64 / SCALE * q)
+                .map(|(p, q)| *p as f64 / self.scale() * q)
                 .sum(),
             self.asks
                 .iter()
                 .take(20)
-                .map(|(p, q)| *p as f64 / SCALE * q)
+                .map(|(p, q)| *p as f64 / self.scale() * q)
                 .sum(),
         )
     }
-    fn levels(side: &mut BTreeMap<i64, f64>, levels: &[[f64; 2]]) -> Result<(), String> {
+    fn levels(
+        side: &mut BTreeMap<i64, f64>,
+        levels: &[[f64; 2]],
+        scale: f64,
+    ) -> Result<(), String> {
         for [p, q] in levels {
             if !p.is_finite() || !q.is_finite() || *p <= 0. || *p > 1e9 || *q < 0. {
                 return Err("invalid_level".into());
             }
-            let key = (p * SCALE).round() as i64;
+            if p * scale < 0.5 || p * scale >= i64::MAX as f64 {
+                return Err("price_precision_unsupported".into());
+            }
+            let key = (p * scale).round() as i64;
             if *q == 0. {
                 side.remove(&key);
             } else {
@@ -75,11 +121,17 @@ impl Book {
     fn apply_inner(&mut self, e: &MarketEvent) -> Result<bool, String> {
         match &e.data {
             EventData::Snapshot { bids, asks } => {
+                self.price_scale = if bids.first().is_some_and(|l| l[0] < 1.) {
+                    Some(1_000_000_000_000)
+                } else {
+                    None
+                };
                 self.bids.clear();
                 self.asks.clear();
                 self.ofi = 0.;
-                Self::levels(&mut self.bids, bids)?;
-                Self::levels(&mut self.asks, asks)?;
+                let scale = self.scale();
+                Self::levels(&mut self.bids, bids, scale)?;
+                Self::levels(&mut self.asks, asks, scale)?;
                 self.bridged = e.exchange != "binance";
             }
             EventData::Delta {
@@ -108,8 +160,9 @@ impl Book {
                     return Err("sequence_gap".into());
                 }
                 // OKX may reset seqId lower; matching prevSeqId remains authoritative.
-                Self::levels(&mut self.bids, bids)?;
-                Self::levels(&mut self.asks, asks)?;
+                let scale = self.scale();
+                Self::levels(&mut self.bids, bids, scale)?;
+                Self::levels(&mut self.asks, asks, scale)?;
                 self.bridged = true;
             }
             _ => return Ok(false),
