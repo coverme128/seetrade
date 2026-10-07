@@ -2186,3 +2186,71 @@ tbody tr:hover {
     align-items: stretch;
   }
 }
+
+.review-panel {
+  min-width: 0;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.review-counts {
+  list-style: none;
+  padding: 0;
+}
+.review-counts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.review-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.review-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.review-table-wrap th,
+.review-table-wrap td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  min-width: 110px;
+}
+.review-table-wrap details {
+  min-width: 180px;
+  max-width: 340px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.review-diagnostics {
+  margin: 24px 0;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.review-diagnostics li {
+  margin: 8px 0;
+}
+.review-error {
+  color: var(--red);
+}
+@media (max-width: 700px) {
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+  .review-panel .universe-controls label {
+    width: 100%;
+  }
+  .review-panel input,
+  .review-panel select {
+    max-width: 100%;
+  }
+}

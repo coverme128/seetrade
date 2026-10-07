@@ -28,3 +28,5 @@ pub mod universe;
 pub mod universe_storage;
 
 pub mod asset_grid;
+
+pub mod review;

@@ -1,0 +1,13 @@
+{
+  "captured_at_utc": "20261007T062116Z",
+  "backup_path": "data/backups/v0.5.1-before-v0.5.2-20261007T062116Z.sqlite",
+  "records": 103770,
+  "integrity": "ok",
+  "foreign_key_errors": [],
+  "mode": "OBSERVE",
+  "config_version": 35,
+  "model_version": "score-v1-unvalidated",
+  "paper_position_count": 0,
+  "execution_configured": false,
+  "order_count": 0
+}

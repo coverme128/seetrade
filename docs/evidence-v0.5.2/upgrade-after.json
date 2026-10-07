@@ -1,0 +1,128 @@
+{
+  "captured_at_utc": "2026-10-07T06:26:12.599409+00:00",
+  "program_version": "0.5.2",
+  "core_sha256": "43819af71fe732b94f420756091be0f016b62df3d5948da3a48d3fa356089ca6",
+  "mode": "OBSERVE",
+  "source": "live",
+  "config_version": 35,
+  "model_version": "score-v1-unvalidated",
+  "execution_configured": false,
+  "paper_positions": 0,
+  "exchange_orders": 0,
+  "old_records_missing_or_changed": 0,
+  "records_after": 103963,
+  "sqlite_integrity": "ok",
+  "foreign_key_errors": [],
+  "review_all_seconds": 4.039,
+  "cumulative_summary": {
+    "calibration_ece": null,
+    "calibration_samples": 0,
+    "eligible": 336,
+    "exchange_filled_opportunities": 0,
+    "execution": {
+      "NOT_QUALIFIED": 115,
+      "OBSERVE_ONLY": 3066
+    },
+    "hit_probability_brier": null,
+    "invalid": 2843,
+    "invalid_reasons": {
+      "confirmed_signal_change": 2522,
+      "market_data_integrity": 129,
+      "process_restart": 22,
+      "stale_feed": 170
+    },
+    "non_execution_reasons": {
+      "calibration": 3181,
+      "exchange": 4,
+      "freshness": 28,
+      "liquidity": 8,
+      "model_trust": 3181,
+      "net_ev": 350,
+      "net_pnl": 336,
+      "probability": 522,
+      "regime": 3097,
+      "risk": 5
+    },
+    "observed_net_edge": -0.0010230768909473486,
+    "opening_grades": {
+      "unverified": 3181
+    },
+    "opportunities": 3181,
+    "outcomes": {
+      "DATA_INVALIDATED": 189,
+      "INVALIDATED": 132,
+      "PENDING": 2,
+      "SIGNAL_INVALIDATED": 2522,
+      "STOP_HIT": 9,
+      "TIMEOUT_NEGATIVE": 85,
+      "TIMEOUT_POSITIVE": 242
+    },
+    "paper_entries": 0,
+    "pending": 2,
+    "qualified": 0,
+    "target_hit_rate": 0.0
+  },
+  "cumulative_cohorts": 31,
+  "daily_summary": {
+    "calibration_ece": null,
+    "calibration_samples": 0,
+    "eligible": 1,
+    "exchange_filled_opportunities": 0,
+    "execution": {
+      "OBSERVE_ONLY": 168
+    },
+    "hit_probability_brier": null,
+    "invalid": 165,
+    "invalid_reasons": {
+      "confirmed_signal_change": 149,
+      "market_data_integrity": 16
+    },
+    "non_execution_reasons": {
+      "calibration": 168,
+      "model_trust": 168,
+      "net_ev": 21,
+      "net_pnl": 15,
+      "probability": 33,
+      "regime": 168,
+      "risk": 5
+    },
+    "observed_net_edge": -0.0006606771683925453,
+    "opening_grades": {
+      "unverified": 168
+    },
+    "opportunities": 168,
+    "outcomes": {
+      "DATA_INVALIDATED": 16,
+      "PENDING": 2,
+      "SIGNAL_INVALIDATED": 149,
+      "TIMEOUT_POSITIVE": 1
+    },
+    "paper_entries": 0,
+    "pending": 2,
+    "qualified": 0,
+    "target_hit_rate": 0.0
+  },
+  "archived_report": "data/live-validation/reviews/live/review-2026-10-06.json",
+  "venues": {
+    "BTCUSDT": {
+      "binance": {
+        "ready": true,
+        "connected": true
+      },
+      "okx": {
+        "ready": true,
+        "connected": true
+      }
+    },
+    "ETHUSDT": {
+      "binance": {
+        "ready": true,
+        "connected": true
+      },
+      "okx": {
+        "ready": true,
+        "connected": true
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ import {
 } from "./universe-panel";
 import { AdmissionCard, IntegrityPanel } from "./admission-panel";
 import OperationsPanel from "./operations-panel";
+import ReviewPanel from "./review-panel";
 import OpportunityPanel, { OpportunityBadge } from "./opportunity-panel";
 import {
   currentOpportunity,
@@ -397,6 +398,7 @@ export default function Home() {
     scanner: ["币种扫描器", "发现、评估与逐步验证新的 USDT 永续合约。"],
     radar: ["机会雷达", "只关注触发后形成的正式交易机会。"],
     overview: ["市场工作台", "从市场结构到可验证的交易判断。"],
+    review: ["每日复盘", "追踪每个机会的去向，用结果检验策略与执行。"],
     history: ["预测与交易记录", "让每一次判断，都有可追溯的结果。"],
     health: ["模型健康", "先验证可靠性，再分配风险。"],
     settings: ["个人风险设置", "约束先于执行，每次变更留有记录。"],
@@ -427,6 +429,7 @@ export default function Home() {
             ["scanner", "grid", "币种扫描器"],
             ["radar", "pulse", "机会雷达"],
             ["history", "history", "预测与交易"],
+            ["review", "history", "每日复盘"],
             ["health", "pulse", "模型健康"],
             ["settings", "settings", "风险设置"],
           ].map(([id, icon, label]) => (
@@ -605,6 +608,7 @@ export default function Home() {
             </div>
           ) : (
             <>
+              {tab === "review" && <ReviewPanel source={state.source} />}
               {tab === "scanner" && (
                 <ScannerPanel state={state} busy={busy} command={command} />
               )}
@@ -1829,7 +1833,7 @@ export default function Home() {
           <footer className="footer">
             <span>
               <span className="status-dot" />
-              MICRO ALPHA <b>PERSONAL v0.5.1 · v1.1</b>
+              MICRO ALPHA <b>PERSONAL v0.5.2 · v1.1</b>
             </span>
             <span>
               Deterministic core · AI OFF ·{" "}

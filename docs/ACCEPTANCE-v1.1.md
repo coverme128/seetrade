@@ -1,5 +1,7 @@
 # v1.1 实现与验收
 
+当前程序增量为 0.5.2，每日复盘与效果评估见 [0.5.2 验收](ACCEPTANCE-v0.5.2.md)。下文保留 0.5.1 修复时的验证记录。
+
 程序版本：0.5.1。对应升级包：`micro-alpha-trading-v1.1-upgrade-for-codex-v1.0.4-base.zip`。
 包 SHA-256：`b897d474123245ef1ee18fb4461af6679eaa3e8ab809a2c6bfc994ce2ced20ae`。
 26 份原始文件保存在 [spec-v1.1](spec-v1.1/UPGRADE-CONTRACT.md)，不修改源合同。

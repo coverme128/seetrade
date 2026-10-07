@@ -124,6 +124,10 @@ async fn main() -> Result<()> {
         engine: Mutex::new(engine),
         store,
     });
+    let review_worker = tokio::spawn(review_worker(
+        app.store.path.clone(),
+        PathBuf::from(&dir).join("reviews").join(source),
+    ));
     let scanner_worker = tokio::spawn(scanner_worker(app.clone()));
     let research_worker = tokio::spawn(research_worker(app.clone(), PathBuf::from(&dir)));
     let execution_worker = broker.map(|b| tokio::spawn(broker_worker(app.clone(), b)));
@@ -223,6 +227,7 @@ async fn main() -> Result<()> {
         .route("/api/trigger-analytics", get(trigger_analytics))
         .route("/api/assist", post(assist))
         .route("/api/history", get(history))
+        .route("/api/review", get(review))
         .route("/api/control/{command}", post(control))
         .layer(DefaultBodyLimit::max(256 * 1024))
         .with_state(app.clone());
@@ -232,6 +237,8 @@ async fn main() -> Result<()> {
             let _ = tokio::signal::ctrl_c().await;
         })
         .await?;
+    review_worker.abort();
+    let _ = review_worker.await;
     scanner_worker.abort();
     let _ = scanner_worker.await;
     research_worker.abort();
@@ -310,6 +317,51 @@ async fn state(State(app): State<Shared>) -> Json<Value> {
         "OFF"
     });
     Json(snapshot)
+}
+async fn review(
+    State(app): State<Shared>,
+    Query(query): Query<micro_alpha_engine::review::ReviewQuery>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let now = feeds::now_ms();
+    query.validate(now).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": e.to_string()})),
+        )
+    })?;
+    let path = app.store.path.clone();
+    tokio::task::spawn_blocking(move || micro_alpha_engine::review::build(&path, &query, now))
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error":"复盘任务中断"})),
+            )
+        })?
+        .map(Json)
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error":e.to_string()})),
+            )
+        })
+}
+async fn review_worker(db: PathBuf, directory: PathBuf) {
+    let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+    loop {
+        interval.tick().await;
+        let db = db.clone();
+        let dir = directory.clone();
+        match tokio::task::spawn_blocking(move || {
+            micro_alpha_engine::review::archive_previous_day(&db, &dir, feeds::now_ms())
+        })
+        .await
+        {
+            Ok(Ok(Some(path))) => tracing::info!(path=%path.display(), "daily review archived"),
+            Ok(Ok(None)) => {}
+            result => tracing::warn!(?result, "daily review unavailable; will retry"),
+        }
+    }
 }
 async fn trigger_analytics(State(app): State<Shared>) -> Json<Value> {
     let e = app.engine.lock().await;

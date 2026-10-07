@@ -1,6 +1,6 @@
 # 个人版实现说明
 
-当前程序 0.5.1 / 合同 v1.1。v1.1 增量：Scanner worker 在核心锁外读取公共元数据与有限深度；Universe 将观察结果、档案、成员资格和状态转换交给原持久化队列，在同一 SQLite 事务写入专用查询表和检查点。动态订阅、执行线程按实际名单管理；同一 Alpha 引擎按资产取模型、成本/风险与 Trigger Profile。Portfolio Gate 在意图创建和发送前各复核一次。详见 [v1.1 使用与接口](UNIVERSE-GUIDE.md)。
+当前程序 0.5.2 / 合同 v1.1。v1.1 增量：Scanner worker 在核心锁外读取公共元数据与有限深度；Universe 将观察结果、档案、成员资格和状态转换交给原持久化队列，在同一 SQLite 事务写入专用查询表和检查点。动态订阅、执行线程按实际名单管理；同一 Alpha 引擎按资产取模型、成本/风险与 Trigger Profile。Portfolio Gate 在意图创建和发送前各复核一次。详见 [v1.1 使用与接口](UNIVERSE-GUIDE.md)。
 
 ## 单币配置、成本与审计
 
@@ -238,3 +238,11 @@ POST 需要 `X-Micro-Alpha: local`，浏览器 Origin 必须为本机允许地�
 | `protection_trigger` / `protection_result` | 保护 `id` 关联原因、评估和处理动作；EXIT 动作不等于交易所已确认平仓 |
 
 控制配置仍走 `POST /api/control/trigger_config`，请求体为完整配置对象，需 `X-Micro-Alpha: local` 和允许的本机 Origin；界面负责提交。未知字段和非法值被拒绝，省略字段会填默认值。实际范围与修改副作用见 [配置说明](EXECUTION.md#参数边界与配置所属位置)。
+
+## 每日复盘与效果评估（0.5.2）
+
+`review.rs` 在只读 SQLite 事务内按持久化记录编号和截止时间读取完整相关历史，按来源 / prediction ID、订单 client ID 和交易标识去重。共享同一汇总代码供 `GET /api/review`、离线 `review_report` 示例及自动归档使用，主程序通过 `spawn_blocking` 在核心锁外计算。
+
+开场日机会统计与平仓日交易统计分开；订单首次关联时冻结记录中的执行环境，后续资金费修订替换同一交易而非累计。报告保留开场资格、版本、独立到期观察和各类未知字段；旧缺失证据不补造。分页及导出绑定 `through_id/as_of`，不使用界面结果缓存作为全量分母。
+
+自动任务启动及每 300 秒检查上一北京时间自然日归档，保存到 `<MICRO_ALPHA_DATA>/reviews/live/` 或 `reviews/demo/`，写临时文件后原子重命名；已归档报告保持不变。来源 `live/demo` 表示真实 / 合成行情，执行通道另以 PAPER / TESTNET / LIVE / UNKNOWN 分组。无数据库表迁移、预测标签修改或交易控制调用。统计定义与使用方式见 [每日复盘指南](DAILY-REVIEW.md)。

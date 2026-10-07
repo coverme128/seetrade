@@ -1,6 +1,6 @@
 # 个人版运行、备份与故障排查
 
-适用版本：v0.5.1 / 合同 v1.1（保留 v1.0.4 触发运行时）。动态币种迁移和冻结回退见 [动态币种池指南](UNIVERSE-GUIDE.md)。命令均从项目根目录运行；示例操作需按实际运行目录执行。本手册没有设置开机自启、后台守护或自动定期比较任务。
+适用版本：v0.5.2 / 合同 v1.1（保留 v1.0.4 触发运行时）。动态币种迁移和冻结回退见 [动态币种池指南](UNIVERSE-GUIDE.md)。命令均从项目根目录运行；示例操作需按实际运行目录执行。本手册没有设置操作系统开机自启、后台守护或周期性回放比较任务。核心运行期间会自动归档上一日日报，规则见下文。
 
 ## 启动与停止
 
@@ -34,6 +34,7 @@ curl --fail --silent --show-error http://127.0.0.1:8787/api/health
 curl --fail --silent --show-error http://127.0.0.1:8787/api/state
 curl --fail --silent --show-error http://127.0.0.1:8787/api/trigger-analytics
 curl --fail --silent --show-error 'http://127.0.0.1:8787/api/history?kind=protection_trigger&limit=50'
+curl --fail --silent --show-error 'http://127.0.0.1:8787/api/review?date=all&source=live&limit=5'
 ```
 
 `/api/health` 的 `ok` 主要反映存储健康，不能替代各采集币种行情、模型健康和执行门槛检查。`/api/state` 的 `now` 为毫秒时间；与本机时间比较可观察核心积压。`telemetry` 提供 Pulse、完整评估、输入队列与 checkpoint 序列化的近期耗时，单位为微秒。
@@ -45,9 +46,10 @@ curl --fail --silent --show-error 'http://127.0.0.1:8787/api/history?kind=protec
 | `live.sqlite` / `demo.sqlite` | 派生审计记录及最后 checkpoint，来源独立 |
 | `*.sqlite-wal` / `*.sqlite-shm` | SQLite 运行时文件；进程运行时不要单独删除 |
 | `live-<时间戳>.jsonl` / `demo-<时间戳>.jsonl` | 每次启动的新会话输入 Journal，供确定性回放与研究 |
+| `reviews/live/` / `reviews/demo/` 内的日期 JSON | 自动保存的上一日复盘，按北京时间；启动及每 5 分钟检查一次，已归档不覆盖 |
 | `research/` | 后台研究任务的工件与报告；具体目录以界面 job 信息为准 |
 
-启动脚本默认将进程输出写到终端，不保证生成 `runtime.log`；已有验证目录中的该文件来自人工重定向。持续录制占用磁盘，当前没有自动归档、容量配额或历史清理任务。
+启动脚本默认将进程输出写到终端，不保证生成 `runtime.log`；已有验证目录中的该文件来自人工重定向。持续录制占用磁盘，当前没有原始录制的自动归档、容量配额或历史清理任务；每日复盘 JSON 不代替原始数据备份。
 
 SQLite `records.payload` 存的是完整包装对象 `{kind, payload, source, ts}`；具体事件内容在内部 `payload`。JSONL 保存输入 Journal，派生事件在回放时重建，不能用读取 SQLite 包装对象的方式直接解释 Journal。
 
@@ -58,7 +60,7 @@ SQLite `records.payload` 存的是完整包装对象 `{kind, payload, source, ts
 ```bash
 set -e
 runtime_data='data/live-validation'
-backup_dir="data/backups/v0.5.1-$(date +%Y%m%d-%H%M%S)"
+backup_dir="data/backups/v0.5.2-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$backup_dir"
 cp -Rp "$runtime_data" "$backup_dir/data"
 git rev-parse HEAD > "$backup_dir/code-commit.txt"
@@ -71,8 +73,8 @@ git diff --binary > "$backup_dir/working-tree.patch"
 
 ```bash
 set -e
-backup_data='data/backups/v0.5.1-YYYYMMDD-HHMMSS/data'
-restore_dir='data/restored-v0.5.1'
+backup_data='data/backups/v0.5.2-YYYYMMDD-HHMMSS/data'
+restore_dir='data/restored-v0.5.2'
 test -d "$backup_data"
 test ! -e "$restore_dir"
 cp -Rp "$backup_data" "$restore_dir"
@@ -96,6 +98,8 @@ MICRO_ALPHA_DATA="$restore_dir" MICRO_ALPHA_EXECUTION='' MICRO_ALPHA_AI_MODE=OFF
 需要暂停动态池时，优先使用“冻结动态池并切回观察”，让新增币种已有仓位 / 待处理订单继续保留行情与保护，历史和档案不删除。解除冻结不会自行打开扫描或实盘。
 
 程序版本回退必须先核对真实账户，处理仍需保护的仓位和待处理订单，再停止实例、封存本次录制与审计，使用已知可用的旧代码及其对应备份。旧版不能直接接管动态币种持仓，不能通过旧库撤销实际成交。固定步进仅作离线参考；当前回退流程见 [动态池回退](UNIVERSE-GUIDE.md#实盘与回退)，旧版本迁移记录保留在 [v1.0.4 历史验收](ACCEPTANCE.md#迁移回退与证据边界)。
+
+0.5.1 → 0.5.2 无数据库表迁移，不需要因复盘功能重新保存配置或重新训练；新文件写入数据目录的 `reviews/`。2026-10-07 升级检查保留了全部 103,770 条旧记录，见 [0.5.2 升级证据](ACCEPTANCE-v0.5.2.md#本机升级结果)。整目录备份会包含自动日报；在数据目录之外手动导出的报告需另行备份。
 
 ## 封存录制与回放
 
@@ -137,3 +141,20 @@ target/debug/micro-alpha-engine --replay data/diagnostics/trigger-fixture.jsonl
 | 漏斗全为零、对照没有漏机会 | 检查报告范围、预热、未闭合结果和有效参考分母；零分母不构成零漏机会证据 |
 
 反馈问题时保留程序版本、数据来源 / 目录、发生时间、配置版本、相关 Episode / Trigger ID 和脱敏后的诊断。账户记录可能包含个人交易信息；不要附带 `.env.local` 或 API 凭证。
+
+## 每日复盘运行检查
+
+0.5.2 在核心锁外只读汇总历史并生成上一日日报，不需要新增配置或凭证。打开左侧“每日复盘”检查日期、来源及截止时间；JSON 位于当前数据目录 `reviews/live/` 或 `reviews/demo/`。归档失败看核心日志，修复目录可写性后会重试。完整口径、跨日结果和离线导出见 [每日复盘指南](DAILY-REVIEW.md)。长期停机只自动补上一日，更早日期可手动导出；该任务不负责训练、模型晋升或开启交易。
+
+| 现象 | 检查与处理 |
+|---|---|
+| 没有今天的自动 JSON | 自动任务归档上一日；今天用页面查询 / 导出，页面需点击“刷新复盘”取得最新证据 |
+| 昨天的文件也不存在 | 检查核心是否运行、实际 `MICRO_ALPHA_DATA` 和 `live/demo` 子目录；查看日志中的目录权限、磁盘或读取错误 |
+| 长期停机后缺少多天文件 | 重启只补上一日；在页面选择更早日期导出，或使用离线命令 |
+| 昨日日报待完成，但交易后来已平仓 | 历史日报保留当日截止状态；在累计评估查看最终结果，平仓日查看成交汇总 |
+| 页面只有 50 条，汇总却远大于 50 | 50 是分页大小；汇总读取完整相关历史，导出完整 JSON 可取得全部明细 |
+| 两次导出数量不同 | 对照来源、币种、日期、`as_of` 和 `through_id`；持续采集会增加记录，独立查询可能使用不同快照 |
+| 有预测但没有收益，或指标未知 | 核对执行原因及已平仓证据；观察结果不等于成交，没有成交不能当成零收益验证 |
+| 旧归档没有出现后续修订 | 已归档文件不覆盖；生成新的累计报告查看后续结果与资金费修订 |
+
+备份整个数据目录时包含 `reviews/`，仍须保留 SQLite、JSONL 和研究工件；日报不足以重建原始行情或恢复执行状态。复盘问题反馈应附完整 JSON、程序版本和发生时间，具体字段见 [迭代反馈](DAILY-REVIEW.md#如何用于迭代)。

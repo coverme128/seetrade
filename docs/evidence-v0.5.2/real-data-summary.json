@@ -1,0 +1,59 @@
+{
+  "date": "all",
+  "timezone": "Asia/Shanghai",
+  "as_of": 1791353517039,
+  "through_id": 103128,
+  "summary": {
+    "calibration_ece": null,
+    "calibration_samples": 0,
+    "eligible": 336,
+    "exchange_filled_opportunities": 0,
+    "execution": {
+      "NOT_QUALIFIED": 115,
+      "OBSERVE_ONLY": 3045
+    },
+    "hit_probability_brier": null,
+    "invalid": 2822,
+    "invalid_reasons": {
+      "confirmed_signal_change": 2501,
+      "market_data_integrity": 129,
+      "process_restart": 22,
+      "stale_feed": 170
+    },
+    "non_execution_reasons": {
+      "calibration": 3160,
+      "exchange": 4,
+      "freshness": 28,
+      "liquidity": 8,
+      "model_trust": 3160,
+      "net_ev": 349,
+      "net_pnl": 335,
+      "probability": 516,
+      "regime": 3076
+    },
+    "observed_net_edge": -0.0010230768909473486,
+    "opening_grades": {
+      "unverified": 3160
+    },
+    "opportunities": 3160,
+    "outcomes": {
+      "DATA_INVALIDATED": 189,
+      "INVALIDATED": 132,
+      "PENDING": 2,
+      "SIGNAL_INVALIDATED": 2501,
+      "STOP_HIT": 9,
+      "TIMEOUT_NEGATIVE": 85,
+      "TIMEOUT_POSITIVE": 242
+    },
+    "paper_entries": 0,
+    "pending": 2,
+    "qualified": 0,
+    "target_hit_rate": 0.0
+  },
+  "cohort_count": 31,
+  "trading_group_count": 0,
+  "exported_rows": 3160,
+  "independent_sql_count_check": "passed",
+  "scope": "All recorded versions; not the current version sample count.",
+  "full_report_local_path": "data/review-exports/review-all-20261007.json"
+}
