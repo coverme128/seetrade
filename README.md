@@ -2,6 +2,24 @@
 
 基于 v1.0.3–v1.1 升级合同实现的本地个人版。面向 Binance / OKX **USDT 永续合约**，默认 **OBSERVE**，保留 BTC/ETH 并支持逐步验证新增币种。
 
+本项目把公开行情、机会判断、风险门槛、模拟执行和每日复盘放在一台电脑上运行。公共行情观察无需交易所账号；只有主动配置私有执行环境时才需要 API 凭证。当前默认评分模型尚未经过真实市场盈利验证，界面中的机会等级是研究与执行检查结果，不是收益保证。
+
+**快速体验（合成行情，无账号）：** 安装 Node.js 22+ 与 Rust stable，运行 `npm ci --prefix web`，再运行 `./scripts/dev.sh --demo`，打开 `http://127.0.0.1:3000`。真实公共行情可用 `./scripts/start.sh` 启动；完整准备和账户边界见下文与 [配置说明](docs/EXECUTION.md)。
+
+### 界面预览
+
+| 工作台 | 机会雷达 |
+|---|---|
+| [![市场工作台](docs/screenshots/workspace-desktop.png)](docs/screenshots/workspace-desktop.png) | [![机会雷达](docs/screenshots/universe-radar.png)](docs/screenshots/universe-radar.png) |
+
+| 币种扫描 | 每日复盘 |
+|---|---|
+| [![币种扫描器](docs/screenshots/universe-scanner.png)](docs/screenshots/universe-scanner.png) | [![每日复盘](docs/screenshots/daily-review-desktop.png)](docs/screenshots/daily-review-desktop.png) |
+
+截图为既有本地运行画面；每日复盘截图显示当时尚无已平仓成交验证。截图中的机会和统计不构成实时信号或策略有效性证明。更多手机截图见 [截图目录](docs/screenshots/)。
+
+参与开发见 [贡献指南](CONTRIBUTING.md)，安全问题见 [安全报告说明](SECURITY.md)。公开发布前的授权和检查事项见 [发布准备](docs/OPEN-SOURCE-RELEASE.md)；当前尚未选定项目开源许可证。
+
 当前程序版本 **0.5.2（合同 v1.1）**：支持公共币种扫描、手动添加、动态采集池、资产资格与生命周期、独立模型/触发档案、机会雷达和组合敞口门禁。扫描默认关闭，新增币种默认只观察；不能从研究排名直接下单。使用步骤见 [动态币种池指南](docs/UNIVERSE-GUIDE.md)，交付范围及验证证据见 [v1.1 验收](docs/ACCEPTANCE-v1.1.md)。
 
 已有 P0–P3 的 PAPER、独立信号加仓、Binance / OKX 私有 REST、CONFIRM / AUTO、受控重训与影子晋升保留。软件功能验证不等于多币种模型已经通过真实市场验证，也不等于已完成资金账户验收。
@@ -27,8 +45,6 @@ v1.0.4 在此基础上加入逐标的 Market Pulse、四类归一化触发、候
 | 启停、检查、备份恢复、回放与排障 | [运维手册](docs/OPERATIONS.md) |
 | 架构、接口、模型与执行边界 | [实现架构](docs/ARCHITECTURE.md) |
 | 升级需求对应、测试证据与尚未验收事项 | [当前增量验收](docs/ACCEPTANCE-v0.5.2.md) 与 [v1.1 基线验收](docs/ACCEPTANCE-v1.1.md) |
-
-![工作台](docs/screenshots/workspace-desktop.png)
 
 ## 运行配置与账户
 
